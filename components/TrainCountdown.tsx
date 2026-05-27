@@ -1,0 +1,495 @@
+/**
+ * TrainCountdown — Reloj Predictivo Premium (redesign v2)
+ *
+ * Diseño: minimalista dark, hora en morado bold 28px, layout limpio.
+ * 3 tarjetas máximo. Accent stripe izquierda coloreada por estado.
+ * Sin gradientes recargados — fondo sólido elevado.
+ */
+import React, { useEffect, useRef, useState, memo } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  ActivityIndicator,
+} from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withSequence,
+  withTiming,
+  withSpring,
+  FadeInDown,
+} from 'react-native-reanimated';
+import { Colors, Typography, Spacing, Radius } from '../theme';
+import type { PredictiveClock, ArrivalStatus } from '../types';
+
+// ── Status config ─────────────────────────────────────────────────────────────
+const STATUS: Record<ArrivalStatus, {
+  stripe:  string;
+  label:   string;
+  pulse:   boolean;
+}> = {
+  safe:   { stripe: Colors.status.safe,   label: 'En hora',      pulse: false },
+  warn:   { stripe: Colors.status.warn,   label: 'Al límite',    pulse: true  },
+  danger: { stripe: Colors.status.danger, label: 'Perdido',      pulse: true  },
+};
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function fmt(date: Date) {
+  return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+}
+
+function fmtCountdown(ms: number): string {
+  if (ms <= 0) return 'Saliendo';
+  const m = Math.floor(ms / 60_000);
+  const h = Math.floor(m / 60);
+  if (h > 0) return `${h}h ${m % 60}m`;
+  return `${m} min`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+interface TrainCountdownProps {
+  clocks:    PredictiveClock[];
+  isLoading: boolean;
+  isLive:    boolean;
+  onSelect:  (clock: PredictiveClock) => void;
+}
+
+export default memo(function TrainCountdown({
+  clocks,
+  isLoading,
+  isLive,
+  onSelect,
+}: TrainCountdownProps) {
+  return (
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <Text style={styles.headerTitle}>Próximos trenes</Text>
+          {isLive && (
+            <View style={styles.liveChip}>
+              <View style={styles.liveDot} />
+              <Text style={styles.liveText}>EN VIVO</Text>
+            </View>
+          )}
+        </View>
+        <Text style={styles.headerSub}>Toca para comprar</Text>
+      </View>
+
+      {/* Cards */}
+      {isLoading ? (
+        <SkeletonCards />
+      ) : clocks.length === 0 ? (
+        <EmptyState />
+      ) : (
+        clocks.slice(0, 3).map((clock, i) => (
+          <TrainCard
+            key={clock.train.serviceId}
+            clock={clock}
+            index={i}
+            onPress={() => onSelect(clock)}
+          />
+        ))
+      )}
+    </View>
+  );
+});
+
+// ── TrainCard ─────────────────────────────────────────────────────────────────
+function TrainCard({
+  clock,
+  index,
+  onPress,
+}: {
+  clock:   PredictiveClock;
+  index:   number;
+  onPress: () => void;
+}) {
+  const cfg = STATUS[clock.status];
+  const { train } = clock;
+
+  // Contador vivo (1 seg)
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Pulso para warn/danger
+  const opacity = useSharedValue(1);
+  const prevStatus = useRef(clock.status);
+
+  useEffect(() => {
+    if (cfg.pulse) {
+      opacity.value = withRepeat(
+        withSequence(
+          withTiming(0.55, { duration: 700 }),
+          withTiming(1,    { duration: 700 }),
+        ),
+        -1, true,
+      );
+    } else {
+      opacity.value = withSpring(1);
+    }
+    if (prevStatus.current !== clock.status) {
+      prevStatus.current = clock.status;
+    }
+  }, [cfg.pulse, opacity, clock.status]);
+
+  const animStyle = useAnimatedStyle(() => ({
+    opacity: cfg.pulse ? opacity.value : 1,
+  }));
+
+  const msLeft = train.departureTime.getTime() - now;
+
+  return (
+    <Animated.View
+      entering={FadeInDown.delay(index * 80).springify()}
+      style={animStyle}
+    >
+      <Pressable
+        style={({ pressed }) => [
+          styles.card,
+          index === 0 && styles.cardFirst,
+          pressed && styles.cardPressed,
+        ]}
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={`${train.operator} ${train.trainNumber} a ${train.destination.name} — ${fmt(train.departureTime)}`}
+      >
+        {/* Stripe de estado (izquierda) */}
+        <View style={[styles.stripe, { backgroundColor: cfg.stripe }]} />
+
+        {/* Cuerpo */}
+        <View style={styles.cardInner}>
+
+          {/* Fila superior: operador + destino | hora */}
+          <View style={styles.topRow}>
+            <View style={styles.trainMeta}>
+              {/* Operador + número */}
+              <View style={styles.operatorRow}>
+                <Text style={styles.operatorLabel}>
+                  {train.operator.toUpperCase()}
+                </Text>
+                <Text style={styles.trainNum}>{train.trainNumber}</Text>
+                {index === 0 && (
+                  <View style={styles.nextBadge}>
+                    <Text style={styles.nextBadgeText}>PRÓXIMO</Text>
+                  </View>
+                )}
+              </View>
+              {/* Destino */}
+              <Text style={styles.destination} numberOfLines={1}>
+                → {train.destination.name}
+              </Text>
+            </View>
+
+            {/* Hora de salida — grande y morado */}
+            <View style={styles.timeBlock}>
+              <Text style={[styles.depTime, msLeft < 0 && { color: Colors.status.danger }]}>
+                {fmt(train.departureTime)}
+              </Text>
+              {train.delayMinutes > 0 && (
+                <Text style={styles.delayBadge}>+{train.delayMinutes}'</Text>
+              )}
+            </View>
+          </View>
+
+          {/* Separador */}
+          <View style={styles.divider} />
+
+          {/* Fila inferior: andén + buffer + walk */}
+          <View style={styles.bottomRow}>
+            {/* Andén */}
+            {train.platform ? (
+              <View style={styles.platformChip}>
+                <Text style={styles.platformLabel}>ANDÉN</Text>
+                <Text style={styles.platformNum}>{train.platform}</Text>
+              </View>
+            ) : (
+              <View style={styles.platformChip}>
+                <Text style={[styles.platformLabel, { color: Colors.text.muted }]}>ANDÉN</Text>
+                <Text style={[styles.platformNum, { color: Colors.text.muted }]}>—</Text>
+              </View>
+            )}
+
+            {/* Spacer */}
+            <View style={{ flex: 1 }} />
+
+            {/* Walk time */}
+            <View style={styles.walkChip}>
+              <Text style={styles.walkIcon}>🚶</Text>
+              <Text style={styles.walkText}>{Math.round(clock.walkMinutes)} min</Text>
+            </View>
+
+            {/* Buffer countdown */}
+            <View style={[styles.bufferChip, { borderColor: cfg.stripe + '55' }]}>
+              <Text style={[styles.bufferText, { color: cfg.stripe }]}>
+                {fmtCountdown(msLeft)}
+              </Text>
+            </View>
+          </View>
+
+        </View>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+// ── Skeleton ──────────────────────────────────────────────────────────────────
+function SkeletonCards() {
+  return (
+    <View style={styles.skeletonWrap}>
+      <ActivityIndicator size="small" color={Colors.brand.glow} />
+      {[0, 1, 2].map((i) => (
+        <View key={i} style={[styles.skeletonCard, { opacity: 1 - i * 0.25 }]} />
+      ))}
+    </View>
+  );
+}
+
+// ── Empty ─────────────────────────────────────────────────────────────────────
+function EmptyState() {
+  return (
+    <View style={styles.emptyWrap}>
+      <Text style={styles.emptyIcon}>🚉</Text>
+      <Text style={styles.emptyTitle}>Sin servicios</Text>
+      <Text style={styles.emptySub}>No hay trenes en las próximas horas{'\n'}desde esta estación.</Text>
+    </View>
+  );
+}
+
+// ─── STYLES ──────────────────────────────────────────────────────────────────
+const styles = StyleSheet.create({
+  container: {
+    flex:    1,
+    paddingHorizontal: Spacing['3'],
+    paddingBottom:     Spacing['2'],
+    gap:     Spacing['2'],
+  },
+
+  // Header
+  header: {
+    flexDirection:  'row',
+    alignItems:     'center',
+    justifyContent: 'space-between',
+    paddingTop:     Spacing['1'],
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           Spacing['2'],
+  },
+  headerTitle: {
+    fontSize:   Typography.size.sm,
+    fontWeight: Typography.weight.bold,
+    color:      Colors.text.primary,
+    letterSpacing: 0.3,
+  },
+  headerSub: {
+    fontSize: 10,
+    color:    Colors.text.muted,
+  },
+  liveChip: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    gap:               4,
+    paddingVertical:   2,
+    paddingHorizontal: Spacing['2'],
+    backgroundColor:   'rgba(239,68,68,0.12)',
+    borderRadius:      Radius.full,
+    borderWidth:       1,
+    borderColor:       'rgba(239,68,68,0.35)',
+  },
+  liveDot: {
+    width:           5,
+    height:          5,
+    borderRadius:    3,
+    backgroundColor: Colors.status.danger,
+  },
+  liveText: {
+    fontSize:      9,
+    fontWeight:    Typography.weight.bold,
+    color:         Colors.status.danger,
+    letterSpacing: 1,
+  },
+
+  // Card
+  card: {
+    flexDirection:   'row',
+    backgroundColor: Colors.bg.elevated,
+    borderRadius:    Radius.md,
+    overflow:        'hidden',
+    borderWidth:     1,
+    borderColor:     Colors.border.subtle,
+  },
+  cardFirst: {
+    borderColor:  Colors.border.default,
+    // glow sutil morado en la primera tarjeta
+    shadowColor:  Colors.brand.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity:0.25,
+    shadowRadius: 10,
+    elevation:    6,
+  },
+  cardPressed: {
+    opacity:   0.82,
+    transform: [{ scale: 0.985 }],
+  },
+
+  // Accent stripe
+  stripe: {
+    width:                   4,
+    borderTopLeftRadius:     Radius.md,
+    borderBottomLeftRadius:  Radius.md,
+  },
+
+  cardInner: {
+    flex:    1,
+    padding: Spacing['3'],
+    gap:     Spacing['2'],
+  },
+
+  // Top row
+  topRow: {
+    flexDirection:  'row',
+    alignItems:     'flex-start',
+    justifyContent: 'space-between',
+    gap:            Spacing['2'],
+  },
+  trainMeta: { flex: 1, gap: 2 },
+  operatorRow: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           Spacing['1'],
+    flexWrap:      'wrap',
+  },
+  operatorLabel: {
+    fontSize:      9,
+    fontWeight:    Typography.weight.bold,
+    color:         Colors.text.muted,
+    letterSpacing: 1.5,
+  },
+  trainNum: {
+    fontSize:   Typography.size.xs,
+    fontWeight: Typography.weight.semibold,
+    color:      Colors.text.secondary,
+  },
+  nextBadge: {
+    paddingVertical:   1,
+    paddingHorizontal: 5,
+    backgroundColor:   Colors.brand.primary,
+    borderRadius:      Radius.full,
+  },
+  nextBadgeText: {
+    fontSize:      8,
+    fontWeight:    Typography.weight.bold,
+    color:         '#fff',
+    letterSpacing: 0.8,
+  },
+  destination: {
+    fontSize:   Typography.size.sm,
+    fontWeight: Typography.weight.semibold,
+    color:      Colors.text.primary,
+  },
+
+  // Hora grande
+  timeBlock: { alignItems: 'flex-end', gap: 1 },
+  depTime: {
+    fontSize:      28,
+    fontWeight:    '800',
+    color:         Colors.brand.glow,   // morado vibrante
+    letterSpacing: -1,
+    lineHeight:    30,
+    fontVariant:   ['tabular-nums'],
+  },
+  delayBadge: {
+    fontSize:   9,
+    fontWeight: Typography.weight.bold,
+    color:      Colors.status.warn,
+    textAlign:  'right',
+  },
+
+  divider: {
+    height:          1,
+    backgroundColor: Colors.border.subtle,
+  },
+
+  // Bottom row
+  bottomRow: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           Spacing['2'],
+  },
+  platformChip: {
+    alignItems: 'center',
+  },
+  platformLabel: {
+    fontSize:      7,
+    fontWeight:    Typography.weight.bold,
+    color:         Colors.text.brand,
+    letterSpacing: 1,
+  },
+  platformNum: {
+    fontSize:   Typography.size.sm,
+    fontWeight: Typography.weight.black,
+    color:      Colors.text.brand,
+    lineHeight: 16,
+  },
+  walkChip: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           2,
+  },
+  walkIcon: { fontSize: 10 },
+  walkText: {
+    fontSize: 10,
+    color:    Colors.text.secondary,
+  },
+  bufferChip: {
+    paddingVertical:   2,
+    paddingHorizontal: Spacing['2'],
+    borderRadius:      Radius.full,
+    borderWidth:       1,
+    borderColor:       Colors.border.default,
+    backgroundColor:   Colors.bg.surface,
+  },
+  bufferText: {
+    fontSize:   10,
+    fontWeight: Typography.weight.bold,
+    fontVariant:['tabular-nums'],
+  },
+
+  // Skeleton
+  skeletonWrap: { gap: Spacing['2'], alignItems: 'center', paddingTop: Spacing['2'] },
+  skeletonCard: {
+    width:           '100%',
+    height:          88,
+    backgroundColor: Colors.bg.elevated,
+    borderRadius:    Radius.md,
+  },
+
+  // Empty
+  emptyWrap: {
+    flex:           1,
+    alignItems:     'center',
+    justifyContent: 'center',
+    gap:            Spacing['2'],
+    paddingVertical:Spacing['8'],
+  },
+  emptyIcon:  { fontSize: 36 },
+  emptyTitle: {
+    fontSize:   Typography.size.base,
+    fontWeight: Typography.weight.bold,
+    color:      Colors.text.secondary,
+  },
+  emptySub: {
+    fontSize:  Typography.size.xs,
+    color:     Colors.text.muted,
+    textAlign: 'center',
+    lineHeight:18,
+  },
+});

@@ -1,0 +1,915 @@
+/**
+ * WoW TRENES — Split-Screen 50/50 (STEP 2 + Tourist v2)
+ *
+ * UPPER 50%: Reloj Predictivo de Pánico — próximos 3 trenes + buffer coloreado
+ * LOWER 50%: Mapa Multimodal en tiempo real con chips de modo
+ *
+ * TOURIST MODE (mode="tourist"):
+ *   • Recibe originStationId + destStationId + destName desde Home
+ *   • AffiliateWebView como checkout principal (sin B2B, 0 acuerdos)
+ *   • startPlatformMonitoring cuando el usuario selecciona un tren
+ *   • registerDestinationGeofence en onPurchaseSuccess (Ring-3 destino)
+ *   • Ticket almacenado localmente para geofencing Rings 1+2
+ */
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import {
+  View,
+  StyleSheet,
+  Dimensions,
+  Platform,
+  Text,
+  Pressable,
+  Linking,
+  Animated as RNAnimated,
+} from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import MapView, { Marker, Polyline, Circle, PROVIDER_GOOGLE } from 'react-native-maps';
+import * as Haptics from 'expo-haptics';
+import Animated, {
+  FadeIn,
+  FadeOut,
+} from 'react-native-reanimated';
+
+import { Colors, Typography, Spacing, Radius, Shadows } from '../theme';
+import TrainCountdown    from '../components/TrainCountdown';
+import ModeChip          from '../components/ModeChip';
+import AffiliateWebView  from '../components/AffiliateWebView';
+
+import { useTrainSchedules }          from '../hooks/useTrainSchedules';
+import { useLocation }                from '../hooks/useLocation';
+import { useLiveTrainPosition }       from '../services/liveTrainPosition';
+import { findNearestStation, getStationById } from '../services/gtfsDatabase';
+import { optimizeRoute }              from '../services/routeOptimizer';
+import { startPlatformMonitoring, stopPlatformMonitoring } from '../services/trainArrivalMonitor';
+import { registerDestinationGeofence, refreshGeofences }  from '../tasks/geofenceTask';
+import { storeTicket }                from '../services/ticketStorage';
+
+import DestinationSearch from '../components/DestinationSearch';
+
+import type {
+  TransportMode,
+  TrainService,
+  PredictiveClock,
+  Coordinates,
+  Station,
+  StoredTicket,
+} from '../types';
+
+const { height: H, width: W } = Dimensions.get('window');
+const HALF_H = H / 2;
+
+// ── Deep links for rideshare ──────────────────────────────────────────────
+function openRideshare(dest: Coordinates, stationName: string) {
+  const uberLink = `uber://?action=setPickup&dropoff[latitude]=${dest.latitude}&dropoff[longitude]=${dest.longitude}&dropoff[nickname]=${encodeURIComponent(stationName)}`;
+  Linking.canOpenURL(uberLink).then((can) => {
+    if (can) Linking.openURL(uberLink);
+    else Linking.openURL(
+      `https://m.uber.com/looking?drop[latitude]=${dest.latitude}&drop[longitude]=${dest.longitude}`
+    );
+  });
+}
+
+// ── Map style — dark minimal ──────────────────────────────────────────────
+const DARK_MAP_STYLE = [
+  { elementType: 'geometry',             stylers: [{ color: '#09090B' }] },
+  { elementType: 'labels.text.fill',     stylers: [{ color: '#71717A' }] },
+  { featureType: 'road',       elementType: 'geometry', stylers: [{ color: '#27272A' }] },
+  { featureType: 'water',      elementType: 'geometry', stylers: [{ color: '#0A0A14' }] },
+  { featureType: 'transit.station.rail', elementType: 'geometry', stylers: [{ color: '#7C3AED' }] },
+  { featureType: 'poi',        stylers: [{ visibility: 'off' }] },
+];
+
+// ── Success banner ────────────────────────────────────────────────────────
+function PurchaseSuccessBanner({
+  bookingRef,
+  destName,
+  onDismiss,
+}: {
+  bookingRef: string;
+  destName:   string;
+  onDismiss:  () => void;
+}) {
+  return (
+    <Animated.View entering={FadeIn.duration(400)} exiting={FadeOut.duration(300)} style={styles.successBanner}>
+      <Text style={styles.successEmoji}>🎉</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.successTitle}>¡Billete confirmado!</Text>
+        <Text style={styles.successSub} numberOfLines={1}>
+          {destName} · Ref: {bookingRef}
+        </Text>
+        <Text style={styles.successHint}>
+          Recibirás el QR de Trainline por email. La app te avisará cuando llegues.
+        </Text>
+      </View>
+      <Pressable onPress={onDismiss} style={styles.successClose} accessibilityLabel="Cerrar">
+        <Text style={styles.successCloseText}>✕</Text>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+// ── LiveTrainMarker — punto animado del tren en el mapa ──────────────────────
+/**
+ * Muestra el tren como un punto azul pulsante.
+ * - Outer ring: pulsa 0.6→1.0 en opacidad (efecto "ping")
+ * - Inner dot:  fijo, azul sólido con borde blanco
+ * El marker rota según el `bearing` para reflejar la dirección de marcha.
+ */
+function LiveTrainMarker({
+  coordinate,
+  bearing,
+  isLive,
+}: {
+  coordinate: { latitude: number; longitude: number };
+  bearing:    number;
+  isLive:     boolean;
+}) {
+  const pulse = useRef(new RNAnimated.Value(0.6)).current;
+
+  useEffect(() => {
+    const anim = RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.timing(pulse, { toValue: 1,   duration: 900, useNativeDriver: true }),
+        RNAnimated.timing(pulse, { toValue: 0.6, duration: 900, useNativeDriver: true }),
+      ])
+    );
+    anim.start();
+    return () => anim.stop();
+  }, [pulse]);
+
+  return (
+    <Marker
+      coordinate={coordinate}
+      anchor={{ x: 0.5, y: 0.5 }}
+      flat
+      rotation={bearing}
+      title={isLive ? '🚂 Posición en vivo' : '🚂 Posición estimada'}
+    >
+      <View style={liveStyles.wrapper}>
+        {/* Pulse ring */}
+        <RNAnimated.View style={[liveStyles.ring, { opacity: pulse }]} />
+        {/* Core dot */}
+        <View style={liveStyles.dot} />
+        {/* Direction arrow (small triangle at top) */}
+        <View style={liveStyles.arrow} />
+      </View>
+    </Marker>
+  );
+}
+
+const liveStyles = StyleSheet.create({
+  wrapper: {
+    width:          34,
+    height:         34,
+    alignItems:     'center',
+    justifyContent: 'center',
+  },
+  ring: {
+    position:        'absolute',
+    width:           34,
+    height:          34,
+    borderRadius:    17,
+    borderWidth:     2,
+    borderColor:     '#3B82F6',
+    backgroundColor: 'rgba(59,130,246,0.15)',
+  },
+  dot: {
+    width:           16,
+    height:          16,
+    borderRadius:    8,
+    backgroundColor: '#3B82F6',
+    borderWidth:     2,
+    borderColor:     '#FFFFFF',
+    zIndex:          2,
+  },
+  arrow: {
+    position:         'absolute',
+    top:              2,
+    width:            0,
+    height:           0,
+    borderLeftWidth:  4,
+    borderRightWidth: 4,
+    borderBottomWidth:6,
+    borderStyle:      'solid',
+    borderLeftColor:  'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor:'#FFFFFF',
+    zIndex:           3,
+  },
+});
+
+// ── Delay badge en el mapa ────────────────────────────────────────────────────
+function DelayBadge({ minutes, isLive }: { minutes: number; isLive: boolean }) {
+  if (minutes === 0 && isLive) return null;
+
+  const color = minutes > 10
+    ? Colors.status.danger
+    : minutes > 3
+      ? Colors.status.warn
+      : Colors.status.safe;
+
+  return (
+    <View style={delayStyles.badge}>
+      <View style={[delayStyles.dot, { backgroundColor: isLive ? '#3B82F6' : Colors.text.muted }]} />
+      <Text style={[delayStyles.text, { color }]}>
+        {minutes > 0 ? `+${minutes} min` : 'En hora'}
+      </Text>
+      {!isLive && <Text style={delayStyles.estimated}>est.</Text>}
+    </View>
+  );
+}
+
+const delayStyles = StyleSheet.create({
+  badge: {
+    position:         'absolute',
+    bottom:           Spacing['3'],
+    left:             Spacing['3'],
+    flexDirection:    'row',
+    alignItems:       'center',
+    gap:              Spacing['1'],
+    paddingHorizontal:Spacing['2'],
+    paddingVertical:  4,
+    borderRadius:     Radius.full,
+    backgroundColor:  'rgba(9,9,11,0.85)',
+    borderWidth:      1,
+    borderColor:      Colors.border.default,
+  },
+  dot: {
+    width:        6,
+    height:       6,
+    borderRadius: 3,
+  },
+  text: {
+    fontSize:   Typography.size.xs,
+    fontWeight: Typography.weight.bold,
+    fontVariant:['tabular-nums'],
+  },
+  estimated: {
+    fontSize: Typography.size.xs,
+    color:    Colors.text.muted,
+  },
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+export default function SplitScreen() {
+  const params = useLocalSearchParams<{
+    lat?:             string;
+    lon?:             string;
+    country?:         string;
+    mode?:            string;   // "tourist" | "country"
+    originStationId?: string;   // Pre-resolved origin from Home (tourist mode)
+    destStationId?:   string;   // Destination station from Home
+    destName?:        string;   // Human-readable destination name (e.g. "Vaticano")
+    destPoiId?:       string;   // Source POI id (analytics/future)
+    metroCity?:       string;   // Ciudad de metro urbano (e.g. "New York", "Madrid")
+  }>();
+  const router     = useRouter();
+  const mapRef     = useRef<MapView>(null);
+  const isTourist  = params.mode === 'tourist';
+  // Modo metro: país con código de ciudad (US_NYC, ES_MAD, ES_BCN…)
+  const isMetro    = !!params.metroCity;
+  // Hint ISO-2 para el geocoder (extrae el country base del código)
+  const countryHint = params.country?.split('_')[0] ?? 'ES';
+
+  // ── State ──────────────────────────────────────────────────────────────
+  const [transportMode,    setTransportMode]    = useState<TransportMode>('walk');
+  const [selectedStation,  setSelectedStation]  = useState<Station | null>(null);
+  const [destStation,      setDestStation]      = useState<Station | null>(null);
+  const [selectedService,  setSelectedService]  = useState<TrainService | null>(null);
+  const [routePolyline,    setRoutePolyline]    = useState<Coordinates[]>([]);
+  // Estación de llegada encontrada por búsqueda de dirección (modo metro)
+  const [searchedDestWalk, setSearchedDestWalk] = useState<number>(0);
+  const [showDestSearch,   setShowDestSearch]   = useState(isMetro); // visible en modo metro
+
+  // Checkout — affiliate WebView (primary)
+  const [affiliateVisible, setAffiliateVisible] = useState(false);
+
+  // Post-purchase success banner
+  const [purchaseBookingRef, setPurchaseBookingRef] = useState<string | null>(null);
+
+  const { locationState, requestLocation } = useLocation();
+
+  // Resolve user coordinates (from params or live GPS)
+  const userCoords: Coordinates | null =
+    params.lat && params.lon
+      ? { latitude: parseFloat(params.lat), longitude: parseFloat(params.lon) }
+      : locationState.status === 'granted' ? locationState.coords : null;
+
+  // ── Resolve origin station ────────────────────────────────────────────
+  useEffect(() => {
+    (async () => {
+      if (params.originStationId) {
+        // Tourist mode — station already resolved by Home
+        try {
+          const st = await getStationById(params.originStationId);
+          if (st) { setSelectedStation(st); return; }
+        } catch { /* fall through to GPS fallback */ }
+      }
+      // Country mode or fallback
+      if (!userCoords) return;
+      const station = await findNearestStation(userCoords);
+      if (station) setSelectedStation(station);
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Resolve destination station (tourist mode) ────────────────────────
+  useEffect(() => {
+    if (!params.destStationId) return;
+    (async () => {
+      try {
+        const st = await getStationById(params.destStationId!);
+        if (st) setDestStation(st);
+      } catch { /* non-fatal */ }
+    })();
+  }, [params.destStationId]);
+
+  // ── Live train position (polling 15s, solo si hay tren seleccionado) ──
+  // Activo solo cuando el tren saldrá en < 3 horas o ya partió
+  const livePosition = useLiveTrainPosition(
+    selectedService,
+    selectedService !== null,
+  );
+
+  // ── Train schedules for selected origin station ───────────────────────
+  const { clocks, isLoading, isLive, refresh } = useTrainSchedules({
+    stationId:    selectedStation?.id ?? 'STOP_PLACEHOLDER',
+    userLocation: userCoords,
+    transportMode,
+    maxResults:   3,
+  });
+
+  // ── Auto-seguimiento de cámara al tren en movimiento ─────────────────
+  useEffect(() => {
+    if (!livePosition.coordinates || !mapRef.current) return;
+    // Solo seguir si el tren está en marcha (isLive) y hay posición real
+    if (!livePosition.isLive) return;
+
+    mapRef.current.animateCamera(
+      {
+        center:  {
+          latitude:  livePosition.coordinates.latitude,
+          longitude: livePosition.coordinates.longitude,
+        },
+        heading: livePosition.bearing,
+        zoom:    13,
+        pitch:   0,
+      },
+      { duration: 800 },
+    );
+  }, [livePosition.coordinates, livePosition.bearing, livePosition.isLive]);
+
+  // ── Route optimization (user → origin station) ────────────────────────
+  useEffect(() => {
+    if (!userCoords || !selectedStation) return;
+    (async () => {
+      try {
+        const route = await optimizeRoute(userCoords, selectedStation.coordinates, transportMode);
+        setRoutePolyline(route.polyline ?? []);
+        if (mapRef.current && route.polyline && route.polyline.length > 0) {
+          mapRef.current.fitToCoordinates(route.polyline, {
+            edgePadding: { top: 40, right: 40, bottom: 40, left: 40 },
+            animated:    true,
+          });
+        }
+      } catch {
+        setRoutePolyline([]);
+      }
+    })();
+  }, [transportMode, userCoords, selectedStation]);
+
+  // ── Rideshare deeplink ────────────────────────────────────────────────
+  useEffect(() => {
+    if (transportMode === 'rideshare' && selectedStation) {
+      openRideshare(selectedStation.coordinates, selectedStation.name);
+    }
+  }, [transportMode, selectedStation]);
+
+  // ── Destino encontrado por búsqueda de dirección ─────────────────────
+  const handleDestinationFound = useCallback((station: Station, walkMinutes: number) => {
+    setDestStation(station);
+    setSearchedDestWalk(walkMinutes);
+    setShowDestSearch(false);   // colapsar el buscador
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Centrar mapa en la estación de destino
+    if (mapRef.current) {
+      mapRef.current.animateToRegion(
+        {
+          latitude:       station.coordinates.latitude,
+          longitude:      station.coordinates.longitude,
+          latitudeDelta:  0.015,
+          longitudeDelta: 0.015,
+        },
+        500,
+      );
+    }
+  }, []);
+
+  // ── Clock / service selection ─────────────────────────────────────────
+  const handleClockSelect = useCallback((clock: PredictiveClock) => {
+    const svc = clock.train;
+    setSelectedService(svc);
+
+    // Start platform arrival monitor ("tu tren llega en N min")
+    startPlatformMonitoring(svc);
+
+    // Open affiliate checkout
+    setAffiliateVisible(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  }, []);
+
+  // ── Purchase success ──────────────────────────────────────────────────
+  /**
+   * Called by AffiliateWebView when Trainline's confirmation URL is detected.
+   * 1. Register Ring-3 destination geofence ("preparate para bajar")
+   * 2. Store minimal affiliate-booking record for Ring-1/2 notifications
+   * 3. Refresh geofences so new regions are registered immediately
+   */
+  const handlePurchaseSuccess = useCallback(async (bookingRef: string) => {
+    if (!selectedService) return;
+
+    setAffiliateVisible(false);
+    setPurchaseBookingRef(bookingRef);
+
+    // Determine destination station id for Ring-3
+    const destId = params.destStationId ?? selectedService.destination.id;
+    const destDisplayName = params.destName ?? selectedService.destination.name;
+
+    // ── Register Ring-3 geofence (arrival alert at destination) ──────────
+    registerDestinationGeofence({
+      destinationStationId: destId,
+      ticketId:             bookingRef,
+      trainNumber:          selectedService.trainNumber,
+      operator:             selectedService.operator,
+      destinationName:      destDisplayName,
+      platform:             selectedService.platform,
+    });
+
+    // ── Store affiliate booking record (enables Ring-1/2 approach alerts) ─
+    // In affiliate model we don't have the actual QR from Trainline,
+    // so we store the bookingRef as qrData — the notification system
+    // still works; the user gets the real QR ticket from Trainline via email.
+    const now = new Date();
+    const ticket: StoredTicket = {
+      id:           bookingRef,
+      bookingRef,
+      qrData:       bookingRef,          // Trainline sends real QR via email
+      qrFormat:     'QR_CODE',
+      trainService: selectedService,
+      passenger:    { firstName: '', lastName: '' }, // RGPD: not persisted
+      issuedAt:     now,
+      validUntil:   selectedService.arrivalTime,
+      operator:     selectedService.operator,
+      status:       'valid',
+      storedAt:     now,
+      associatedStation: selectedService.origin.id,
+    };
+
+    try {
+      await storeTicket(ticket);
+      // Refresh geofences so new rings are registered with expo-location
+      await refreshGeofences();
+    } catch (err) {
+      console.warn('[SplitScreen] storeTicket failed (non-fatal):', err);
+    }
+
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  }, [selectedService, params.destStationId, params.destName]);
+
+  // ── Back ──────────────────────────────────────────────────────────────
+  const handleBack = useCallback(() => {
+    // Stop any active platform monitoring when leaving screen
+    if (selectedService) stopPlatformMonitoring(selectedService.serviceId);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.back();
+  }, [router, selectedService]);
+
+  // ── Map initial region ────────────────────────────────────────────────
+  const initialRegion = userCoords
+    ? { latitude: userCoords.latitude, longitude: userCoords.longitude, latitudeDelta: 0.02, longitudeDelta: 0.02 }
+    : { latitude: 48.8566, longitude: 2.3522, latitudeDelta: 0.05, longitudeDelta: 0.05 };
+
+  // ── Destination label for tourist mode ───────────────────────────────
+  const destLabel = params.destName ?? destStation?.name ?? null;
+
+  return (
+    <View style={styles.root}>
+
+      {/* ── TOP HALF: Predictive Clock ── */}
+      <View style={styles.topHalf}>
+
+        {/* Nav bar */}
+        <View style={styles.topNav}>
+          <Pressable
+            onPress={handleBack}
+            style={styles.backBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Volver"
+          >
+            <Text style={styles.backText}>‹ {isTourist ? 'Mapa' : 'Países'}</Text>
+          </Pressable>
+
+          {/* Origin station pill */}
+          {selectedStation && (
+            <View style={styles.stationPill}>
+              <Text style={styles.stationPillText} numberOfLines={1}>
+                📍 {selectedStation.name}
+              </Text>
+            </View>
+          )}
+
+          <Pressable onPress={refresh} style={styles.refreshBtn} accessibilityLabel="Actualizar horarios">
+            <Text style={styles.refreshText}>↻</Text>
+          </Pressable>
+        </View>
+
+        {/* ── Buscador de dirección (modo metro) ── */}
+        {isMetro && showDestSearch && (
+          <Animated.View
+            entering={FadeIn.duration(300)}
+            exiting={FadeOut.duration(200)}
+            style={styles.destSearchWrap}
+          >
+            <View style={styles.destSearchHeader}>
+              <Text style={styles.destSearchTitle}>
+                🚇 {params.metroCity}
+              </Text>
+              <Pressable onPress={() => setShowDestSearch(false)} hitSlop={8}>
+                <Text style={styles.destSearchClose}>✕</Text>
+              </Pressable>
+            </View>
+            <DestinationSearch
+              onStationFound={handleDestinationFound}
+              countryHint={countryHint}
+              placeholder="Escribe una calle o lugar…"
+            />
+          </Animated.View>
+        )}
+
+        {/* ── Botón "¿A dónde vas?" para reabrir el buscador ── */}
+        {isMetro && !showDestSearch && (
+          <Pressable
+            style={styles.reopenSearchBtn}
+            onPress={() => setShowDestSearch(true)}
+          >
+            <Text style={styles.reopenSearchIcon}>🔍</Text>
+            <Text style={styles.reopenSearchText} numberOfLines={1}>
+              {destStation
+                ? `Destino: ${destStation.name}`
+                : `¿A dónde vas en ${params.metroCity}?`}
+            </Text>
+            {destStation && searchedDestWalk > 0 && (
+              <Text style={styles.reopenSearchWalk}>
+                🚶 {searchedDestWalk} min
+              </Text>
+            )}
+          </Pressable>
+        )}
+
+        {/* Destination strip (tourist mode only) */}
+        {isTourist && destLabel && (
+          <View style={styles.destStrip}>
+            <Text style={styles.destStripLabel}>DESTINO</Text>
+            <Text style={styles.destStripName} numberOfLines={1}>🏛️ {destLabel}</Text>
+          </View>
+        )}
+
+        <TrainCountdown
+          clocks={clocks}
+          isLoading={isLoading}
+          isLive={isLive}
+          onSelect={handleClockSelect}
+        />
+      </View>
+
+      {/* Divider */}
+      <View style={styles.divider}>
+        <View style={styles.dividerLine} />
+        <Text style={styles.dividerLabel}>CÓMO LLEGAR</Text>
+        <View style={styles.dividerLine} />
+      </View>
+
+      {/* ── BOTTOM HALF: Multimodal Map ── */}
+      <View style={styles.bottomHalf}>
+        <ModeChip
+          selected={transportMode}
+          onChange={setTransportMode}
+          destination={selectedStation?.coordinates}
+        />
+
+        <MapView
+          ref={mapRef}
+          style={styles.map}
+          provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
+          initialRegion={initialRegion}
+          customMapStyle={DARK_MAP_STYLE}
+          // mapType="terrain" da un look más oscuro sin API key en dev
+          // En prod con API key el customMapStyle toma el control
+          showsUserLocation
+          showsMyLocationButton={false}
+          showsCompass={false}
+          showsTraffic={false}
+          showsBuildings={false}
+          rotateEnabled={false}
+          userInterfaceStyle="dark"
+        >
+          {/* Route polyline (user → origin station) */}
+          {routePolyline.length > 1 && (
+            <Polyline
+              coordinates={routePolyline}
+              strokeColor={Colors.brand.primary}
+              strokeWidth={4}
+              lineDashPattern={transportMode === 'walk' ? [8, 6] : undefined}
+            />
+          )}
+
+          {/* Origin station marker */}
+          {selectedStation && (
+            <Marker
+              coordinate={selectedStation.coordinates}
+              title={selectedStation.name}
+              description="Estación de origen"
+              pinColor={Colors.brand.glow}
+            />
+          )}
+
+          {/* Destination station marker (tourist mode) */}
+          {destStation && (
+            <Marker
+              coordinate={destStation.coordinates}
+              title={destLabel ?? destStation.name}
+              description="Tu destino"
+              pinColor={Colors.status.safe}
+            />
+          )}
+
+          {/* Geofence ring visualisation — inner 50m (when station known) */}
+          {selectedStation && (
+            <Circle
+              center={selectedStation.coordinates}
+              radius={50}
+              fillColor="rgba(124,58,237,0.08)"
+              strokeColor="rgba(124,58,237,0.4)"
+              strokeWidth={1}
+            />
+          )}
+
+          {/* ── Live train dot ── */}
+          {livePosition.coordinates && !livePosition.isLoading && (
+            <LiveTrainMarker
+              coordinate={livePosition.coordinates}
+              bearing={livePosition.bearing}
+              isLive={livePosition.isLive}
+            />
+          )}
+        </MapView>
+
+        {/* Delay badge superpuesto sobre el mapa */}
+        {selectedService && !livePosition.isLoading && (
+          <DelayBadge
+            minutes={livePosition.delayMinutes}
+            isLive={livePosition.isLive}
+          />
+        )}
+      </View>
+
+      {/* ── Purchase success banner ── */}
+      {purchaseBookingRef && (
+        <PurchaseSuccessBanner
+          bookingRef={purchaseBookingRef}
+          destName={destLabel ?? selectedService?.destination.name ?? 'destino'}
+          onDismiss={() => setPurchaseBookingRef(null)}
+        />
+      )}
+
+      {/* ── Affiliate WebView checkout (primary) ── */}
+      {selectedService && (
+        <AffiliateWebView
+          service={selectedService}
+          visible={affiliateVisible}
+          onClose={() => {
+            setAffiliateVisible(false);
+            // Stop monitoring if user cancels checkout
+            stopPlatformMonitoring(selectedService.serviceId);
+          }}
+          onPurchaseSuccess={handlePurchaseSuccess}
+        />
+      )}
+
+    </View>
+  );
+}
+
+// ─── STYLES ─────────────────────────────────────────────────────────────────
+const styles = StyleSheet.create({
+  root: {
+    flex:            1,
+    backgroundColor: Colors.bg.base,
+  },
+
+  // Upper 50%
+  topHalf: {
+    height:            HALF_H,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border.subtle,
+  },
+  topNav: {
+    flexDirection:    'row',
+    alignItems:       'center',
+    paddingHorizontal: Spacing['4'],
+    paddingTop:       Platform.select({ ios: 52, android: 36 }),
+    paddingBottom:    Spacing['2'],
+    gap:              Spacing['3'],
+  },
+  backBtn: {
+    paddingVertical:   Spacing['2'],
+    paddingHorizontal: Spacing['3'],
+    minHeight:         44,
+    justifyContent:    'center',
+  },
+  backText: {
+    fontSize:   Typography.size.md,
+    color:      Colors.text.brand,
+    fontWeight: Typography.weight.semibold,
+  },
+  stationPill: {
+    flex:              1,
+    paddingVertical:   Spacing['2'],
+    paddingHorizontal: Spacing['3'],
+    backgroundColor:   Colors.bg.elevated,
+    borderRadius:      Radius.full,
+    borderWidth:       1,
+    borderColor:       Colors.border.default,
+  },
+  stationPillText: {
+    fontSize:   Typography.size.sm,
+    color:      Colors.text.primary,
+    fontWeight: Typography.weight.medium,
+    textAlign:  'center',
+  },
+  refreshBtn: {
+    width:          44,
+    height:         44,
+    alignItems:     'center',
+    justifyContent: 'center',
+  },
+  refreshText: {
+    fontSize: Typography.size.xl,
+    color:    Colors.text.secondary,
+  },
+
+  // Buscador de dirección (metro mode)
+  destSearchWrap: {
+    paddingHorizontal: Spacing['4'],
+    paddingBottom:     Spacing['2'],
+    gap:               Spacing['2'],
+    backgroundColor:   Colors.bg.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border.subtle,
+  },
+  destSearchHeader: {
+    flexDirection:  'row',
+    alignItems:     'center',
+    justifyContent: 'space-between',
+  },
+  destSearchTitle: {
+    fontSize:   Typography.size.sm,
+    fontWeight: Typography.weight.bold,
+    color:      Colors.text.primary,
+  },
+  destSearchClose: {
+    fontSize: Typography.size.sm,
+    color:    Colors.text.secondary,
+    padding:  Spacing['1'],
+  },
+
+  // "Reabrir buscador" pill cuando está colapsado
+  reopenSearchBtn: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    gap:               Spacing['2'],
+    marginHorizontal:  Spacing['4'],
+    marginBottom:      Spacing['2'],
+    paddingVertical:   Spacing['2'],
+    paddingHorizontal: Spacing['3'],
+    backgroundColor:   Colors.bg.elevated,
+    borderRadius:      Radius.lg,
+    borderWidth:       1,
+    borderColor:       Colors.border.default,
+  },
+  reopenSearchIcon: { fontSize: 13 },
+  reopenSearchText: {
+    flex:       1,
+    fontSize:   Typography.size.xs,
+    color:      Colors.text.secondary,
+  },
+  reopenSearchWalk: {
+    fontSize:   Typography.size.xs,
+    color:      Colors.text.brand,
+    fontWeight: Typography.weight.semibold,
+  },
+
+  // Destination strip (tourist mode)
+  destStrip: {
+    flexDirection:    'row',
+    alignItems:       'center',
+    gap:              Spacing['2'],
+    paddingHorizontal: Spacing['4'],
+    paddingVertical:  Spacing['1'],
+    backgroundColor:  'rgba(34,197,94,0.06)',
+    borderBottomWidth: 1,
+    borderBottomColor:'rgba(34,197,94,0.15)',
+  },
+  destStripLabel: {
+    fontSize:     Typography.size.xs,
+    fontWeight:   Typography.weight.bold,
+    color:        Colors.status.safe,
+    letterSpacing:1.5,
+  },
+  destStripName: {
+    flex:       1,
+    fontSize:   Typography.size.sm,
+    fontWeight: Typography.weight.semibold,
+    color:      Colors.text.primary,
+  },
+
+  // Divider
+  divider: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    paddingHorizontal: Spacing['4'],
+    paddingVertical:   Spacing['1'],
+    gap:               Spacing['2'],
+    backgroundColor:   Colors.bg.surface,
+  },
+  dividerLine: {
+    flex:            1,
+    height:          1,
+    backgroundColor: Colors.border.subtle,
+  },
+  dividerLabel: {
+    fontSize:     Typography.size.xs,
+    fontWeight:   Typography.weight.bold,
+    color:        Colors.text.muted,
+    letterSpacing:2,
+  },
+
+  // Lower 50%
+  bottomHalf: {
+    flex:     1,
+    overflow: 'hidden',
+  },
+  map: {
+    flex: 1,
+  },
+
+  // Purchase success banner
+  successBanner: {
+    position:         'absolute',
+    bottom:           0,
+    left:             0,
+    right:            0,
+    flexDirection:    'row',
+    alignItems:       'flex-start',
+    gap:              Spacing['3'],
+    padding:          Spacing['4'],
+    paddingBottom:    Platform.select({ ios: 34, android: 20 }),
+    backgroundColor:  Colors.bg.elevated,
+    borderTopWidth:   1,
+    borderTopColor:   Colors.status.safe,
+    ...Shadows.card,
+  },
+  successEmoji: {
+    fontSize: 28,
+    marginTop: 2,
+  },
+  successTitle: {
+    fontSize:   Typography.size.md,
+    fontWeight: Typography.weight.bold,
+    color:      Colors.text.primary,
+    marginBottom: 2,
+  },
+  successSub: {
+    fontSize:   Typography.size.sm,
+    color:      Colors.text.brand,
+    fontWeight: Typography.weight.semibold,
+    marginBottom: 4,
+  },
+  successHint: {
+    fontSize: Typography.size.xs,
+    color:    Colors.text.secondary,
+    lineHeight: 16,
+  },
+  successClose: {
+    width:          32,
+    height:         32,
+    alignItems:     'center',
+    justifyContent: 'center',
+    borderRadius:   Radius.full,
+    backgroundColor: Colors.bg.overlay,
+  },
+  successCloseText: {
+    fontSize: Typography.size.sm,
+    color:    Colors.text.secondary,
+  },
+});

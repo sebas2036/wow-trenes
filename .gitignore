@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+
+# DB assets (regenerar con scripts/import_gtfs_*.py)
+assets/*.db
+
+# OS
+.DS_Store
+*.log
+
+# Env
+.env
+.env.local
