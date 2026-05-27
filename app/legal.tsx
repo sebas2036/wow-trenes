@@ -138,7 +138,7 @@ const CONTENT: Record<string, { title: string; sections: { heading: string; body
       },
       {
         heading: 'Vigencia',
-        body: 'Política en vigor desde el 1 de enero de 2025. Última actualización: mayo 2026. Los cambios se comunicarán en la App.',
+        body: 'Política en vigor desde el 1 de enero de 2025. Última actualización: mayo 2026. Los cambios se comunicarán en la App.\n\nVersión web: https://glosx.app/privacy-policy',
       },
     ],
   },
