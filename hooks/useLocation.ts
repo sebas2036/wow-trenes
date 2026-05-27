@@ -23,6 +23,16 @@ interface UseLocationReturn {
   startWatching: (onUpdate: (coords: Coordinates) => void) => Promise<() => void>;
 }
 
+// ── Dev override — simula estar en Zurich para testear desde Argentina ─────────
+// Cambiar a false para usar GPS real, o cambiar las coordenadas a otra ciudad:
+//   Madrid:  { latitude: 40.4168, longitude: -3.7038 }
+//   Paris:   { latitude: 48.8566, longitude:  2.3522 }
+//   London:  { latitude: 51.5074, longitude: -0.1278 }
+//   NYC:     { latitude: 40.7128, longitude: -74.0060 }
+const DEV_LOCATION: Coordinates | null = __DEV__
+  ? { latitude: 47.3769, longitude: 8.5417 }  // Zurich HB
+  : null;
+
 export function useLocation(): UseLocationReturn {
   const [locationState, setLocationState] = useState<LocationState>({ status: 'idle' });
   const watcherRef = useRef<Location.LocationSubscription | null>(null);
@@ -55,21 +65,28 @@ export function useLocation(): UseLocationReturn {
       return null;
     }
 
-    // 2. Get current position with high accuracy
+    // 2. Get current position (dev override if active)
     try {
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
+      let coords: Coordinates;
 
-      const coords: Coordinates = {
-        latitude:  location.coords.latitude,
-        longitude: location.coords.longitude,
-      };
+      if (DEV_LOCATION) {
+        // Simulated location for testing outside Europe/USA
+        await new Promise(r => setTimeout(r, 300)); // simula latencia GPS
+        coords = DEV_LOCATION;
+      } else {
+        const location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.High,
+        });
+        coords = {
+          latitude:  location.coords.latitude,
+          longitude: location.coords.longitude,
+        };
+      }
 
       setLocationState({
         status:   'granted',
         coords,
-        accuracy: location.coords.accuracy,
+        accuracy: DEV_LOCATION ? null : null,
       });
 
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -95,6 +112,12 @@ export function useLocation(): UseLocationReturn {
   const startWatching = useCallback(
     async (onUpdate: (coords: Coordinates) => void): Promise<() => void> => {
       watcherRef.current?.remove();
+
+      // Dev override — emit simulated location once and keep static
+      if (DEV_LOCATION) {
+        onUpdate(DEV_LOCATION);
+        return () => {};
+      }
 
       const subscription = await Location.watchPositionAsync(
         {

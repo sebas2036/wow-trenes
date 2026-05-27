@@ -73,6 +73,7 @@
       "expo-sqlite",
       "expo-secure-store"
     ],
+    "newArchEnabled": true,
     "experiments": {
       "typedRoutes": true
     },

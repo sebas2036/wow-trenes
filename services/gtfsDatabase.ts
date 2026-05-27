@@ -265,12 +265,25 @@ export async function findNearestStation(coords: Coordinates): Promise<Station |
  * Matches both the parent stop AND all its platform children
  * (e.g. "8503000" and "8503000:0:10").
  */
+// UTC offsets per country — GTFS times are in local time of the country
+const COUNTRY_UTC_OFFSET: Partial<Record<CountryCode, number>> = {
+  CH: 1, FR: 1, DE: 1, IT: 1, NL: 1, AT: 1, BE: 1, PT: 0,
+  NO: 1, ES: 1, GB: 0, GB_LON: 0,
+  US: -5, US_NYC: -5, US_CHI: -6, US_LAX: -8,
+  ES_MAD: 1, ES_BCN: 1,
+  JP: 9,
+};
+
 export async function queryUpcomingTrains(
   stationId: string,
   limit: number = 3,
 ): Promise<TrainService[]> {
   const conn    = await db();
-  const now     = new Date();
+  // Adjust device time to the country's local time for correct GTFS comparison
+  const utcOffset   = COUNTRY_UTC_OFFSET[activeCountry] ?? 0;
+  const deviceOffset = -new Date().getTimezoneOffset() / 60; // device UTC offset in hours
+  const diffMs      = (utcOffset - deviceOffset) * 3_600_000;
+  const now         = new Date(Date.now() + diffMs);
   const depFrom = timeToGTFS(now);
   const depTo   = timeToGTFS(new Date(now.getTime() + 4 * 3600_000));
 

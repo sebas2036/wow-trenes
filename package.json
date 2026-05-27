@@ -12,6 +12,7 @@
   "dependencies": {
     "@expo/vector-icons": "^14.0.4",
     "@gorhom/bottom-sheet": "^4.6.4",
+    "@react-native-async-storage/async-storage": "1.23.1",
     "expo": "~52.0.0",
     "expo-asset": "~10.0.10",
     "expo-blur": "~14.0.1",
