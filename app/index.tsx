@@ -182,20 +182,24 @@ function CountryCard({
 // ── Componente: tarjeta de metro ────────────────────────────────────────────
 function MetroCard({
   metro,
+  isFav,
   onPress,
+  onFavToggle,
 }: {
-  metro:   MetroCity;
-  onPress: (code: CountryCode) => void;
+  metro:       MetroCity;
+  isFav:       boolean;
+  onPress:     (code: CountryCode) => void;
+  onFavToggle: (code: CountryCode) => void;
 }) {
   return (
     <Pressable
       style={({ pressed }) => [
         styles.metroCard,
-        { borderColor: metro.color + '66' },
-        pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
+        pressed && { opacity: 0.85, transform: [{ scale: 0.985 }] },
       ]}
       onPress={() => onPress(metro.code)}
     >
+      <View style={[styles.cardStrip, { backgroundColor: metro.color }]} />
       <Text style={styles.metroCardIcon}>{metro.icon}</Text>
       <View style={styles.metroCardInfo}>
         <View style={styles.metroCardNameRow}>
@@ -204,6 +208,23 @@ function MetroCard({
         </View>
         <Text style={styles.metroCardLines}>{metro.lines}</Text>
       </View>
+
+      {/* Speed lines */}
+      <View style={styles.speedLines}>
+        <View style={[styles.speedLine, { width: 32, opacity: 0.55, backgroundColor: metro.color }]} />
+        <View style={[styles.speedLine, { width: 22, opacity: 0.35, backgroundColor: metro.color }]} />
+        <View style={[styles.speedLine, { width: 14, opacity: 0.2,  backgroundColor: metro.color }]} />
+      </View>
+
+      {/* Favorito */}
+      <Pressable
+        style={[styles.favBtn, isFav && styles.favBtnActive]}
+        onPress={(e) => { e.stopPropagation?.(); onFavToggle(metro.code); }}
+        hitSlop={10}
+      >
+        <Text style={styles.favIcon}>{isFav ? '❤️' : '♡'}</Text>
+      </Pressable>
+
       <Text style={styles.metroCardArrow}>›</Text>
     </Pressable>
   );
@@ -336,7 +357,13 @@ export default function HomeScreen() {
             <Text style={styles.sectionLabel}>METROS URBANOS</Text>
             <View style={styles.metroList}>
               {METRO_CITIES.map((m) => (
-                <MetroCard key={m.code} metro={m} onPress={handleMetroPress} />
+                <MetroCard
+                  key={m.code}
+                  metro={m}
+                  isFav={favs.includes(m.code)}
+                  onPress={handleMetroPress}
+                  onFavToggle={handleFavToggle}
+                />
               ))}
             </View>
           </>
@@ -480,20 +507,21 @@ const styles = StyleSheet.create({
   speedLine:  { height: 2, borderRadius: 2 },
 
   // Metro list
-  metroList: { paddingHorizontal: 16, gap: 12 },
+  metroList: { paddingHorizontal: 16, gap: 10 },
   metroCard: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#16161E',
-    borderRadius: Radius.lg, borderWidth: 1.5,
-    padding: 16, gap: 14,
+    backgroundColor: '#13131A',
+    borderRadius: Radius.lg,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)',
+    overflow: 'hidden', minHeight: 72,
   },
-  metroCardIcon:    { fontSize: 40 },
-  metroCardInfo:    { flex: 1 },
-  metroCardNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-  metroCardFlag:    { fontSize: 18 },
-  metroCardCity:    { fontSize: 17, fontWeight: '700', color: Colors.text.primary },
-  metroCardLines:   { fontSize: 13, color: Colors.text.secondary },
-  metroCardArrow:   { fontSize: 22, color: Colors.brand.glow, fontWeight: '300' },
+  metroCardIcon:    { fontSize: 28, marginHorizontal: 14 },
+  metroCardInfo:    { flex: 1, paddingVertical: 12, gap: 3 },
+  metroCardNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  metroCardFlag:    { fontSize: 16 },
+  metroCardCity:    { fontSize: 16, fontWeight: '700', color: Colors.text.primary },
+  metroCardLines:   { fontSize: 12, color: Colors.text.secondary },
+  metroCardArrow:   { fontSize: 22, color: Colors.text.muted, paddingHorizontal: 14, fontWeight: '300' },
 
   // Coming soon
   comingSoon: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: 40 },

@@ -4,6 +4,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Switch, ScrollView, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 
 import { Colors, Radius } from '../theme';
@@ -44,9 +45,15 @@ function Row({ icon, label, value, onPress, isSwitch, switchValue, onToggle }: {
 }
 
 export default function AjustesScreen() {
+  const router = useRouter();
   const [notifications, setNotifications] = useState(true);
   const [haptics,       setHaptics]       = useState(true);
   const [translator,    setTranslator]    = useState(false);
+
+  const goLegal = (page: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push({ pathname: '/legal', params: { page } });
+  };
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
@@ -56,7 +63,7 @@ export default function AjustesScreen() {
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
 
-        {/* App */}
+        {/* Preferencias */}
         <Text style={styles.section}>PREFERENCIAS</Text>
         <View style={styles.group}>
           <Row icon="🔔" label="Notificaciones de tren"
@@ -79,6 +86,22 @@ export default function AjustesScreen() {
         </View>
 
         {/* Legal */}
+        <Text style={styles.section}>LEGAL</Text>
+        <View style={styles.group}>
+          <Row icon="❓" label="Preguntas frecuentes (FAQ)"
+            onPress={() => goLegal('faq')} />
+          <View style={styles.divider} />
+          <Row icon="📄" label="Términos y Condiciones"
+            onPress={() => goLegal('terms')} />
+          <View style={styles.divider} />
+          <Row icon="🔐" label="Política de Privacidad"
+            onPress={() => goLegal('privacy')} />
+          <View style={styles.divider} />
+          <Row icon="🛡️" label="Seguridad y Privacidad"
+            onPress={() => goLegal('security')} />
+        </View>
+
+        {/* Privacidad rápida */}
         <Text style={styles.section}>PRIVACIDAD</Text>
         <View style={styles.group}>
           <Row icon="🔒" label="Sin cuentas de usuario"   value="RGPD Art. 5" />
@@ -91,7 +114,7 @@ export default function AjustesScreen() {
         {/* Acerca */}
         <Text style={styles.section}>ACERCA DE</Text>
         <View style={styles.group}>
-          <Row icon="📋" label="Versión"    value={APP_VERSION} />
+          <Row icon="📋" label="Versión" value={APP_VERSION} />
           <View style={styles.divider} />
           <Row
             icon="⭐" label="Calificar la app"
@@ -100,7 +123,7 @@ export default function AjustesScreen() {
           <View style={styles.divider} />
           <Row
             icon="🐛" label="Reportar un problema"
-            onPress={() => Linking.openURL('mailto:jasinskysebastian@gmail.com?subject=WoW TRENES - Bug')}
+            onPress={() => Linking.openURL('mailto:Glosx@outlook.com?subject=WoW TRENES - Bug')}
           />
         </View>
 

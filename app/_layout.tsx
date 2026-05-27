@@ -45,6 +45,7 @@ export default function RootLayout() {
         <Stack.Screen name="salidas" />
         <Stack.Screen name="favoritos" />
         <Stack.Screen name="ajustes" />
+        <Stack.Screen name="legal" />
         <Stack.Screen
           name="split-screen"
           options={{ animation: 'slide_from_bottom' }}

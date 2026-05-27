@@ -9,14 +9,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '../theme';
 
-export type TabName = 'inicio' | 'salidas' | 'favoritos' | 'traducir' | 'ajustes';
+export type TabName = 'inicio' | 'salidas' | 'traducir' | 'ajustes';
 
 const TABS: { name: TabName; label: string; icon: string; path: string }[] = [
-  { name: 'inicio',    label: 'Inicio',    icon: '⊞',  path: '/'           },
-  { name: 'salidas',   label: 'Salidas',   icon: '🚆', path: '/salidas'    },
-  { name: 'favoritos', label: 'Favoritos', icon: '♡',  path: '/favoritos'  },
-  { name: 'traducir',  label: 'Traducir',  icon: '◎',  path: '/'           },
-  { name: 'ajustes',   label: 'Ajustes',   icon: '⚙',  path: '/ajustes'   },
+  { name: 'inicio',   label: 'Inicio',   icon: '⊞',  path: '/'        },
+  { name: 'salidas',  label: 'Salidas',  icon: '🚆', path: '/salidas' },
+  { name: 'traducir', label: 'Traducir', icon: '◎',  path: '/'        },
+  { name: 'ajustes',  label: 'Ajustes',  icon: '⚙',  path: '/ajustes' },
 ];
 
 interface Props {

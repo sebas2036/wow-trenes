@@ -129,7 +129,7 @@ export default function FavoritosScreen() {
         <View style={{ height: 8 }} />
       </ScrollView>
 
-      <BottomTabBar active="favoritos" onTranslatePress={() => setTranslator(true)} />
+      <BottomTabBar active="inicio" onTranslatePress={() => setTranslator(true)} />
       <TranslatorSheet visible={translator} onClose={() => setTranslator(false)} />
     </SafeAreaView>
   );
