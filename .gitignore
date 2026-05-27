@@ -16,3 +16,7 @@ assets/*.db
 # Env
 .env
 .env.local
+assets/*.db-wal
+assets/*.db-shm
+assets/.fuse_hidden*
+assets/test_write.txt
