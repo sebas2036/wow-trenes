@@ -142,7 +142,8 @@ async function fetchSBBPosition(service: TrainService): Promise<LiveTrainPositio
     if (!entry) return null;
 
     const dep   = new Date(entry.stop?.departure ?? Date.now());
-    const delay = Math.round((dep.getTime() - new Date(entry.stop?.departureTimestamp * 1000 ?? Date.now()).getTime()) / 60_000);
+    const ts    = entry.stop?.departureTimestamp ? entry.stop.departureTimestamp * 1000 : Date.now();
+    const delay = Math.round((dep.getTime() - new Date(ts).getTime()) / 60_000);
 
     // SBB no da coordenadas GPS en esta API — interpolamos por horario
     return {

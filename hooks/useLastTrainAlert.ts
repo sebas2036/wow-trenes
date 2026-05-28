@@ -24,8 +24,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import * as Notifications from 'expo-notifications';
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
-import { queryUpcomingTrains } from '../services/gtfsDatabase';
-import { getNearestStation } from '../services/gtfsDatabase';
+import { queryUpcomingTrains, findNearestStation } from '../services/gtfsDatabase';
 import type { TrainService, Station } from '../types';
 
 // ── Tipos públicos ────────────────────────────────────────────────────────────
@@ -170,12 +169,12 @@ export function useLastTrainAlert(
 
     try {
       // 1. Encontrar estación más cercana
-      const station: Station | null = await getNearestStation(userLat, userLon)
+      const station: Station | null = await findNearestStation({ latitude: userLat, longitude: userLon })
         .catch(() => null);
       if (!station) return;
 
       // 2. Obtener trenes próximos (ventana de LAST_TRAIN_HORIZON minutos)
-      const trains = await queryUpcomingTrains(station.id, 20, new Date())
+      const trains = await queryUpcomingTrains(station.id, 20)
         .catch(() => [] as TrainService[]);
       if (trains.length === 0) {
         setAlert(null);

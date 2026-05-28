@@ -98,7 +98,19 @@ const LightColors = {
 } as const;
 
 // ─── FUNCIÓN PRINCIPAL ────────────────────────────────────────────────────────
-export type AppColors = typeof DarkColors;
+// AppColors es el tipo estructural (sin literal strings) para que DarkColors
+// y LightColors sean asignables aunque sus string literals difieran.
+export type AppColors = {
+  bg:     { base: string; surface: string; elevated: string; overlay: string; card: string; tabBar: string; gpsBanner: string };
+  brand:  { primary: string; secondary: string; accent: string; glow: string };
+  status: { safe: string; warn: string; danger: string; neutral: string };
+  text:   { primary: string; secondary: string; muted: string; inverse: string; brand: string };
+  border: { subtle: string; default: string; strong: string; card: string };
+  shadow: { color: string; opacity: number; radius: number };
+  white:  string;
+  black:  string;
+  transparent: string;
+};
 
 export function getColors(scheme: ColorSchemeName): AppColors {
   return scheme === 'light' ? LightColors : DarkColors;
@@ -108,15 +120,16 @@ export function getColors(scheme: ColorSchemeName): AppColors {
 export const Colors = DarkColors;
 
 // ─── GRADIENTS ───────────────────────────────────────────────────────────────
+// Tipado como readonly tuples para que LinearGradient los acepte sin cast
 export const Gradients = {
-  cardScrim: ['transparent', 'rgba(9,9,11,0.55)', 'rgba(9,9,11,0.92)', '#09090B'] as string[],
-  cardScrimLocations: [0, 0.35, 0.75, 1] as number[],
-  heroTop: ['rgba(9,9,11,0.85)', 'transparent'] as string[],
-  brand: ['#7C3AED', '#4F46E5'] as string[],
-  brandVertical: ['#8B5CF6', '#7C3AED', '#6D28D9'] as string[],
-  safe:   ['rgba(34,197,94,0.15)', 'rgba(34,197,94,0)'] as string[],
-  warn:   ['rgba(234,179,8,0.15)',  'rgba(234,179,8,0)'] as string[],
-  danger: ['rgba(239,68,68,0.15)', 'rgba(239,68,68,0)'] as string[],
+  cardScrim:          ['transparent', 'rgba(9,9,11,0.55)', 'rgba(9,9,11,0.92)', '#09090B'] as readonly [string, string, string, string],
+  cardScrimLocations: [0, 0.35, 0.75, 1]                                                  as readonly [number, number, number, number],
+  heroTop:            ['rgba(9,9,11,0.85)', 'transparent']                                 as readonly [string, string],
+  brand:              ['#7C3AED', '#4F46E5']                                                as readonly [string, string],
+  brandVertical:      ['#8B5CF6', '#7C3AED', '#6D28D9']                                    as readonly [string, string, string],
+  safe:               ['rgba(34,197,94,0.15)', 'rgba(34,197,94,0)']                        as readonly [string, string],
+  warn:               ['rgba(234,179,8,0.15)',  'rgba(234,179,8,0)']                       as readonly [string, string],
+  danger:             ['rgba(239,68,68,0.15)', 'rgba(239,68,68,0)']                        as readonly [string, string],
 } as const;
 
 // ─── TYPOGRAPHY ───────────────────────────────────────────────────────────────

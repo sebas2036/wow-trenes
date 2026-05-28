@@ -1,7 +1,7 @@
 /**
  * WoW TRENES — Ticket Screen
- * Lists all stored offline tickets.
- * Integrates useGeofenceTrigger to auto-show QR overlay on Ring-2 events.
+ * Lista todos los billetes guardados offline.
+ * Integra useGeofenceTrigger para mostrar QR automáticamente en Ring-2.
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import {
@@ -16,20 +16,23 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { Colors, Typography, Spacing, Radius, Shadows, Gradients } from '../theme';
-import { loadAllTickets } from '../services/ticketStorage';
-import QRTicketOverlay    from '../components/QRTicketOverlay';
+import { Ionicons } from '@expo/vector-icons';
+
+import { Typography, Spacing, Radius, Shadows, Gradients } from '../theme';
+import { useTheme } from '../context/ThemeContext';
+import { loadAllTickets }    from '../services/ticketStorage';
+import QRTicketOverlay       from '../components/QRTicketOverlay';
 import { useGeofenceTrigger } from '../hooks/useGeofenceTrigger';
 import type { StoredTicket } from '../types';
 
 export default function TicketScreen() {
   const router    = useRouter();
+  const { colors } = useTheme();
   const [tickets, setTickets] = useState<StoredTicket[]>([]);
   const [loading, setLoading] = useState(true);
   const { activeTicket, qrVisible, triggerRing, dismissQR, openManually } =
     useGeofenceTrigger();
 
-  // Load stored tickets
   useEffect(() => {
     loadAllTickets()
       .then(setTickets)
@@ -45,22 +48,29 @@ export default function TicketScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
+    <SafeAreaView style={[styles.root, { backgroundColor: colors.bg.base }]} edges={['top', 'bottom']}>
+
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.border.subtle }]}>
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.backTxt}>‹</Text>
+          <Text style={[styles.backTxt, { color: colors.text.brand }]}>‹</Text>
         </Pressable>
-        <Text style={styles.title}>Mis Billetes</Text>
-        <Text style={styles.subtitle}>{tickets.length} guardados offline</Text>
+        <Text style={[styles.title, { color: colors.text.primary }]}>Mis Billetes</Text>
+        <Text style={[styles.subtitle, { color: colors.text.secondary }]}>
+          {tickets.length} guardados offline
+        </Text>
       </View>
 
       {tickets.length === 0 && !loading ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyIcon}>🎫</Text>
-          <Text style={styles.emptyTitle}>Sin billetes aún</Text>
-          <Text style={styles.emptySub}>
-            Compra un tren y tu QR aparecerá aquí, listo para usar sin internet.
+          <View style={[styles.emptyIconWrap, { backgroundColor: colors.bg.elevated }]}>
+            <Ionicons name="ticket-outline" size={48} color={colors.text.muted} />
+          </View>
+          <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>
+            Sin billetes aún
+          </Text>
+          <Text style={[styles.emptySub, { color: colors.text.secondary }]}>
+            Compra un tren y tu QR aparecerá aquí,{'\n'}listo para usar sin internet.
           </Text>
         </View>
       ) : (
@@ -87,7 +97,7 @@ export default function TicketScreen() {
   );
 }
 
-// ── Ticket card ─────────────────────────────────────────────────────────
+// ── Ticket card ──────────────────────────────────────────────────────────────
 function TicketCard({
   ticket,
   onPress,
@@ -95,6 +105,7 @@ function TicketCard({
   ticket:  StoredTicket;
   onPress: (t: StoredTicket) => void;
 }) {
+  const { colors } = useTheme();
   const svc     = ticket.trainService;
   const dep     = svc.departureTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
   const dateStr = svc.departureTime.toLocaleDateString('es-ES', {
@@ -104,108 +115,128 @@ function TicketCard({
 
   return (
     <Pressable
-      style={[styles.card, Shadows.card]}
+      style={({ pressed }) => [
+        styles.card,
+        Shadows.card,
+        { backgroundColor: colors.bg.surface, borderColor: colors.border.default },
+        pressed && { opacity: 0.88, transform: [{ scale: 0.985 }] },
+      ]}
       onPress={() => onPress(ticket)}
       accessible
       accessibilityRole="button"
       accessibilityLabel={`Billete ${svc.operator.toUpperCase()} a ${svc.destination.name}. Sale a las ${dep}. Toca para ver QR.`}
     >
-      <LinearGradient colors={['rgba(255,255,255,0.03)', 'transparent']} style={StyleSheet.absoluteFill} />
+      <LinearGradient
+        colors={['rgba(255,255,255,0.03)', 'transparent']}
+        style={StyleSheet.absoluteFill}
+      />
 
-      {/* Status stripe */}
-      <View style={[styles.stripe, { backgroundColor: isValid ? Colors.status.safe : Colors.status.neutral }]} />
+      {/* Franja de estado lateral */}
+      <View style={[
+        styles.stripe,
+        { backgroundColor: isValid ? colors.status.safe : colors.status.neutral },
+      ]} />
 
       <View style={styles.cardContent}>
         <View style={styles.cardLeft}>
-          <Text style={styles.cardOp}>{svc.operator.toUpperCase()} {svc.trainNumber}</Text>
-          <Text style={styles.cardDest}>→ {svc.destination.name}</Text>
-          <Text style={styles.cardDate}>{dateStr}</Text>
+          <Text style={[styles.cardOp, { color: colors.text.primary }]}>
+            {svc.operator.toUpperCase()} {svc.trainNumber}
+          </Text>
+          <Text style={[styles.cardDest, { color: colors.text.secondary }]}>
+            → {svc.destination.name}
+          </Text>
+          <Text style={[styles.cardDate, { color: colors.text.muted }]}>{dateStr}</Text>
         </View>
+
         <View style={styles.cardRight}>
-          <Text style={styles.cardTime}>{dep}</Text>
+          <Text style={[styles.cardTime, { color: colors.text.primary }]}>{dep}</Text>
           {svc.platform && (
-            <Text style={styles.cardPlatform}>Andén {svc.platform}</Text>
+            <Text style={[styles.cardPlatform, { color: colors.text.brand }]}>
+              Andén {svc.platform}
+            </Text>
           )}
-          <View style={styles.qrIcon}>
-            <Text style={{ fontSize: 24 }}>📱</Text>
+          <View style={[styles.qrIconWrap, { backgroundColor: colors.brand.primary + '18' }]}>
+            <Ionicons name="qr-code-outline" size={22} color={colors.brand.primary} />
           </View>
         </View>
       </View>
 
-      <Text style={styles.cardRef}>Ref: {ticket.bookingRef}</Text>
+      <Text style={[styles.cardRef, { color: colors.text.muted }]}>
+        Ref: {ticket.bookingRef}
+      </Text>
     </Pressable>
   );
 }
 
 // ─── STYLES ─────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: Colors.bg.base,
-  },
+  root: { flex: 1 },
+
   header: {
     paddingHorizontal: Spacing['5'],
     paddingTop:        Spacing['4'],
     paddingBottom:     Spacing['3'],
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border.subtle,
   },
   backBtn: {
-    marginBottom:  Spacing['2'],
-    alignSelf:     'flex-start',
+    marginBottom:    Spacing['2'],
+    alignSelf:       'flex-start',
     paddingVertical: Spacing['1'],
   },
   backTxt: {
     fontSize:   Typography.size['2xl'],
-    color:      Colors.text.brand,
     fontWeight: Typography.weight.bold,
   },
   title: {
     fontSize:   Typography.size.xl,
     fontWeight: Typography.weight.black,
-    color:      Colors.text.primary,
   },
   subtitle: {
     fontSize:  Typography.size.sm,
-    color:     Colors.text.secondary,
     marginTop: 2,
   },
-  list: { padding: Spacing['4'], gap: Spacing['3'] },
+
+  list:  { padding: Spacing['4'], gap: Spacing['3'] },
+
   empty: {
-    flex:           1,
+    flex:              1,
+    alignItems:        'center',
+    justifyContent:    'center',
+    paddingHorizontal: Spacing['8'],
+    gap:               Spacing['3'],
+  },
+  emptyIconWrap: {
+    width:          88,
+    height:         88,
+    borderRadius:   44,
     alignItems:     'center',
     justifyContent: 'center',
-    paddingHorizontal: Spacing['8'],
-    gap:            Spacing['3'],
+    marginBottom:   4,
   },
-  emptyIcon:  { fontSize: 64 },
   emptyTitle: {
     fontSize:   Typography.size.xl,
     fontWeight: Typography.weight.bold,
-    color:      Colors.text.primary,
     textAlign:  'center',
   },
   emptySub: {
-    fontSize:  Typography.size.sm,
-    color:     Colors.text.secondary,
-    textAlign: 'center',
-    lineHeight:Typography.size.sm * 1.6,
+    fontSize:   Typography.size.sm,
+    textAlign:  'center',
+    lineHeight: Typography.size.sm * 1.6,
   },
+
   card: {
-    backgroundColor: Colors.bg.surface,
-    borderRadius:    Radius.lg,
-    borderWidth:     1,
-    borderColor:     Colors.border.default,
-    overflow:        'hidden',
-    padding:         Spacing['4'],
-    gap:             Spacing['2'],
+    borderRadius: Radius.lg,
+    borderWidth:  1,
+    overflow:     'hidden',
+    padding:      Spacing['4'],
+    gap:          Spacing['2'],
   },
   stripe: {
-    position:     'absolute',
-    left:         0,
-    top:          0,
-    bottom:       0,
-    width:        4,
+    position:               'absolute',
+    left:                   0,
+    top:                    0,
+    bottom:                 0,
+    width:                  4,
     borderTopLeftRadius:    Radius.lg,
     borderBottomLeftRadius: Radius.lg,
   },
@@ -215,33 +246,29 @@ const styles = StyleSheet.create({
     paddingLeft:    Spacing['2'],
   },
   cardLeft:     { gap: 2 },
-  cardOp: {
-    fontSize:   Typography.size.sm,
-    fontWeight: Typography.weight.bold,
-    color:      Colors.text.primary,
-    letterSpacing: 0.5,
-  },
-  cardDest: { fontSize: Typography.size.sm, color: Colors.text.secondary },
-  cardDate: { fontSize: Typography.size.xs, color: Colors.text.muted },
+  cardOp:       { fontSize: Typography.size.sm, fontWeight: Typography.weight.bold, letterSpacing: 0.5 },
+  cardDest:     { fontSize: Typography.size.sm },
+  cardDate:     { fontSize: Typography.size.xs },
   cardRight:    { alignItems: 'flex-end', gap: Spacing['1'] },
   cardTime: {
-    fontSize:   Typography.size['2xl'],
-    fontWeight: Typography.weight.black,
-    color:      Colors.text.primary,
+    fontSize:      Typography.size['2xl'],
+    fontWeight:    Typography.weight.black,
     letterSpacing: -0.5,
   },
   cardPlatform: {
     fontSize:   Typography.size.xs,
-    color:      Colors.text.brand,
     fontWeight: Typography.weight.semibold,
   },
-  qrIcon: {
-    marginTop: Spacing['1'],
-    alignItems:'center',
+  qrIconWrap: {
+    marginTop:      Spacing['1'],
+    width:          36,
+    height:         36,
+    borderRadius:   Radius.md,
+    alignItems:     'center',
+    justifyContent: 'center',
   },
   cardRef: {
-    fontSize:  Typography.size.xs,
-    color:     Colors.text.muted,
+    fontSize:    Typography.size.xs,
     paddingLeft: Spacing['2'],
   },
 });

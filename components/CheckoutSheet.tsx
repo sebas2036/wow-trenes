@@ -28,16 +28,17 @@ import BottomSheet, {
 } from '@gorhom/bottom-sheet';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { Colors, Gradients, Typography, Spacing, Radius, Shadows } from '../theme';
+import { Ionicons } from '@expo/vector-icons';
+import { Gradients, Typography, Spacing, Radius, Shadows } from '../theme';
 import { buildBookingPayload, estimateCommission } from '../services/affiliateEngine';
 import { storeTicket }    from '../services/ticketStorage';
 import type { TrainService, PassengerInfo, SeatClass, BookingConfirmation } from '../types';
 
 // ── Seat class options ────────────────────────────────────────────────────
-const CLASS_OPTIONS: { value: SeatClass; label: string; icon: string }[] = [
-  { value: 'second',   label: '2ª Clase',  icon: '🪑' },
-  { value: 'first',    label: '1ª Clase',  icon: '💺' },
-  { value: 'business', label: 'Business',  icon: '✨' },
+const CLASS_OPTIONS: { value: SeatClass; label: string; icon: keyof typeof import('@expo/vector-icons').Ionicons.glyphMap }[] = [
+  { value: 'second',   label: '2ª Clase',  icon: 'person-outline'   },
+  { value: 'first',    label: '1ª Clase',  icon: 'star-outline'     },
+  { value: 'business', label: 'Business',  icon: 'diamond-outline'  },
 ];
 
 interface CheckoutSheetProps {
@@ -183,7 +184,7 @@ export default function CheckoutSheet({ service, visible, onClose }: CheckoutShe
             </Text>
           </View>
           <Pressable onPress={onClose} style={styles.closeBtn}>
-            <Text style={styles.closeTxt}>✕</Text>
+            <Ionicons name="close" size={18} color="rgba(235,235,245,0.60)" />
           </Pressable>
         </View>
 
@@ -193,7 +194,7 @@ export default function CheckoutSheet({ service, visible, onClose }: CheckoutShe
             <Text style={styles.summaryTime}>
               {service.departureTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
             </Text>
-            <Text style={styles.summaryArrow}>──🚄──→</Text>
+            <Ionicons name="arrow-forward" size={18} color="rgba(235,235,245,0.60)" />
             <Text style={styles.summaryTime}>
               {service.arrivalTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
             </Text>
@@ -205,9 +206,12 @@ export default function CheckoutSheet({ service, visible, onClose }: CheckoutShe
 
         {/* ── RGPD notice ── */}
         <View style={styles.rgpdBanner}>
-          <Text style={styles.rgpdText}>
-            🔒 Tus datos sólo se usan para emitir el billete. No creamos cuentas ni almacenamos tu información (RGPD Art. 5).
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
+            <Ionicons name="lock-closed-outline" size={13} color="rgba(139,92,246,0.80)" style={{ marginTop: 1 }} />
+            <Text style={[styles.rgpdText, { flex: 1 }]}>
+              Tus datos sólo se usan para emitir el billete. No creamos cuentas ni almacenamos tu información (RGPD Art. 5).
+            </Text>
+          </View>
         </View>
 
         {/* ── Passenger form ── */}
@@ -269,7 +273,7 @@ export default function CheckoutSheet({ service, visible, onClose }: CheckoutShe
               {seatClass === opt.value && (
                 <LinearGradient colors={Gradients.brand} style={StyleSheet.absoluteFill} />
               )}
-              <Text style={styles.classIcon}>{opt.icon}</Text>
+              <Ionicons name={opt.icon} size={20} color={seatClass === opt.value ? '#FFFFFF' : 'rgba(235,235,245,0.60)'} />
               <Text style={[styles.classLabel, seatClass === opt.value && styles.classLabelSel]}>
                 {opt.label}
               </Text>
@@ -317,11 +321,13 @@ export default function CheckoutSheet({ service, visible, onClose }: CheckoutShe
               <ActivityIndicator color="#fff" size="small" />
             ) : (
               <>
-                <Text style={styles.payIcon}>
-                  {Platform.OS === 'ios' ? '' : '💳'}
-                </Text>
+                <Ionicons
+                  name={Platform.OS === 'ios' ? 'logo-apple' : 'card-outline'}
+                  size={20}
+                  color="#fff"
+                />
                 <Text style={styles.payText}>
-                  {Platform.OS === 'ios' ? ' Pagar con Apple Pay' : 'Pagar con Google Pay'} · {totalPrice.toFixed(2)} €
+                  {Platform.OS === 'ios' ? 'Pagar con Apple Pay' : 'Pagar con Google Pay'} · {totalPrice.toFixed(2)} €
                 </Text>
               </>
             )}
@@ -357,8 +363,8 @@ function Field({
         style={[fieldStyles.input, !!error && fieldStyles.inputError]}
         value={value}
         onChangeText={onChangeText}
-        placeholderTextColor={Colors.text.muted}
-        selectionColor={Colors.brand.primary}
+        placeholderTextColor="rgba(235,235,245,0.30)"
+        selectionColor="#8B5CF6"
         {...inputProps}
       />
       {!!error && <Text style={fieldStyles.error}>{error}</Text>}
@@ -367,14 +373,15 @@ function Field({
 }
 
 // ─── STYLES ─────────────────────────────────────────────────────────────────
+// CheckoutSheet siempre aparece como bottom sheet sobre el split-screen oscuro
 const styles = StyleSheet.create({
   sheetBg: {
-    backgroundColor: Colors.bg.elevated,
+    backgroundColor:      '#2C2C2E',
     borderTopLeftRadius:  24,
     borderTopRightRadius: 24,
   },
   handle: {
-    backgroundColor: Colors.border.strong,
+    backgroundColor: 'rgba(255,255,255,0.18)',
     width:           44,
     height:          4,
   },
@@ -390,11 +397,11 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize:   Typography.size.xl,
     fontWeight: Typography.weight.bold,
-    color:      Colors.text.primary,
+    color:      '#FFFFFF',
   },
   headerSub: {
     fontSize:  Typography.size.sm,
-    color:     Colors.text.secondary,
+    color:     'rgba(235,235,245,0.60)',
     marginTop: 4,
   },
   closeBtn: {
@@ -403,17 +410,13 @@ const styles = StyleSheet.create({
     alignItems:     'center',
     justifyContent: 'center',
   },
-  closeTxt: {
-    fontSize: Typography.size.lg,
-    color:    Colors.text.secondary,
-  },
 
   trainSummary: {
-    backgroundColor: Colors.bg.surface,
+    backgroundColor: '#1C1C1E',
     borderRadius:    Radius.md,
     padding:         Spacing['4'],
     borderWidth:     1,
-    borderColor:     Colors.border.default,
+    borderColor:     'rgba(255,255,255,0.09)',
     gap:             Spacing['2'],
   },
   summaryRoute: {
@@ -424,15 +427,11 @@ const styles = StyleSheet.create({
   summaryTime: {
     fontSize:   Typography.size.xl,
     fontWeight: Typography.weight.black,
-    color:      Colors.text.primary,
-  },
-  summaryArrow: {
-    fontSize: Typography.size.sm,
-    color:    Colors.text.secondary,
+    color:      '#FFFFFF',
   },
   summaryPlatform: {
     fontSize:   Typography.size.sm,
-    color:      Colors.text.brand,
+    color:      '#C4B5FD',
     fontWeight: Typography.weight.semibold,
   },
 
@@ -444,17 +443,17 @@ const styles = StyleSheet.create({
     borderColor:     'rgba(124,58,237,0.25)',
   },
   rgpdText: {
-    fontSize: Typography.size.xs,
-    color:    Colors.text.secondary,
+    fontSize:   Typography.size.xs,
+    color:      'rgba(235,235,245,0.60)',
     lineHeight: Typography.size.xs * 1.6,
   },
 
   sectionLabel: {
-    fontSize:   Typography.size.sm,
-    fontWeight: Typography.weight.bold,
-    color:      Colors.text.primary,
+    fontSize:      Typography.size.sm,
+    fontWeight:    Typography.weight.bold,
+    color:         '#FFFFFF',
     letterSpacing: 0.5,
-    marginBottom: -Spacing['2'],
+    marginBottom:  -Spacing['2'],
   },
   fieldRow: {
     flexDirection: 'row',
@@ -466,46 +465,41 @@ const styles = StyleSheet.create({
     gap:           Spacing['2'],
   },
   classChip: {
-    flex:          1,
-    alignItems:    'center',
-    paddingVertical:  Spacing['3'],
-    borderRadius:  Radius.md,
-    borderWidth:   1,
-    borderColor:   Colors.border.default,
-    backgroundColor: Colors.bg.surface,
-    overflow:      'hidden',
-    gap:           Spacing['1'],
+    flex:            1,
+    alignItems:      'center',
+    paddingVertical: Spacing['3'],
+    borderRadius:    Radius.md,
+    borderWidth:     1,
+    borderColor:     'rgba(255,255,255,0.09)',
+    backgroundColor: '#1C1C1E',
+    overflow:        'hidden',
+    gap:             Spacing['1'],
   },
   classChipSel: {
-    borderColor: Colors.brand.primary,
+    borderColor: '#8B5CF6',
   },
-  classIcon:    { fontSize: Typography.size.lg },
-  classLabel:   {
+  classLabel: {
     fontSize:   Typography.size.xs,
     fontWeight: Typography.weight.semibold,
-    color:      Colors.text.secondary,
+    color:      'rgba(235,235,245,0.60)',
   },
-  classLabelSel:{ color: Colors.white },
+  classLabelSel: { color: '#FFFFFF' },
 
   priceSummary: {
-    backgroundColor: Colors.bg.surface,
+    backgroundColor: '#1C1C1E',
     borderRadius:    Radius.md,
     padding:         Spacing['4'],
     borderWidth:     1,
-    borderColor:     Colors.border.default,
+    borderColor:     'rgba(255,255,255,0.09)',
     gap:             Spacing['2'],
   },
-  priceRow:      { flexDirection: 'row', justifyContent: 'space-between' },
-  priceLabel:    { fontSize: Typography.size.sm, color: Colors.text.secondary },
-  priceValue:    { fontSize: Typography.size.sm, color: Colors.text.primary, fontWeight: Typography.weight.medium },
-  priceTotal:    {
-    paddingTop:  Spacing['2'],
-    borderTopWidth: 1,
-    borderTopColor: Colors.border.subtle,
-  },
-  priceTotalLabel:{ fontSize: Typography.size.md, fontWeight: Typography.weight.bold,  color: Colors.text.primary },
-  priceTotalValue:{ fontSize: Typography.size.xl, fontWeight: Typography.weight.black, color: Colors.brand.glow },
-  priceNote:      { fontSize: Typography.size.xs, color: Colors.text.muted, textAlign: 'center' },
+  priceRow:       { flexDirection: 'row', justifyContent: 'space-between' },
+  priceLabel:     { fontSize: Typography.size.sm, color: 'rgba(235,235,245,0.60)' },
+  priceValue:     { fontSize: Typography.size.sm, color: '#FFFFFF', fontWeight: Typography.weight.medium },
+  priceTotal:     { paddingTop: Spacing['2'], borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)' },
+  priceTotalLabel:{ fontSize: Typography.size.md, fontWeight: Typography.weight.bold,  color: '#FFFFFF' },
+  priceTotalValue:{ fontSize: Typography.size.xl, fontWeight: Typography.weight.black, color: '#A78BFA' },
+  priceNote:      { fontSize: Typography.size.xs, color: 'rgba(235,235,245,0.30)', textAlign: 'center' },
 
   payBtn: {
     borderRadius: Radius.xl,
@@ -515,50 +509,49 @@ const styles = StyleSheet.create({
   },
   payBtnDisabled: { opacity: 0.7 },
   payGradient: {
-    flexDirection:    'row',
-    alignItems:       'center',
-    justifyContent:   'center',
-    paddingVertical:  Spacing['4'],
-    paddingHorizontal:Spacing['6'],
-    gap:              Spacing['2'],
-    minHeight:        60,
+    flexDirection:     'row',
+    alignItems:        'center',
+    justifyContent:    'center',
+    paddingVertical:   Spacing['4'],
+    paddingHorizontal: Spacing['6'],
+    gap:               Spacing['2'],
+    minHeight:         60,
   },
-  payIcon: { fontSize: 22 },
   payText: {
     fontSize:   Typography.size.md,
     fontWeight: Typography.weight.bold,
-    color:      Colors.white,
+    color:      '#FFFFFF',
   },
   pciNote: {
-    fontSize:  Typography.size.xs,
-    color:     Colors.text.muted,
-    textAlign: 'center',
-    lineHeight:Typography.size.xs * 1.6,
+    fontSize:   Typography.size.xs,
+    color:      'rgba(235,235,245,0.30)',
+    textAlign:  'center',
+    lineHeight: Typography.size.xs * 1.6,
   },
 });
 
 const fieldStyles = StyleSheet.create({
   wrapper: { gap: Spacing['1'] },
   label: {
-    fontSize:   Typography.size.xs,
-    fontWeight: Typography.weight.semibold,
-    color:      Colors.text.secondary,
+    fontSize:      Typography.size.xs,
+    fontWeight:    Typography.weight.semibold,
+    color:         'rgba(235,235,245,0.60)',
     letterSpacing: 0.3,
   },
   input: {
-    backgroundColor: Colors.bg.surface,
-    borderWidth:     1,
-    borderColor:     Colors.border.default,
-    borderRadius:    Radius.md,
-    paddingVertical: Platform.OS === 'ios' ? Spacing['3'] : Spacing['2'],
-    paddingHorizontal:Spacing['3'],
-    fontSize:        Typography.size.base,
-    color:           Colors.text.primary,
-    minHeight:       48,
+    backgroundColor:   '#1C1C1E',
+    borderWidth:       1,
+    borderColor:       'rgba(255,255,255,0.09)',
+    borderRadius:      Radius.md,
+    paddingVertical:   Platform.OS === 'ios' ? Spacing['3'] : Spacing['2'],
+    paddingHorizontal: Spacing['3'],
+    fontSize:          Typography.size.base,
+    color:             '#FFFFFF',
+    minHeight:         48,
   },
-  inputError: { borderColor: Colors.status.danger },
+  inputError: { borderColor: '#FF453A' },
   error: {
     fontSize: Typography.size.xs,
-    color:    Colors.status.danger,
+    color:    '#FF453A',
   },
 });

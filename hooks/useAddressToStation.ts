@@ -119,11 +119,13 @@ export function useAddressToStation(): UseAddressToStationReturn {
     };
 
     // Construir dirección normalizada a partir del geocoder result
+    // Se castea a any porque el tipo oficial de expo-location varía por versión
+    const g = geo as any;
     const parts = [
-      geo.name,
-      geo.street,
-      geo.city,
-      geo.region,
+      g.name ?? g.formattedAddress,
+      g.street ?? g.thoroughfare,
+      g.city ?? g.locality,
+      g.region ?? g.administrativeArea,
       countryHint,
     ].filter(Boolean);
     const resolvedAddress = parts.join(', ') || trimmed;

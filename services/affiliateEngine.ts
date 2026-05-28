@@ -83,8 +83,8 @@ export async function buildBookingPayload(
     departure:  service.departureTime.toISOString(),
     class:      seatClass,
 
-    // Impact Radius secondary tracking
-    impactSid:  Affiliate.impactRadiusSid,
+    // Impact secondary tracking
+    impactSid:  Affiliate.impactSid,
     sku:        `TKT_${service.operator.toUpperCase()}_${service.trainNumber}`,
 
     ...extraParams,

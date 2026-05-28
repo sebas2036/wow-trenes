@@ -123,7 +123,6 @@ export async function buildDayPlan(
       const trains = await queryUpcomingTrains(
         poi.nearestStation.id,
         6,
-        cursor,
       ).catch(() => [] as TrainService[]);
 
       const viableTrain = trains.find(t =>
