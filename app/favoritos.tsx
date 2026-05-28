@@ -1,6 +1,5 @@
 /**
- * WoW TRENES — Favoritos
- * Países guardados por el usuario. Persistidos en AsyncStorage.
+ * WoW TRENES — Favoritos · Tema claro/oscuro automático
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
@@ -9,7 +8,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 
-import { Colors, Radius } from '../theme';
+import { Radius } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 import { setActiveCountry } from '../services/gtfsDatabase';
 import BottomTabBar from '../components/BottomTabBar';
 import TranslatorSheet from '../components/TranslatorSheet';
@@ -54,6 +54,7 @@ export async function getFavoritos(): Promise<CountryCode[]> {
 
 export default function FavoritosScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const [favs,       setFavs]       = useState<CountryCode[]>([]);
   const [translator, setTranslator] = useState(false);
 
@@ -74,10 +75,10 @@ export default function FavoritosScreen() {
   const favCountries = ALL_COUNTRIES.filter((c) => favs.includes(c.code));
 
   return (
-    <SafeAreaView style={styles.root} edges={['top']}>
+    <SafeAreaView style={[styles.root, { backgroundColor: colors.bg.base }]} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.title}>Favoritos</Text>
-        <Text style={styles.subtitle}>
+        <Text style={[styles.title,    { color: colors.text.primary   }]}>Favoritos</Text>
+        <Text style={[styles.subtitle, { color: colors.text.secondary }]}>
           {favCountries.length > 0 ? 'Tus destinos guardados' : 'Guardá tus destinos favoritos desde el inicio'}
         </Text>
       </View>
@@ -88,12 +89,12 @@ export default function FavoritosScreen() {
         {favCountries.length === 0 ? (
           <View style={styles.empty}>
             <Text style={styles.emptyIcon}>❤️</Text>
-            <Text style={styles.emptyTitle}>Sin favoritos aún</Text>
-            <Text style={styles.emptySub}>
+            <Text style={[styles.emptyTitle, { color: colors.text.primary   }]}>Sin favoritos aún</Text>
+            <Text style={[styles.emptySub,   { color: colors.text.secondary }]}>
               Tocá el corazón en cualquier tarjeta de país para guardarlo acá.
             </Text>
             <Pressable
-              style={({ pressed }) => [styles.emptyBtn, pressed && { opacity: 0.8 }]}
+              style={({ pressed }) => [styles.emptyBtn, { backgroundColor: colors.brand.primary }, pressed && { opacity: 0.8 }]}
               onPress={() => router.push('/')}
             >
               <Text style={styles.emptyBtnText}>Explorar países</Text>
@@ -103,7 +104,11 @@ export default function FavoritosScreen() {
           favCountries.map((d) => (
             <Pressable
               key={d.code}
-              style={({ pressed }) => [styles.card, pressed && { opacity: 0.8 }]}
+              style={({ pressed }) => [
+                styles.card,
+                { backgroundColor: colors.bg.card, borderColor: colors.border.card },
+                pressed && { opacity: 0.8 },
+              ]}
               onPress={() => handlePress(d.code)}
             >
               <View style={[styles.strip, { backgroundColor: d.color }]} />
@@ -111,9 +116,9 @@ export default function FavoritosScreen() {
               <View style={styles.info}>
                 <View style={styles.nameRow}>
                   <Text style={styles.flag}>{d.flag}</Text>
-                  <Text style={styles.name}>{d.name}</Text>
+                  <Text style={[styles.name, { color: colors.text.primary }]}>{d.name}</Text>
                 </View>
-                <Text style={styles.sub}>🚄 {d.sub}</Text>
+                <Text style={[styles.sub, { color: colors.text.secondary }]}>🚄 {d.sub}</Text>
               </View>
               <Pressable
                 style={styles.heartBtn}
@@ -122,7 +127,7 @@ export default function FavoritosScreen() {
               >
                 <Text style={styles.heartFilled}>❤️</Text>
               </Pressable>
-              <Text style={styles.arrow}>›</Text>
+              <Text style={[styles.arrow, { color: colors.text.muted }]}>›</Text>
             </Pressable>
           ))
         )}
@@ -136,41 +141,33 @@ export default function FavoritosScreen() {
 }
 
 const styles = StyleSheet.create({
-  root:   { flex: 1, backgroundColor: Colors.bg.base },
-  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
-  title:    { fontSize: 28, fontWeight: '800', color: Colors.text.primary },
-  subtitle: { fontSize: 13, color: Colors.text.secondary, marginTop: 4 },
-  scroll: { flex: 1 },
-  list:   { paddingHorizontal: 16, gap: 10 },
+  root:     { flex: 1 },
+  header:   { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
+  title:    { fontSize: 28, fontWeight: '800' },
+  subtitle: { fontSize: 13, marginTop: 4 },
+  scroll:   { flex: 1 },
+  list:     { paddingHorizontal: 16, gap: 10 },
 
-  // Card
   card: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#13131A',
-    borderRadius: Radius.lg,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)',
+    borderRadius: Radius.lg, borderWidth: 1,
     overflow: 'hidden', minHeight: 64,
   },
-  strip: { width: 4, alignSelf: 'stretch' },
-  icon:  { fontSize: 28, marginHorizontal: 14 },
-  info:  { flex: 1, paddingVertical: 12, gap: 3 },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  flag:  { fontSize: 16 },
-  name:  { fontSize: 16, fontWeight: '700', color: Colors.text.primary },
-  sub:   { fontSize: 12, color: Colors.text.secondary },
+  strip:    { width: 4, alignSelf: 'stretch' },
+  icon:     { fontSize: 28, marginHorizontal: 14 },
+  info:     { flex: 1, paddingVertical: 12, gap: 3 },
+  nameRow:  { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  flag:     { fontSize: 16 },
+  name:     { fontSize: 16, fontWeight: '700' },
+  sub:      { fontSize: 12 },
   heartBtn: { padding: 8 },
   heartFilled: { fontSize: 18 },
-  arrow: { fontSize: 22, color: Colors.text.muted, paddingHorizontal: 14, fontWeight: '300' },
+  arrow:    { fontSize: 22, paddingHorizontal: 14, fontWeight: '300' },
 
-  // Empty state
-  empty: { alignItems: 'center', paddingTop: 80, paddingHorizontal: 40 },
+  empty:      { alignItems: 'center', paddingTop: 80, paddingHorizontal: 40 },
   emptyIcon:  { fontSize: 64, marginBottom: 20 },
-  emptyTitle: { fontSize: 22, fontWeight: '700', color: Colors.text.primary, marginBottom: 10 },
-  emptySub:   { fontSize: 15, color: Colors.text.secondary, textAlign: 'center', lineHeight: 24, marginBottom: 28 },
-  emptyBtn: {
-    backgroundColor: Colors.brand.primary,
-    borderRadius: Radius.full,
-    paddingVertical: 13, paddingHorizontal: 28,
-  },
+  emptyTitle: { fontSize: 22, fontWeight: '700', marginBottom: 10 },
+  emptySub:   { fontSize: 15, textAlign: 'center', lineHeight: 24, marginBottom: 28 },
+  emptyBtn:   { borderRadius: Radius.full, paddingVertical: 13, paddingHorizontal: 28 },
   emptyBtnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
 });

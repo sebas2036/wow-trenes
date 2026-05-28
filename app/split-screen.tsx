@@ -39,7 +39,7 @@ import { useTrainSchedules }          from '../hooks/useTrainSchedules';
 import { useLocation }                from '../hooks/useLocation';
 import { useLiveTrainPosition }       from '../services/liveTrainPosition';
 import { findNearestStation, getStationById } from '../services/gtfsDatabase';
-import { optimizeRoute }              from '../services/routeOptimizer';
+import { optimizeRoute, calculateETA } from '../services/routeOptimizer';
 import { startPlatformMonitoring, stopPlatformMonitoring } from '../services/trainArrivalMonitor';
 import { registerDestinationGeofence, refreshGeofences }  from '../tasks/geofenceTask';
 import { storeTicket }                from '../services/ticketStorage';
@@ -58,14 +58,26 @@ import type {
 const { height: H, width: W } = Dimensions.get('window');
 const HALF_H = H / 2;
 
-// ── Deep links for rideshare ──────────────────────────────────────────────
+// ── Deep links for rideshare ─────────────────────────────────────────────
+// En Android 11+ canOpenURL() siempre falla para apps de terceros sin
+// declarar en el Manifest. Usamos universal links — Android los intercepta
+// y abre la app instalada directamente sin necesitar el check previo.
 function openRideshare(dest: Coordinates, stationName: string) {
-  const uberLink = `uber://?action=setPickup&dropoff[latitude]=${dest.latitude}&dropoff[longitude]=${dest.longitude}&dropoff[nickname]=${encodeURIComponent(stationName)}`;
-  Linking.canOpenURL(uberLink).then((can) => {
-    if (can) Linking.openURL(uberLink);
-    else Linking.openURL(
-      `https://m.uber.com/looking?drop[latitude]=${dest.latitude}&drop[longitude]=${dest.longitude}`
-    );
+  const lat  = dest.latitude;
+  const lon  = dest.longitude;
+  const name = encodeURIComponent(stationName);
+
+  // Universal link de Uber — abre la app en iOS y Android si está instalada,
+  // si no, carga la web móvil. No requiere canOpenURL().
+  const uberUrl = `https://m.uber.com/ul/?action=setPickup`
+    + `&dropoff[latitude]=${lat}`
+    + `&dropoff[longitude]=${lon}`
+    + `&dropoff[nickname]=${name}`
+    + `&pickup=my_location`;
+
+  Linking.openURL(uberUrl).catch(() => {
+    // Fallback: Cabify web
+    Linking.openURL(`https://cabify.com/`);
   });
 }
 
@@ -281,6 +293,11 @@ export default function SplitScreen() {
   const [searchedDestWalk, setSearchedDestWalk] = useState<number>(0);
   const [showDestSearch,   setShowDestSearch]   = useState(isMetro); // visible en modo metro
 
+  // ETAs para los 3 modos de transporte (minutos)
+  const [etas, setEtas] = useState<Record<TransportMode, number | null>>({
+    walk: null, bus: null, rideshare: null,
+  });
+
   // Checkout — affiliate WebView (primary)
   const [affiliateVisible, setAffiliateVisible] = useState(false);
 
@@ -358,6 +375,22 @@ export default function SplitScreen() {
       { duration: 800 },
     );
   }, [livePosition.coordinates, livePosition.bearing, livePosition.isLive]);
+
+  // ── ETAs para los 3 modos en paralelo ────────────────────────────────
+  useEffect(() => {
+    if (!userCoords || !selectedStation) return;
+    Promise.all([
+      calculateETA(userCoords, selectedStation.coordinates, 'walk'),
+      calculateETA(userCoords, selectedStation.coordinates, 'bus'),
+      calculateETA(userCoords, selectedStation.coordinates, 'rideshare'),
+    ]).then(([walk, bus, ride]) => {
+      setEtas({
+        walk:      Math.round(walk.durationMinutes),
+        bus:       Math.round(bus.durationMinutes),
+        rideshare: Math.round(ride.durationMinutes),
+      });
+    }).catch(() => {});
+  }, [userCoords, selectedStation]);
 
   // ── Route optimization (user → origin station) ────────────────────────
   useEffect(() => {
@@ -595,6 +628,7 @@ export default function SplitScreen() {
           selected={transportMode}
           onChange={setTransportMode}
           destination={selectedStation?.coordinates}
+          etas={etas}
         />
 
         <MapView

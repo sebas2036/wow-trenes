@@ -2,8 +2,8 @@
  * TranslatorSheet — Traductor de señales ferroviarias
  *
  * DOS MODOS:
- *   📷 CÁMARA  → apuntás a un cartel en japonés/chino → OCR → traducción
- *   ✏️  TEXTO   → escribís cualquier texto → traducción
+ *   CÁMARA → apuntás a un cartel en japonés/chino → OCR → traducción
+ *   TEXTO  → escribís cualquier texto → traducción
  *
  * POR QUÉ EXISTE:
  *   Un turista en Tokio no puede leer "出発" (Salida) ni "のりば" (Andén).
@@ -33,10 +33,20 @@ import {
   Platform,
   SafeAreaView,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import FlagCircle from './FlagCircle';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 
-import { Colors, Typography, Spacing, Radius, Shadows } from '../theme';
+import { Typography, Spacing, Radius, Shadows } from '../theme';
+import { useTheme } from '../context/ThemeContext';
+
+/** Mapa idioma ISO 639-1 → código de país ISO 3166-1 alpha-2 para bandera */
+const LANG_TO_COUNTRY: Record<string, string> = {
+  es: 'es', en: 'gb', pt: 'pt', fr: 'fr',
+  de: 'de', it: 'it', ja: 'jp', zh: 'cn',
+  ko: 'kr', ar: 'sa', ru: 'ru', nl: 'nl',
+};
 import { t, SUPPORTED_LANGUAGES, getLanguage } from '../services/i18n';
 import { translate, SOURCE_LANGUAGES } from '../services/translatorEngine';
 import type { AppLanguage } from '../types';
@@ -49,21 +59,23 @@ interface TranslatorSheetProps {
 
 // ── Tipo de resultado visual ──────────────────────────────────────────────────
 interface TranslationDisplay {
-  original:   string;
-  translated: string;
+  original:     string;
+  translated:   string;
   detectedLang: string | null;
-  source:     'offline' | 'api' | 'fallback';
+  source:       'offline' | 'api' | 'fallback';
 }
 
 // ── Componente ────────────────────────────────────────────────────────────────
 export default function TranslatorSheet({ visible, onClose }: TranslatorSheetProps) {
+  const { colors, isDark } = useTheme();
+
   const [mode,         setMode]         = useState<'camera' | 'text'>('camera');
   const [inputText,    setInputText]    = useState('');
   const [sourceLang,   setSourceLang]   = useState('auto');
   const [targetLang,   setTargetLang]   = useState<AppLanguage>(getLanguage());
   const [isLoading,    setIsLoading]    = useState(false);
   const [result,       setResult]       = useState<TranslationDisplay | null>(null);
-  const [capturedText, setCapturedText] = useState<string | null>(null); // texto extraído por OCR
+  const [capturedText, setCapturedText] = useState<string | null>(null);
   const inputRef = useRef<TextInput>(null);
 
   // ── Captura de imagen ────────────────────────────────────────────────────
@@ -72,23 +84,20 @@ export default function TranslatorSheet({ visible, onClose }: TranslatorSheetPro
 
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      // Show fallback: switch to text mode
       setMode('text');
       return;
     }
 
     const picked = await ImagePicker.launchCameraAsync({
-      allowsEditing:   false,
-      quality:         0.85,
-      base64:          true, // para enviar al OCR endpoint si existe
+      allowsEditing: false,
+      quality:       0.85,
+      base64:        true,
     });
 
     if (picked.canceled) return;
 
-    // MVP: en build nativa se usa ML Kit text recognition.
-    // En simulador mostramos un placeholder para que el usuario ingrese el texto.
     setCapturedText(null);
-    setMode('text'); // Fallback a texto en simulador
+    setMode('text');
     inputRef.current?.focus();
   }, []);
 
@@ -107,7 +116,6 @@ export default function TranslatorSheet({ visible, onClose }: TranslatorSheetPro
 
     if (picked.canceled) return;
 
-    // Misma lógica — OCR en nativo, fallback a texto en simulador
     setMode('text');
     inputRef.current?.focus();
   }, []);
@@ -148,6 +156,11 @@ export default function TranslatorSheet({ visible, onClose }: TranslatorSheetPro
     setCapturedText(null);
   }, []);
 
+  // ── Helpers ──────────────────────────────────────────────────────────────
+  const cardShadow = Platform.OS === 'ios'
+    ? (isDark ? Shadows.cardDark : Shadows.card)
+    : { elevation: 2 };
+
   // ── Render ───────────────────────────────────────────────────────────────
   return (
     <Modal
@@ -156,40 +169,73 @@ export default function TranslatorSheet({ visible, onClose }: TranslatorSheetPro
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <SafeAreaView style={styles.root}>
+      <SafeAreaView style={[styles.root, { backgroundColor: colors.bg.base }]}>
 
         {/* ── Header ── */}
-        <View style={styles.header}>
-          <Pressable onPress={onClose} style={styles.closeBtn} accessibilityLabel={t('close')}>
-            <Text style={styles.closeIcon}>✕</Text>
+        <View style={[styles.header, {
+          backgroundColor:   colors.bg.elevated,
+          borderBottomColor: colors.border.subtle,
+        }]}>
+          <Pressable
+            onPress={onClose}
+            style={[styles.closeBtn, { backgroundColor: colors.bg.overlay }]}
+            accessibilityLabel={t('close')}
+            hitSlop={8}
+          >
+            <Ionicons name="close" size={16} color={colors.text.secondary} />
           </Pressable>
+
           <View style={styles.headerCenter}>
-            <Text style={styles.headerTitle}>{t('translator_title')}</Text>
-            <Text style={styles.headerSub}>🇯🇵 🇨🇳 🇩🇪 🇫🇷 +7</Text>
+            <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
+              {t('translator_title')}
+            </Text>
+            <Text style={[styles.headerSub, { color: colors.text.muted }]}>
+              🇯🇵 🇨🇳 🇩🇪 🇫🇷 +7
+            </Text>
           </View>
+
           <View style={{ width: 44 }} />
         </View>
 
-        {/* ── Mode tabs ── */}
-        <View style={styles.modeTabs}>
-          <Pressable
-            style={[styles.modeTab, mode === 'camera' && styles.modeTabActive]}
-            onPress={() => setMode('camera')}
-          >
-            <Text style={[styles.modeTabIcon, mode === 'camera' && styles.modeTabIconActive]}>📷</Text>
-            <Text style={[styles.modeTabText, mode === 'camera' && styles.modeTabTextActive]}>
-              {t('translator_camera')}
-            </Text>
-          </Pressable>
-          <Pressable
-            style={[styles.modeTab, mode === 'text' && styles.modeTabActive]}
-            onPress={() => { setMode('text'); setTimeout(() => inputRef.current?.focus(), 200); }}
-          >
-            <Text style={[styles.modeTabIcon, mode === 'text' && styles.modeTabIconActive]}>✏️</Text>
-            <Text style={[styles.modeTabText, mode === 'text' && styles.modeTabTextActive]}>
-              {t('translator_text')}
-            </Text>
-          </Pressable>
+        {/* ── Mode tabs — Apple segmented control ── */}
+        <View style={[styles.modeTabsWrap, { backgroundColor: colors.bg.surface, borderBottomColor: colors.border.subtle }]}>
+          <View style={[styles.modeTabs, { backgroundColor: colors.bg.elevated }]}>
+            {([
+              { key: 'camera', icon: 'camera',  iconOutline: 'camera-outline',  label: t('translator_camera') },
+              { key: 'text',   icon: 'create',  iconOutline: 'create-outline',  label: t('translator_text')   },
+            ] as const).map((tab) => {
+              const active = mode === tab.key;
+              return (
+                <Pressable
+                  key={tab.key}
+                  style={[
+                    styles.modeTab,
+                    active && [styles.modeTabActive, { backgroundColor: colors.bg.card }, Shadows.segment],
+                  ]}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setMode(tab.key);
+                    if (tab.key === 'text') setTimeout(() => inputRef.current?.focus(), 200);
+                  }}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: active }}
+                >
+                  <Ionicons
+                    name={active ? tab.icon : tab.iconOutline}
+                    size={16}
+                    color={active ? colors.brand.primary : colors.text.muted}
+                  />
+                  <Text style={[
+                    styles.modeTabText,
+                    { color: active ? colors.text.primary : colors.text.secondary },
+                    active && { fontWeight: '600' },
+                  ]}>
+                    {tab.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
 
         <ScrollView
@@ -201,28 +247,60 @@ export default function TranslatorSheet({ visible, onClose }: TranslatorSheetPro
           {/* ── Camera mode ── */}
           {mode === 'camera' && (
             <View style={styles.cameraSection}>
-              <View style={styles.cameraPreview}>
-                <Text style={styles.cameraPlaceholderEmoji}>📸</Text>
-                <Text style={styles.cameraPlaceholderText}>{t('translator_camera_hint')}</Text>
-                <Text style={styles.cameraPlaceholderSub}>
+              {/* Preview placeholder */}
+              <View style={[styles.cameraPreview, {
+                backgroundColor: colors.bg.surface,
+                borderColor:     colors.border.default,
+              }]}>
+                <View style={[styles.cameraIconWrap, { backgroundColor: colors.bg.elevated }]}>
+                  <Ionicons name="camera-outline" size={40} color={colors.text.muted} />
+                </View>
+                <Text style={[styles.cameraPlaceholderText, { color: colors.text.secondary }]}>
+                  {t('translator_camera_hint')}
+                </Text>
+                <Text style={[styles.cameraPlaceholderSub, { color: colors.text.muted }]}>
                   Japonés · Chino · Coreano · Cualquier idioma
                 </Text>
               </View>
 
+              {/* Buttons */}
               <View style={styles.cameraButtons}>
-                <Pressable style={styles.cameraPrimary} onPress={handleCameraCapture}>
-                  <Text style={styles.cameraPrimaryIcon}>📷</Text>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.cameraPrimary,
+                    { backgroundColor: colors.brand.primary },
+                    pressed && { opacity: 0.85 },
+                  ]}
+                  onPress={handleCameraCapture}
+                >
+                  <Ionicons name="camera" size={18} color="#fff" />
                   <Text style={styles.cameraPrimaryText}>{t('translator_camera')}</Text>
                 </Pressable>
-                <Pressable style={styles.cameraSecondary} onPress={handleGalleryPick}>
-                  <Text style={styles.cameraSecondaryIcon}>🖼️</Text>
-                  <Text style={styles.cameraSecondaryText}>Galería</Text>
+
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.cameraSecondary,
+                    {
+                      backgroundColor: colors.bg.elevated,
+                      borderColor:     colors.border.default,
+                    },
+                    pressed && { opacity: 0.75 },
+                  ]}
+                  onPress={handleGalleryPick}
+                >
+                  <Ionicons name="images-outline" size={18} color={colors.text.secondary} />
+                  <Text style={[styles.cameraSecondaryText, { color: colors.text.secondary }]}>
+                    Galería
+                  </Text>
                 </Pressable>
               </View>
 
-              <View style={styles.offlineNote}>
-                <Text style={styles.offlineNoteIcon}>📴</Text>
-                <Text style={styles.offlineNoteText}>{t('translator_offline_note')}</Text>
+              {/* Offline note */}
+              <View style={[styles.offlineNote, { backgroundColor: colors.bg.surface }]}>
+                <Ionicons name="cloud-offline-outline" size={14} color={colors.text.muted} />
+                <Text style={[styles.offlineNoteText, { color: colors.text.muted }]}>
+                  {t('translator_offline_note')}
+                </Text>
               </View>
             </View>
           )}
@@ -230,15 +308,21 @@ export default function TranslatorSheet({ visible, onClose }: TranslatorSheetPro
           {/* ── Text mode ── */}
           {mode === 'text' && (
             <View style={styles.textSection}>
-              <Text style={styles.inputLabel}>{t('translator_text_hint')}</Text>
+              <Text style={[styles.inputLabel, { color: colors.text.secondary }]}>
+                {t('translator_text_hint')}
+              </Text>
               <View style={styles.inputWrap}>
                 <TextInput
                   ref={inputRef}
-                  style={styles.textInput}
+                  style={[styles.textInput, {
+                    backgroundColor: colors.bg.surface,
+                    borderColor:     colors.border.default,
+                    color:           colors.text.primary,
+                  }]}
                   value={inputText}
                   onChangeText={setInputText}
                   placeholder="出発  /  站台  /  Bahnsteig..."
-                  placeholderTextColor={Colors.text.muted}
+                  placeholderTextColor={colors.text.muted}
                   multiline
                   numberOfLines={4}
                   returnKeyType="done"
@@ -246,8 +330,12 @@ export default function TranslatorSheet({ visible, onClose }: TranslatorSheetPro
                   autoCapitalize="none"
                 />
                 {inputText.length > 0 && (
-                  <Pressable style={styles.clearBtn} onPress={handleClear}>
-                    <Text style={styles.clearBtnText}>✕</Text>
+                  <Pressable
+                    style={[styles.clearBtn, { backgroundColor: colors.bg.overlay }]}
+                    onPress={handleClear}
+                    hitSlop={8}
+                  >
+                    <Ionicons name="close" size={11} color={colors.text.secondary} />
                   </Pressable>
                 )}
               </View>
@@ -258,39 +346,74 @@ export default function TranslatorSheet({ visible, onClose }: TranslatorSheetPro
           <View style={styles.langRow}>
             {/* Source */}
             <View style={styles.langBox}>
-              <Text style={styles.langLabel}>{t('translator_from')}</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.langScroll}>
-                {SOURCE_LANGUAGES.map((lang) => (
-                  <Pressable
-                    key={lang.code}
-                    style={[styles.langChip, sourceLang === lang.code && styles.langChipActive]}
-                    onPress={() => setSourceLang(lang.code)}
-                  >
-                    <Text style={[styles.langChipText, sourceLang === lang.code && styles.langChipTextActive]}>
-                      {lang.label}
-                    </Text>
-                  </Pressable>
-                ))}
+              <Text style={[styles.langLabel, { color: colors.text.secondary }]}>
+                {t('translator_from')}
+              </Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {SOURCE_LANGUAGES.map((lang) => {
+                  const active = sourceLang === lang.code;
+                  return (
+                    <Pressable
+                      key={lang.code}
+                      style={[
+                        styles.langChip,
+                        {
+                          backgroundColor: active ? colors.brand.primary : colors.bg.surface,
+                          borderColor:     active ? colors.brand.primary : colors.border.subtle,
+                        },
+                      ]}
+                      onPress={() => setSourceLang(lang.code)}
+                    >
+                      <Text style={[
+                        styles.langChipText,
+                        { color: active ? '#fff' : colors.text.secondary },
+                        active && { fontWeight: '600' },
+                      ]}>
+                        {lang.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
               </ScrollView>
             </View>
 
-            <Text style={styles.langArrow}>→</Text>
+            <Ionicons name="arrow-forward" size={18} color={colors.brand.accent} style={styles.langArrow} />
 
             {/* Target */}
             <View style={styles.langBox}>
-              <Text style={styles.langLabel}>{t('translator_to')}</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.langScroll}>
-                {SUPPORTED_LANGUAGES.map((lang) => (
-                  <Pressable
-                    key={lang.code}
-                    style={[styles.langChip, targetLang === lang.code && styles.langChipActive]}
-                    onPress={() => setTargetLang(lang.code)}
-                  >
-                    <Text style={[styles.langChipText, targetLang === lang.code && styles.langChipTextActive]}>
-                      {lang.flag} {lang.name}
-                    </Text>
-                  </Pressable>
-                ))}
+              <Text style={[styles.langLabel, { color: colors.text.secondary }]}>
+                {t('translator_to')}
+              </Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {SUPPORTED_LANGUAGES.map((lang) => {
+                  const active = targetLang === lang.code;
+                  return (
+                    <Pressable
+                      key={lang.code}
+                      style={[
+                        styles.langChip,
+                        styles.langChipFlag,
+                        {
+                          backgroundColor: active ? colors.brand.primary + '22' : 'transparent',
+                          borderColor:     active ? colors.brand.primary : colors.border.subtle,
+                        },
+                      ]}
+                      onPress={() => setTargetLang(lang.code)}
+                    >
+                      <FlagCircle
+                        countryCode={LANG_TO_COUNTRY[lang.code] ?? lang.code}
+                        size="sm"
+                      />
+                      <Text style={[
+                        styles.langChipText,
+                        { color: active ? colors.brand.primary : colors.text.secondary },
+                        active && { fontWeight: '700' },
+                      ]}>
+                        {lang.name}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
               </ScrollView>
             </View>
           </View>
@@ -299,6 +422,7 @@ export default function TranslatorSheet({ visible, onClose }: TranslatorSheetPro
           <Pressable
             style={({ pressed }) => [
               styles.translateBtn,
+              { backgroundColor: colors.brand.primary },
               pressed && { opacity: 0.85 },
               (!inputText.trim() && mode === 'text') && styles.translateBtnDisabled,
             ]}
@@ -309,69 +433,114 @@ export default function TranslatorSheet({ visible, onClose }: TranslatorSheetPro
               <ActivityIndicator size="small" color="#fff" />
             ) : (
               <Text style={styles.translateBtnText}>
-                {isLoading ? t('translator_translating') : t('translator_btn')}
+                {t('translator_btn')}
               </Text>
             )}
           </Pressable>
 
-          {/* ── Result ── */}
+          {/* ── Result card ── */}
           {result && (
-            <View style={styles.resultCard}>
+            <View style={[
+              styles.resultCard,
+              { backgroundColor: colors.bg.card, borderColor: colors.border.card },
+              cardShadow,
+            ]}>
+              {/* Original */}
               <View style={styles.resultHeader}>
-                <Text style={styles.resultOriginalLabel}>ORIGINAL</Text>
+                <Text style={[styles.resultSectionLabel, { color: colors.text.muted }]}>
+                  ORIGINAL
+                </Text>
                 <View style={[
                   styles.sourceChip,
-                  result.source === 'offline' && styles.sourceChipOffline,
-                  result.source === 'api'     && styles.sourceChipApi,
+                  {
+                    backgroundColor:
+                      result.source === 'offline' ? 'rgba(48,209,88,0.12)' :
+                      result.source === 'api'     ? 'rgba(124,58,237,0.12)' :
+                                                    colors.bg.elevated,
+                  },
                 ]}>
-                  <Text style={styles.sourceChipText}>
-                    {result.source === 'offline' ? '📴 Offline' : result.source === 'api' ? '🌐 API' : '⚠️ Fallback'}
+                  <Ionicons
+                    name={
+                      result.source === 'offline' ? 'cloud-offline-outline' :
+                      result.source === 'api'     ? 'globe-outline' :
+                                                    'warning-outline'
+                    }
+                    size={10}
+                    color={
+                      result.source === 'offline' ? colors.status.safe :
+                      result.source === 'api'     ? colors.brand.primary :
+                                                    colors.status.warn
+                    }
+                  />
+                  <Text style={[styles.sourceChipText, {
+                    color:
+                      result.source === 'offline' ? colors.status.safe :
+                      result.source === 'api'     ? colors.brand.primary :
+                                                    colors.status.warn,
+                  }]}>
+                    {result.source === 'offline' ? 'Offline' : result.source === 'api' ? 'API' : 'Fallback'}
                   </Text>
                 </View>
               </View>
-              <Text style={styles.resultOriginal}>{result.original}</Text>
+
+              <Text style={[styles.resultOriginal, { color: colors.text.primary }]}>
+                {result.original}
+              </Text>
+
               {result.detectedLang && (
-                <Text style={styles.resultDetected}>
+                <Text style={[styles.resultDetected, { color: colors.text.muted }]}>
                   Idioma detectado: {SOURCE_LANGUAGES.find(l => l.code === result.detectedLang)?.label ?? result.detectedLang}
                 </Text>
               )}
 
-              <View style={styles.resultDivider} />
+              <View style={[styles.resultDivider, { backgroundColor: colors.border.subtle }]} />
 
-              <Text style={styles.resultTranslatedLabel}>TRADUCCIÓN</Text>
-              <Text style={styles.resultTranslated}>{result.translated}</Text>
+              <Text style={[styles.resultSectionLabel, { color: colors.brand.accent }]}>
+                TRADUCCIÓN
+              </Text>
+              <Text style={[styles.resultTranslated, { color: colors.text.primary }]}>
+                {result.translated}
+              </Text>
 
               {result.source === 'fallback' && (
-                <View style={styles.resultWarning}>
-                  <Text style={styles.resultWarningText}>
-                    ⚠️ {t('translator_error')}
+                <View style={[styles.resultWarning, { backgroundColor: 'rgba(255,69,58,0.08)' }]}>
+                  <Ionicons name="warning-outline" size={12} color={colors.status.danger} />
+                  <Text style={[styles.resultWarningText, { color: colors.status.danger }]}>
+                    {t('translator_error')}
                   </Text>
                 </View>
               )}
             </View>
           )}
 
-          {/* ── Quick phrases for Japan / China ── */}
+          {/* ── Quick phrases ── */}
           <View style={styles.quickSection}>
-            <Text style={styles.quickTitle}>Frases rápidas</Text>
+            <Text style={[styles.quickTitle, { color: colors.text.secondary }]}>
+              Frases rápidas
+            </Text>
             <View style={styles.quickRow}>
               {[
-                { label: '🇯🇵 出発 → Salida',         text: '出発' },
-                { label: '🇯🇵 のりば → Andén',        text: 'のりば' },
-                { label: '🇨🇳 站台 → Andén',          text: '站台' },
-                { label: '🇨🇳 换乘 → Transbordo',     text: '换乘' },
-                { label: '🇯🇵 改札口 → Torniquete',   text: '改札口' },
-                { label: '🇨🇳 安检 → Seguridad',      text: '安检' },
+                { label: '🇯🇵 出発 → Salida',       text: '出発'   },
+                { label: '🇯🇵 のりば → Andén',      text: 'のりば' },
+                { label: '🇨🇳 站台 → Andén',         text: '站台'   },
+                { label: '🇨🇳 换乘 → Transbordo',    text: '换乘'   },
+                { label: '🇯🇵 改札口 → Torniquete',  text: '改札口' },
+                { label: '🇨🇳 安检 → Seguridad',     text: '安检'   },
               ].map((phrase) => (
                 <Pressable
                   key={phrase.text}
-                  style={styles.quickChip}
+                  style={[styles.quickChip, {
+                    backgroundColor: colors.bg.surface,
+                    borderColor:     colors.border.subtle,
+                  }]}
                   onPress={() => {
                     setInputText(phrase.text);
                     setMode('text');
                   }}
                 >
-                  <Text style={styles.quickChipText}>{phrase.label}</Text>
+                  <Text style={[styles.quickChipText, { color: colors.text.secondary }]}>
+                    {phrase.label}
+                  </Text>
                 </Pressable>
               ))}
             </View>
@@ -383,93 +552,87 @@ export default function TranslatorSheet({ visible, onClose }: TranslatorSheetPro
   );
 }
 
-// ─── STYLES ─────────────────────────────────────────────────────────────────
+// ─── STYLES — no colors hardcoded, all applied inline ────────────────────────
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.bg.base },
+  root: { flex: 1 },
 
+  // Header
   header: {
     flexDirection:     'row',
     alignItems:        'center',
     paddingHorizontal: Spacing['3'],
     paddingVertical:   Spacing['3'],
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border.subtle,
-    backgroundColor:   Colors.bg.elevated,
+    borderBottomWidth: 0.5,
   },
   closeBtn: {
     width: 44, height: 44,
     alignItems: 'center', justifyContent: 'center',
-    borderRadius: Radius.full, backgroundColor: Colors.bg.overlay,
+    borderRadius: Radius.full,
   },
-  closeIcon: { fontSize: Typography.size.sm, color: Colors.text.secondary },
   headerCenter: { flex: 1, alignItems: 'center', gap: 2 },
   headerTitle: {
-    fontSize:   Typography.size.sm,
-    fontWeight: Typography.weight.black,
-    color:      Colors.text.primary,
+    fontSize:      Typography.size.sm,
+    fontWeight:    '800',
     letterSpacing: 0.5,
   },
-  headerSub: { fontSize: Typography.size.xs, color: Colors.text.muted },
+  headerSub: { fontSize: Typography.size.xs },
 
-  modeTabs: {
-    flexDirection:     'row',
+  // Mode tabs — Apple segmented control
+  modeTabsWrap: {
     paddingHorizontal: Spacing['4'],
     paddingVertical:   Spacing['2'],
-    gap:               Spacing['2'],
-    backgroundColor:   Colors.bg.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border.subtle,
+    borderBottomWidth: 0.5,
+  },
+  modeTabs: {
+    flexDirection: 'row',
+    borderRadius:  Radius.md,
+    padding:       3,
   },
   modeTab: {
-    flex:          1,
-    flexDirection: 'row',
-    alignItems:    'center',
-    justifyContent:'center',
-    gap:           Spacing['2'],
-    paddingVertical: Spacing['2'],
-    borderRadius:  Radius.md,
-    borderWidth:   1,
-    borderColor:   Colors.border.subtle,
+    flex:           1,
+    flexDirection:  'row',
+    alignItems:     'center',
+    justifyContent: 'center',
+    gap:            6,
+    paddingVertical: 9,
+    borderRadius:   Radius.sm,
   },
   modeTabActive: {
-    backgroundColor: Colors.brand.primary,
-    borderColor:     Colors.brand.primary,
+    borderRadius: Radius.sm,
   },
-  modeTabIcon:       { fontSize: 16 },
-  modeTabIconActive: { },
   modeTabText: {
-    fontSize:   Typography.size.sm,
-    fontWeight: Typography.weight.semibold,
-    color:      Colors.text.secondary,
+    fontSize:   Typography.size.xs,
+    fontWeight: '500',
   },
-  modeTabTextActive: { color: '#fff' },
 
+  // Scroll
   scroll:        { flex: 1 },
-  scrollContent: { padding: Spacing['4'], gap: Spacing['4'], paddingBottom: 40 },
+  scrollContent: { padding: Spacing['4'], gap: Spacing['4'], paddingBottom: 48 },
 
   // Camera mode
   cameraSection: { gap: Spacing['3'] },
   cameraPreview: {
-    backgroundColor: Colors.bg.surface,
-    borderRadius:    Radius.lg,
-    borderWidth:     1,
-    borderColor:     Colors.border.subtle,
-    borderStyle:     'dashed',
-    height:          180,
-    alignItems:      'center',
-    justifyContent:  'center',
-    gap:             Spacing['2'],
+    borderRadius:   Radius.lg,
+    borderWidth:    1,
+    borderStyle:    'dashed',
+    height:         180,
+    alignItems:     'center',
+    justifyContent: 'center',
+    gap:            Spacing['2'],
   },
-  cameraPlaceholderEmoji: { fontSize: 40 },
+  cameraIconWrap: {
+    width: 80, height: 80,
+    borderRadius: Radius.xl,
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: 4,
+  },
   cameraPlaceholderText: {
     fontSize:   Typography.size.sm,
-    fontWeight: Typography.weight.semibold,
-    color:      Colors.text.secondary,
+    fontWeight: '600',
     textAlign:  'center',
   },
   cameraPlaceholderSub: {
     fontSize:  Typography.size.xs,
-    color:     Colors.text.muted,
     textAlign: 'center',
   },
   cameraButtons: {
@@ -477,119 +640,102 @@ const styles = StyleSheet.create({
     gap:           Spacing['3'],
   },
   cameraPrimary: {
-    flex:          1,
-    flexDirection: 'row',
-    alignItems:    'center',
-    justifyContent:'center',
-    gap:           Spacing['2'],
+    flex:           1,
+    flexDirection:  'row',
+    alignItems:     'center',
+    justifyContent: 'center',
+    gap:            Spacing['2'],
     paddingVertical: Spacing['3'],
-    backgroundColor: Colors.brand.primary,
-    borderRadius:  Radius.lg,
-    minHeight:     48,
+    borderRadius:   Radius.lg,
+    minHeight:      52,
   },
-  cameraPrimaryIcon: { fontSize: 18 },
   cameraPrimaryText: {
     fontSize:   Typography.size.sm,
-    fontWeight: Typography.weight.bold,
+    fontWeight: '700',
     color:      '#fff',
   },
   cameraSecondary: {
-    flex:          1,
-    flexDirection: 'row',
-    alignItems:    'center',
-    justifyContent:'center',
-    gap:           Spacing['2'],
+    flex:           1,
+    flexDirection:  'row',
+    alignItems:     'center',
+    justifyContent: 'center',
+    gap:            Spacing['2'],
     paddingVertical: Spacing['3'],
-    backgroundColor: Colors.bg.elevated,
-    borderRadius:  Radius.lg,
-    borderWidth:   1,
-    borderColor:   Colors.border.default,
-    minHeight:     48,
+    borderRadius:   Radius.lg,
+    borderWidth:    1,
+    minHeight:      52,
   },
-  cameraSecondaryIcon: { fontSize: 18 },
   cameraSecondaryText: {
     fontSize:   Typography.size.sm,
-    fontWeight: Typography.weight.semibold,
-    color:      Colors.text.secondary,
+    fontWeight: '600',
   },
   offlineNote: {
-    flexDirection: 'row',
-    alignItems:    'center',
-    gap:           Spacing['2'],
-    paddingVertical: Spacing['2'],
+    flexDirection:     'row',
+    alignItems:        'center',
+    gap:               Spacing['2'],
+    paddingVertical:   Spacing['2'],
     paddingHorizontal: Spacing['3'],
-    backgroundColor: Colors.bg.surface,
-    borderRadius:  Radius.md,
+    borderRadius:      Radius.md,
   },
-  offlineNoteIcon: { fontSize: 14 },
-  offlineNoteText: { fontSize: Typography.size.xs, color: Colors.text.muted, flex: 1 },
+  offlineNoteText: { fontSize: Typography.size.xs, flex: 1 },
 
   // Text mode
-  textSection:  { gap: Spacing['2'] },
-  inputLabel:   { fontSize: Typography.size.xs, color: Colors.text.secondary, fontWeight: Typography.weight.semibold },
-  inputWrap:    { position: 'relative' },
+  textSection: { gap: Spacing['2'] },
+  inputLabel:  {
+    fontSize:   Typography.size.xs,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+  },
+  inputWrap:   { position: 'relative' },
   textInput: {
-    backgroundColor: Colors.bg.surface,
-    borderRadius:    Radius.lg,
-    borderWidth:     1,
-    borderColor:     Colors.border.default,
-    padding:         Spacing['3'],
-    fontSize:        Typography.size.lg,
-    color:           Colors.text.primary,
-    minHeight:       100,
-    textAlignVertical:'top',
+    borderRadius:      Radius.lg,
+    borderWidth:       1,
+    padding:           Spacing['3'],
+    fontSize:          Typography.size.lg,
+    minHeight:         100,
+    textAlignVertical: 'top',
   },
   clearBtn: {
     position: 'absolute', top: Spacing['2'], right: Spacing['2'],
     width: 24, height: 24,
-    backgroundColor: Colors.bg.overlay, borderRadius: Radius.full,
+    borderRadius: Radius.full,
     alignItems: 'center', justifyContent: 'center',
   },
-  clearBtnText: { fontSize: 10, color: Colors.text.secondary },
 
-  // Lang selectors
+  // Language selectors
   langRow: {
     flexDirection: 'row',
     alignItems:    'flex-start',
     gap:           Spacing['2'],
   },
-  langBox:   { flex: 1 },
+  langBox:  { flex: 1 },
   langLabel: {
-    fontSize:     Typography.size.xs,
-    color:        Colors.text.secondary,
-    fontWeight:   Typography.weight.semibold,
-    marginBottom: Spacing['1'],
-    letterSpacing:0.5,
+    fontSize:      Typography.size.xs,
+    fontWeight:    '600',
+    marginBottom:  Spacing['1'],
+    letterSpacing: 0.5,
   },
-  langScroll:     { },
-  langArrow: {
-    fontSize:   Typography.size.xl,
-    color:      Colors.brand.glow,
-    marginTop:  20,
-  },
+  langArrow: { marginTop: 22 },
   langChip: {
     paddingVertical:   Spacing['1'],
     paddingHorizontal: Spacing['2'],
-    backgroundColor:   Colors.bg.surface,
     borderRadius:      Radius.full,
     borderWidth:       1,
-    borderColor:       Colors.border.subtle,
     marginRight:       Spacing['1'],
   },
-  langChipActive: {
-    backgroundColor: Colors.brand.primary,
-    borderColor:     Colors.brand.primary,
+  langChipFlag: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           6,
+    paddingVertical:   4,
+    paddingHorizontal: 8,
   },
   langChipText: {
-    fontSize:   Typography.size.xs,
-    color:      Colors.text.secondary,
-    whiteSpace: 'nowrap',
+    fontSize: Typography.size.xs,
   } as any,
-  langChipTextActive: { color: '#fff', fontWeight: Typography.weight.semibold },
 
   // Translate button
   translateBtn: {
-    backgroundColor: Colors.brand.primary,
     borderRadius:    Radius.lg,
     paddingVertical: Spacing['3'],
     alignItems:      'center',
@@ -598,80 +744,63 @@ const styles = StyleSheet.create({
   },
   translateBtnDisabled: { opacity: 0.45 },
   translateBtnText: {
-    fontSize:     Typography.size.md,
-    fontWeight:   Typography.weight.black,
-    color:        '#fff',
-    letterSpacing:0.5,
+    fontSize:      Typography.size.md,
+    fontWeight:    '900',
+    color:         '#fff',
+    letterSpacing: 0.5,
   },
 
   // Result card
   resultCard: {
-    backgroundColor: Colors.bg.elevated,
-    borderRadius:    Radius.lg,
-    borderWidth:     1,
-    borderColor:     Colors.border.default,
-    padding:         Spacing['4'],
-    gap:             Spacing['2'],
+    borderRadius: Radius.lg,
+    borderWidth:  0.5,
+    padding:      Spacing['4'],
+    gap:          Spacing['2'],
   },
-  resultHeader:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  resultOriginalLabel: {
-    fontSize:     Typography.size.xs,
-    fontWeight:   Typography.weight.bold,
-    color:        Colors.text.muted,
-    letterSpacing:1,
+  resultHeader:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  resultSectionLabel: {
+    fontSize:      Typography.size.xs,
+    fontWeight:    '700',
+    letterSpacing: 1,
   },
   sourceChip: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    gap:               4,
     paddingVertical:   2,
     paddingHorizontal: Spacing['2'],
     borderRadius:      Radius.full,
-    backgroundColor:   Colors.bg.overlay,
   },
-  sourceChipOffline: { backgroundColor: 'rgba(34,197,94,0.12)' },
-  sourceChipApi:     { backgroundColor: 'rgba(124,58,237,0.12)' },
-  sourceChipText: { fontSize: 10, color: Colors.text.secondary },
+  sourceChipText: { fontSize: 10, fontWeight: '600' },
   resultOriginal: {
     fontSize:   Typography.size.xl,
-    color:      Colors.text.primary,
-    fontWeight: Typography.weight.bold,
+    fontWeight: '700',
   },
-  resultDetected: {
-    fontSize: Typography.size.xs,
-    color:    Colors.text.muted,
-  },
-  resultDivider: {
-    height:          1,
-    backgroundColor: Colors.border.subtle,
-    marginVertical:  Spacing['1'],
-  },
-  resultTranslatedLabel: {
-    fontSize:     Typography.size.xs,
-    fontWeight:   Typography.weight.bold,
-    color:        Colors.brand.glow,
-    letterSpacing:1,
+  resultDetected: { fontSize: Typography.size.xs },
+  resultDivider:  {
+    height:         1,
+    marginVertical: Spacing['1'],
   },
   resultTranslated: {
     fontSize:   Typography.size['2xl'],
-    color:      Colors.text.primary,
-    fontWeight: Typography.weight.black,
+    fontWeight: '900',
     lineHeight: 42,
   },
   resultWarning: {
-    paddingVertical: Spacing['2'],
+    flexDirection:     'row',
+    alignItems:        'center',
+    gap:               6,
+    paddingVertical:   Spacing['2'],
     paddingHorizontal: Spacing['3'],
-    backgroundColor:'rgba(239,68,68,0.08)',
-    borderRadius:   Radius.md,
+    borderRadius:      Radius.md,
   },
-  resultWarningText: {
-    fontSize: Typography.size.xs,
-    color:    Colors.status.danger,
-  },
+  resultWarningText: { fontSize: Typography.size.xs },
 
   // Quick phrases
   quickSection: { gap: Spacing['2'] },
   quickTitle: {
-    fontSize:   Typography.size.xs,
-    fontWeight: Typography.weight.bold,
-    color:      Colors.text.secondary,
+    fontSize:      Typography.size.xs,
+    fontWeight:    '700',
     letterSpacing: 0.5,
   },
   quickRow: {
@@ -682,13 +811,8 @@ const styles = StyleSheet.create({
   quickChip: {
     paddingVertical:   Spacing['2'],
     paddingHorizontal: Spacing['3'],
-    backgroundColor:   Colors.bg.surface,
     borderRadius:      Radius.md,
-    borderWidth:       1,
-    borderColor:       Colors.border.subtle,
+    borderWidth:       0.5,
   },
-  quickChipText: {
-    fontSize: Typography.size.xs,
-    color:    Colors.text.secondary,
-  },
+  quickChipText: { fontSize: Typography.size.xs },
 });

@@ -373,6 +373,74 @@ export async function getAllGeofenceStations(): Promise<{
   `);
 }
 
+// ── Board: salidas / arribos ──────────────────────────────────────────────────
+export interface BoardEntry {
+  time:     string;   // "14:32"
+  train:    string;   // route_short_name o route_long_name
+  endpoint: string;   // destino (salidas) u origen (arribos)
+  station:  string;   // nombre de la parada
+  status:   'ontime' | 'delayed' | 'cancelled';
+}
+
+/**
+ * getCountryBoard — devuelve las próximas salidas o arribos de un país.
+ * Consulta directamente la DB del country indicado (sin cambiar activeCountry).
+ */
+export async function getCountryBoard(
+  country: CountryCode,
+  mode: 'salidas' | 'arribos',
+  limit = 30,
+): Promise<BoardEntry[]> {
+  const conn = await ensureDB(country);
+  const utcOffset    = COUNTRY_UTC_OFFSET[country] ?? 0;
+  const deviceOffset = -new Date().getTimezoneOffset() / 60;
+  const diffMs       = (utcOffset - deviceOffset) * 3_600_000;
+  const now          = new Date(Date.now() + diffMs);
+  const fromTime     = timeToGTFS(now);
+  const toTime       = timeToGTFS(new Date(now.getTime() + 6 * 3_600_000));
+  const timeCol      = mode === 'salidas' ? 'st.departure_time' : 'st.arrival_time';
+
+  try {
+    const rows = await conn.getAllAsync<{
+      t:     string;
+      train: string | null;
+      head:  string | null;
+      stop:  string;
+    }>(`
+      SELECT
+        ${timeCol}                                              AS t,
+        COALESCE(r.route_short_name, r.route_long_name, '')   AS train,
+        COALESCE(t.trip_headsign, '')                         AS head,
+        s.stop_name                                           AS stop
+      FROM stop_times st
+      JOIN trips  t ON st.trip_id = t.trip_id
+      JOIN routes r ON t.route_id = r.route_id
+      JOIN stops  s ON st.stop_id = s.stop_id
+      WHERE ${timeCol} >= ? AND ${timeCol} <= ?
+        AND s.location_type IN (0, 1)
+      ORDER BY t ASC
+      LIMIT ?
+    `, [fromTime, toTime, limit]);
+
+    return rows.map((r) => ({
+      time:     formatBoardTime(r.t),
+      train:    r.train ?? '—',
+      endpoint: r.head  || '—',
+      station:  r.stop,
+      status:   'ontime' as const,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+function formatBoardTime(gtfsTime: string): string {
+  const parts = gtfsTime.split(':');
+  const h = parseInt(parts[0] ?? '0', 10) % 24;
+  const m = parts[1] ?? '00';
+  return `${h.toString().padStart(2, '0')}:${m}`;
+}
+
 /**
  * getStationById — fetches a single station by GTFS stop_id.
  * Accepts an optional country override; defaults to activeCountry.

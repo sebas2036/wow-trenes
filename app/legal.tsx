@@ -11,7 +11,8 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
-import { Colors, Radius } from '../theme';
+import { Radius } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 // ── Contenido ────────────────────────────────────────────────────────────────
 
@@ -186,11 +187,12 @@ const CONTENT: Record<string, { title: string; sections: { heading: string; body
 
 export default function LegalScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { page } = useLocalSearchParams<{ page: string }>();
   const content = CONTENT[page ?? 'faq'] ?? CONTENT.faq;
 
   return (
-    <SafeAreaView style={styles.root} edges={['top']}>
+    <SafeAreaView style={[styles.root, { backgroundColor: colors.bg.base }]} edges={['top']}>
 
       {/* Header con back */}
       <View style={styles.header}>
@@ -199,10 +201,10 @@ export default function LegalScreen() {
           onPress={() => { Haptics.selectionAsync(); router.back(); }}
           hitSlop={10}
         >
-          <Text style={styles.backIcon}>‹</Text>
-          <Text style={styles.backText}>Ajustes</Text>
+          <Text style={[styles.backIcon, { color: colors.brand.glow }]}>‹</Text>
+          <Text style={[styles.backText, { color: colors.brand.glow }]}>Ajustes</Text>
         </Pressable>
-        <Text style={styles.title}>{content.title}</Text>
+        <Text style={[styles.title, { color: colors.text.primary }]}>{content.title}</Text>
       </View>
 
       <ScrollView
@@ -211,18 +213,18 @@ export default function LegalScreen() {
         showsVerticalScrollIndicator={false}
       >
         {content.sections.map((s, i) => (
-          <View key={i} style={styles.section}>
-            <Text style={styles.heading}>{s.heading}</Text>
-            <Text style={styles.body}>{s.body}</Text>
+          <View key={i} style={[styles.section, { borderBottomColor: colors.border.subtle }]}>
+            <Text style={[styles.heading, { color: colors.text.primary }]}>{s.heading}</Text>
+            <Text style={[styles.body,    { color: colors.text.secondary }]}>{s.body}</Text>
           </View>
         ))}
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            <Text style={styles.footerWow}>WoW </Text>TRENES · v1.0.0
+          <Text style={[styles.footerText, { color: colors.text.muted }]}>
+            <Text style={{ color: colors.brand.glow }}>WoW </Text>TRENES · v1.0.0
           </Text>
-          <Text style={styles.footerSub}>Glosx@outlook.com</Text>
+          <Text style={[styles.footerSub, { color: colors.text.muted }]}>Glosx@outlook.com</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -231,7 +233,7 @@ export default function LegalScreen() {
 
 // ── Estilos ──────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  root:   { flex: 1, backgroundColor: Colors.bg.base },
+  root:   { flex: 1 },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 48, paddingTop: 8 },
 
@@ -240,36 +242,25 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
   },
   backBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     marginBottom: 12,
   },
-  backIcon: { fontSize: 24, color: Colors.brand.glow, lineHeight: 26 },
-  backText: { fontSize: 15, color: Colors.brand.glow, fontWeight: '500' },
-  title:    { fontSize: 26, fontWeight: '800', color: Colors.text.primary },
+  backIcon: { fontSize: 24, lineHeight: 26 },
+  backText: { fontSize: 15, fontWeight: '500' },
+  title:    { fontSize: 26, fontWeight: '800' },
 
   section: {
     marginTop: 28,
     paddingBottom: 20,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.05)',
   },
-  heading: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.text.primary,
-    marginBottom: 8,
-  },
-  body: {
-    fontSize: 14,
-    color: Colors.text.secondary,
-    lineHeight: 22,
-  },
+  heading: { fontSize: 15, fontWeight: '700', marginBottom: 8 },
+  body:    { fontSize: 14, lineHeight: 22 },
 
   footer: { alignItems: 'center', paddingTop: 40, paddingBottom: 16 },
-  footerText: { fontSize: 14, fontWeight: '700', color: Colors.text.muted },
-  footerWow:  { color: Colors.brand.glow },
-  footerSub:  { fontSize: 12, color: Colors.text.muted, marginTop: 4 },
+  footerText: { fontSize: 14, fontWeight: '700' },
+  footerWow:  {},
+  footerSub:  { fontSize: 12, marginTop: 4 },
 });

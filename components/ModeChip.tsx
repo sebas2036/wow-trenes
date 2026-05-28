@@ -1,171 +1,100 @@
 /**
- * ModeChip — Transport mode selector (STEP 2)
- * Touch targets: ≥48×48px (WCAG 2.5.5)
- * Animated selection state via Reanimated
+ * ModeChip — Transport mode selector
+ * Íconos vectoriales Ionicons. Segmented control Apple-style.
  */
 import React, { memo, useCallback } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-  interpolateColor,
-} from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Gradients, Typography, Spacing, Radius, Motion } from '../theme';
+import { Radius, Shadows } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 import type { TransportMode } from '../types';
 
-// ── Mode definitions ──────────────────────────────────────────────────────
 interface ModeConfig {
-  mode:        TransportMode;
-  icon:        string;
-  label:       string;
-  description: string;
-  deepLinkBase?:string;
+  mode:  TransportMode;
+  icon:  keyof typeof Ionicons.glyphMap;
+  label: string;
 }
 
 const MODES: ModeConfig[] = [
-  {
-    mode:        'walk',
-    icon:        '🚶',
-    label:       'Caminando',
-    description: 'A pie desde tu ubicación',
-  },
-  {
-    mode:        'bus',
-    icon:        '🚌',
-    label:       'Bus',
-    description: 'Transporte público',
-  },
-  {
-    mode:        'rideshare',
-    icon:        '🚗',
-    label:       'Uber/Cabify',
-    description: 'Solicitar un coche',
-    deepLinkBase:'uber://',
-  },
+  { mode: 'walk',      icon: 'walk-outline',   label: 'A pie' },
+  { mode: 'bus',       icon: 'bus-outline',    label: 'Bus'   },
+  { mode: 'rideshare', icon: 'car-sport-outline', label: 'Uber'  },
 ];
 
-// ── Component ─────────────────────────────────────────────────────────────
 interface ModeChipProps {
-  selected:    TransportMode;
-  onChange:    (mode: TransportMode) => void;
+  selected:     TransportMode;
+  onChange:     (mode: TransportMode) => void;
   destination?: { latitude: number; longitude: number };
+  etas?:        Record<TransportMode, number | null>;
 }
 
-export default memo(function ModeChip({ selected, onChange, destination }: ModeChipProps) {
+export default memo(function ModeChip({ selected, onChange, etas }: ModeChipProps) {
+  const { colors } = useTheme();
+
+  const handlePress = useCallback(async (mode: TransportMode) => {
+    await Haptics.selectionAsync();
+    onChange(mode);
+  }, [onChange]);
+
   return (
-    <View style={styles.row} accessibilityRole="radiogroup" accessibilityLabel="Modo de transporte">
-      {MODES.map((cfg) => (
-        <Chip
-          key={cfg.mode}
-          config={cfg}
-          isSelected={selected === cfg.mode}
-          onPress={onChange}
-          destination={destination}
-        />
-      ))}
+    <View style={[styles.wrap, { backgroundColor: colors.bg.elevated }]}>
+      {MODES.map((cfg) => {
+        const active = selected === cfg.mode;
+        return (
+          <Pressable
+            key={cfg.mode}
+            style={[
+              styles.btn,
+              active && [styles.btnActive, { backgroundColor: colors.bg.card, ...Shadows.segment }],
+            ]}
+            onPress={() => handlePress(cfg.mode)}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: active }}
+            accessibilityLabel={cfg.label}
+          >
+            <Ionicons
+              name={active ? cfg.icon.replace('-outline', '') as any : cfg.icon as any}
+              size={20}
+              color={active ? colors.brand.primary : colors.text.muted}
+            />
+            <Text style={[
+              styles.label,
+              { color: active ? colors.text.primary : colors.text.secondary },
+              active && { fontWeight: '600' },
+            ]}>
+              {cfg.label}
+            </Text>
+            {/* ETA — siempre visible debajo del label */}
+            <Text style={[styles.eta, { color: active ? colors.brand.primary : colors.text.muted }]}>
+              {etas?.[cfg.mode] != null ? `${etas[cfg.mode]} min` : '—'}
+            </Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
 });
 
-// ── Single Chip ───────────────────────────────────────────────────────────
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
-function Chip({
-  config,
-  isSelected,
-  onPress,
-  destination,
-}: {
-  config:      ModeConfig;
-  isSelected:  boolean;
-  onPress:     (mode: TransportMode) => void;
-  destination?:{ latitude: number; longitude: number };
-}) {
-  const scale    = useSharedValue(1);
-  const selected = useSharedValue(isSelected ? 1 : 0);
-
-  React.useEffect(() => {
-    selected.value = withTiming(isSelected ? 1 : 0, { duration: Motion.fast });
-  }, [isSelected, selected]);
-
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const handlePress = useCallback(async () => {
-    scale.value = withSpring(0.94, { damping: 20, stiffness: 400 });
-    setTimeout(() => { scale.value = withSpring(1, Motion.spring); }, 120);
-    await Haptics.selectionAsync();
-
-    // If rideshare and we have destination, we could open deeplink
-    // (passive — only after explicit tap on a ride-share chip)
-    onPress(config.mode);
-  }, [config.mode, onPress, scale]);
-
-  return (
-    <AnimatedPressable
-      style={[styles.chip, isSelected && styles.chipSelected, animStyle]}
-      onPress={handlePress}
-      accessible
-      accessibilityRole="radio"
-      accessibilityState={{ selected: isSelected }}
-      accessibilityLabel={config.label}
-      accessibilityHint={config.description}
-    >
-      {isSelected && (
-        <LinearGradient
-          colors={Gradients.brand}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
-      )}
-      <Text style={styles.icon}>{config.icon}</Text>
-      <Text style={[styles.label, isSelected && styles.labelSelected]}>
-        {config.label}
-      </Text>
-    </AnimatedPressable>
-  );
-}
-
-// ─── STYLES ─────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  row: {
-    flexDirection:  'row',
-    gap:            Spacing['2'],
-    paddingHorizontal: Spacing['3'],
-    paddingVertical:   Spacing['2'],
+  wrap: {
+    flexDirection: 'row',
+    marginHorizontal: 12,
+    marginVertical: 10,
+    borderRadius: Radius.md,
+    padding: 3,
   },
-  chip: {
-    flex:            1,
-    minHeight:       48, // WCAG 2.5.5
-    minWidth:        48,
-    alignItems:      'center',
-    justifyContent:  'center',
-    borderRadius:    Radius.md,
-    paddingVertical: Spacing['2'],
-    paddingHorizontal: Spacing['3'],
-    backgroundColor: Colors.bg.elevated,
-    borderWidth:     1,
-    borderColor:     Colors.border.default,
-    overflow:        'hidden',
-    gap:             Spacing['1'],
+  btn: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: Radius.sm,
+    gap: 4,
   },
-  chipSelected: {
-    borderColor: Colors.brand.primary,
+  btnActive: {
+    borderRadius: Radius.sm,
   },
-  icon:  { fontSize: 22 },
-  label: {
-    fontSize:   Typography.size.xs,
-    fontWeight: Typography.weight.semibold,
-    color:      Colors.text.secondary,
-    textAlign:  'center',
-  },
-  labelSelected: {
-    color: Colors.white,
-  },
+  label: { fontSize: 11, fontWeight: '500' },
+  eta:   { fontSize: 10, fontWeight: '600', marginTop: 1 },
 });

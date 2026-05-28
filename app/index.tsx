@@ -1,41 +1,40 @@
 /**
- * WoW TRENES — Home Screen (Rediseño Premium v2)
- *
- * FLUJOS:
- *   1. PAÍS     → toca card → split-screen con horarios del país
- *   2. METRO    → tab Metro → ciudades con metro propio
- *   3. GPS      → botón GPS → detección automática de estación cercana
- *   4. TRADUCIR → tab Traducir → TranslatorSheet
+ * WoW TRENES — Home Screen
+ * Diseño minimalista Apple / Dieter Rams
+ * "Less, but better."
  */
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView,
-  Dimensions, ActivityIndicator,
+  ActivityIndicator, Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
 
-import { Colors, Radius } from '../theme';
+import { Radius, Shadows } from '../theme';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Defs, LinearGradient as SvgGrad, Stop, Line } from 'react-native-svg';
+import { useTheme } from '../context/ThemeContext';
+import FlagCircle from '../components/FlagCircle';
 import { findNearestStation, setActiveCountry } from '../services/gtfsDatabase';
 import TranslatorSheet from '../components/TranslatorSheet';
 import BottomTabBar from '../components/BottomTabBar';
 import { toggleFavorito, getFavoritos } from './favoritos';
+import NotificationSheet from '../components/NotificationSheet';
+import { useNotifications } from '../context/NotificationContext';
 import type { CountryCode, Coordinates } from '../types';
-
-const { width: W } = Dimensions.get('window');
-const CARD_W = (W - 48) / 2;  // 2 cols, 16px padding each side + 16px gap
 
 // ── Tipo de filtro ──────────────────────────────────────────────────────────
 type FilterTab = 'trenes' | 'metro' | 'internacional';
 
-// ── Datos países ────────────────────────────────────────────────────────────
+// ── Datos países ─────────────────────────────────────────────────────────────
 interface MetroOption { code: CountryCode; label: string }
 interface CountryEntry {
   code:          CountryCode;
   flag:          string;
-  icon:          string;   // emoji 3D representativo
   name:          string;
   trainLabel:    string;
   color:         string;
@@ -43,83 +42,48 @@ interface CountryEntry {
 }
 
 const COUNTRIES: CountryEntry[] = [
-  {
-    code: 'ES', flag: '🇪🇸', icon: '🏟️', name: 'España',
-    trainLabel: 'AVE · Renfe', color: '#C0392B',
-    metroOptions: [{ code: 'ES_MAD', label: 'Madrid' }, { code: 'ES_BCN', label: 'Barcelona' }],
-  },
-  {
-    code: 'IT', flag: '🇮🇹', icon: '🏛️', name: 'Italia',
-    trainLabel: 'Frecciarossa', color: '#27AE60',
-  },
-  {
-    code: 'FR', flag: '🇫🇷', icon: '🗼', name: 'Francia',
-    trainLabel: 'TGV · SNCF', color: '#2980B9',
-  },
-  {
-    code: 'US', flag: '🇺🇸', icon: '🗽', name: 'USA',
-    trainLabel: 'Amtrak', color: '#1A6BBE',
-    metroOptions: [{ code: 'US_NYC', label: 'New York' }],
-  },
-  {
-    code: 'DE', flag: '🇩🇪', icon: '🏰', name: 'Alemania',
-    trainLabel: 'ICE · DB', color: '#E74C3C',
-  },
-  {
-    code: 'GB', flag: '🇬🇧', icon: '🎡', name: 'Reino Unido',
-    trainLabel: 'Avanti · LNER', color: '#C0192B',
-    metroOptions: [{ code: 'GB_LON', label: 'London Underground' }],
-  },
-  {
-    code: 'CH', flag: '🇨🇭', icon: '🏔️', name: 'Suiza',
-    trainLabel: 'SBB · Glacier', color: '#DC143C',
-  },
-  {
-    code: 'JP', flag: '🇯🇵', icon: '⛩️', name: 'Japón',
-    trainLabel: 'Shinkansen', color: '#E74C3C',
-  },
-  {
-    code: 'NL', flag: '🇳🇱', icon: '🌷', name: 'Países Bajos',
-    trainLabel: 'Intercity · NS', color: '#E67E22',
-  },
-  {
-    code: 'AT', flag: '🇦🇹', icon: '🎭', name: 'Austria',
-    trainLabel: 'Railjet · ÖBB', color: '#C0392B',
-  },
-  {
-    code: 'NO', flag: '🇳🇴', icon: '🌊', name: 'Noruega',
-    trainLabel: 'Bergensbanen', color: '#003F87',
-  },
-  {
-    code: 'PT', flag: '🇵🇹', icon: '🏖️', name: 'Portugal',
-    trainLabel: 'Alfa Pendular', color: '#27AE60',
-  },
-  {
-    code: 'BE', flag: '🇧🇪', icon: '🏅', name: 'Bélgica',
-    trainLabel: 'IC · Thalys', color: '#F39C12',
-  },
+  { code: 'ES', flag: '🇪🇸', name: 'España',       trainLabel: 'AVE · Renfe',       color: '#C0392B',
+    metroOptions: [{ code: 'ES_MAD', label: 'Madrid' }, { code: 'ES_BCN', label: 'Barcelona' }] },
+  { code: 'IT', flag: '🇮🇹', name: 'Italia',        trainLabel: 'Frecciarossa',      color: '#27AE60' },
+  { code: 'FR', flag: '🇫🇷', name: 'Francia',       trainLabel: 'TGV · SNCF',        color: '#2980B9' },
+  { code: 'US', flag: '🇺🇸', name: 'USA',           trainLabel: 'Amtrak',            color: '#1A6BBE',
+    metroOptions: [{ code: 'US_NYC', label: 'New York' }] },
+  { code: 'DE', flag: '🇩🇪', name: 'Alemania',      trainLabel: 'ICE · DB',          color: '#E74C3C' },
+  { code: 'GB', flag: '🇬🇧', name: 'Reino Unido',   trainLabel: 'Avanti · LNER',     color: '#C0192B',
+    metroOptions: [{ code: 'GB_LON', label: 'London Underground' }] },
+  { code: 'CH', flag: '🇨🇭', name: 'Suiza',         trainLabel: 'SBB · Glacier',     color: '#DC143C' },
+  { code: 'JP', flag: '🇯🇵', name: 'Japón',         trainLabel: 'Shinkansen',        color: '#E74C3C' },
+  { code: 'NL', flag: '🇳🇱', name: 'Países Bajos',  trainLabel: 'Intercity · NS',    color: '#E67E22' },
+  { code: 'AT', flag: '🇦🇹', name: 'Austria',       trainLabel: 'Railjet · ÖBB',     color: '#C0392B' },
+  { code: 'NO', flag: '🇳🇴', name: 'Noruega',       trainLabel: 'Bergensbanen',      color: '#003F87' },
+  { code: 'PT', flag: '🇵🇹', name: 'Portugal',      trainLabel: 'Alfa Pendular',     color: '#27AE60' },
+  { code: 'BE', flag: '🇧🇪', name: 'Bélgica',       trainLabel: 'IC · Thalys',       color: '#F39C12' },
 ];
 
-// ── Datos metro ─────────────────────────────────────────────────────────────
+/** Extrae el código ISO de país a partir del CountryCode (e.g. 'US_NYC' → 'us') */
+function isoFromCode(code: string): string {
+  return code.split('_')[0].toLowerCase();
+}
+
+// ── Datos metro ───────────────────────────────────────────────────────────────
 interface MetroCity {
   code:  CountryCode;
   city:  string;
   flag:  string;
-  icon:  string;
   lines: string;
   color: string;
 }
 
 const METRO_CITIES: MetroCity[] = [
-  { code: 'US_NYC', city: 'New York',        flag: '🇺🇸', icon: '🗽', lines: '27 líneas · MTA Subway', color: '#1A6BBE' },
-  { code: 'ES_MAD', city: 'Madrid',          flag: '🇪🇸', icon: '🏟️', lines: '13 líneas · Metro Madrid', color: '#C0392B' },
-  { code: 'GB_LON', city: 'London',          flag: '🇬🇧', icon: '🎡', lines: '14 líneas · TfL Tube + Elizabeth', color: '#C0192B' },
-  { code: 'US_CHI', city: 'Chicago',         flag: '🇺🇸', icon: '🌆', lines: '8 líneas · CTA L Train', color: '#0057A8' },
-  { code: 'US_LAX', city: 'Los Angeles',     flag: '🇺🇸', icon: '🌴', lines: '6 líneas · LA Metro Rail', color: '#7C3AED' },
-  { code: 'ES_BCN', city: 'Barcelona',       flag: '🇪🇸', icon: '🏖️', lines: 'TMB · próximamente', color: '#F39C12' },
+  { code: 'US_NYC', city: 'New York',    flag: '🇺🇸', lines: 'MTA · 27 líneas',          color: '#1A6BBE' },
+  { code: 'ES_MAD', city: 'Madrid',      flag: '🇪🇸', lines: 'Metro Madrid · 13 líneas', color: '#C0392B' },
+  { code: 'GB_LON', city: 'London',      flag: '🇬🇧', lines: 'TfL · Elizabeth line',     color: '#C0192B' },
+  { code: 'US_CHI', city: 'Chicago',     flag: '🇺🇸', lines: 'CTA L Train · 8 líneas',   color: '#0057A8' },
+  { code: 'US_LAX', city: 'Los Angeles', flag: '🇺🇸', lines: 'LA Metro Rail · 6 líneas', color: '#7C3AED' },
+  { code: 'ES_BCN', city: 'Barcelona',   flag: '🇪🇸', lines: 'TMB · próximamente',       color: '#F39C12' },
 ];
 
-// ── Componente: tarjeta de país ─────────────────────────────────────────────
+// ── Tarjeta de país — Dieter Rams / Apple ────────────────────────────────────
 function CountryCard({
   country, isFav, onPress, onMetroPress, onFavToggle,
 }: {
@@ -129,116 +93,163 @@ function CountryCard({
   onMetroPress: (code: CountryCode, label: string) => void;
   onFavToggle:  (code: CountryCode) => void;
 }) {
+  const { colors, isDark } = useTheme();
+  // En Android, elevation recorta hijos en borderRadius — wrapper separa sombra del contenido
+  const shadowStyle = Platform.OS === 'ios'
+    ? (isDark ? Shadows.cardDark : Shadows.card)
+    : { elevation: 2 };
   return (
-    <Pressable
-      style={({ pressed }) => [styles.card, pressed && { opacity: 0.85, transform: [{ scale: 0.985 }] }]}
-      onPress={() => onPress(country)}
-      accessibilityRole="button"
-    >
-      <View style={[styles.cardStrip, { backgroundColor: country.color }]} />
-      <Text style={styles.cardIcon}>{country.icon}</Text>
-
-      <View style={styles.cardInfo}>
-        <View style={styles.cardNameRow}>
-          <Text style={styles.cardFlag}>{country.flag}</Text>
-          <Text style={styles.cardName}>{country.name}</Text>
-        </View>
-        <Text style={styles.cardTrain}>🚄 {country.trainLabel}</Text>
-        {country.metroOptions && country.metroOptions.length > 0 && (
-          <View style={styles.metroRow}>
-            {country.metroOptions.slice(0, 2).map((m) => (
-              <Pressable
-                key={m.code}
-                style={({ pressed }) => [styles.metroPill, pressed && { opacity: 0.7 }]}
-                onPress={(e) => { e.stopPropagation?.(); onMetroPress(m.code, m.label); }}
-              >
-                <Text style={styles.metroPillText}>🚇 {m.label}</Text>
-              </Pressable>
-            ))}
-          </View>
-        )}
-      </View>
-
-      <View style={styles.speedLines}>
-        <View style={[styles.speedLine, { width: 32, opacity: 0.55, backgroundColor: country.color }]} />
-        <View style={[styles.speedLine, { width: 22, opacity: 0.35, backgroundColor: country.color }]} />
-        <View style={[styles.speedLine, { width: 14, opacity: 0.2,  backgroundColor: country.color }]} />
-      </View>
-
-      {/* Botón favorito */}
+    <View style={[styles.cardShadow, shadowStyle, { backgroundColor: colors.bg.card, borderRadius: Radius.lg }]}>
       <Pressable
-        style={[styles.favBtn, isFav && styles.favBtnActive]}
-        onPress={(e) => { e.stopPropagation?.(); onFavToggle(country.code); }}
-        hitSlop={10}
+        style={({ pressed }) => [
+          styles.card,
+          { backgroundColor: colors.bg.card, borderColor: colors.border.card },
+          pressed && { opacity: 0.88, transform: [{ scale: 0.982 }] },
+        ]}
+        onPress={() => onPress(country)}
+        accessibilityRole="button"
       >
-        <Text style={styles.favIcon}>{isFav ? '❤️' : '♡'}</Text>
-      </Pressable>
+        <View style={styles.cardFlag}>
+          <FlagCircle countryCode={isoFromCode(country.code)} size="lg" />
+        </View>
 
-      <Text style={styles.cardArrow}>›</Text>
-    </Pressable>
+        <View style={styles.cardInfo}>
+          <Text style={[styles.cardName, { color: colors.text.primary }]}>{country.name}</Text>
+          <Text style={[styles.cardSub, { color: colors.text.secondary }]}>{country.trainLabel}</Text>
+          {country.metroOptions && country.metroOptions.length > 0 && (
+            <View style={styles.metroRow}>
+              {country.metroOptions.slice(0, 2).map((m) => (
+                <Pressable
+                  key={m.code}
+                  style={({ pressed }) => [
+                    styles.metroPill,
+                    { backgroundColor: colors.bg.elevated, borderColor: colors.border.subtle },
+                    pressed && { opacity: 0.65 },
+                  ]}
+                  onPress={(e) => { e.stopPropagation?.(); onMetroPress(m.code, m.label); }}
+                >
+                  <Text style={[styles.metroPillText, { color: colors.brand.primary }]}>
+                    {m.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          )}
+        </View>
+
+        <Pressable
+          style={styles.favBtn}
+          onPress={(e) => { e.stopPropagation?.(); onFavToggle(country.code); }}
+          hitSlop={12}
+        >
+          <Ionicons
+            name={isFav ? 'heart' : 'heart-outline'}
+            size={22}
+            color={isFav ? '#FF3B30' : colors.text.muted}
+          />
+        </Pressable>
+
+        <Text style={[styles.cardArrow, { color: colors.text.muted }]}>›</Text>
+      </Pressable>
+    </View>
   );
 }
 
-// ── Componente: tarjeta de metro ────────────────────────────────────────────
+// ── Tarjeta de metro — mismo lenguaje visual ──────────────────────────────────
 function MetroCard({
-  metro,
-  isFav,
-  onPress,
-  onFavToggle,
+  metro, isFav, onPress, onFavToggle,
 }: {
   metro:       MetroCity;
   isFav:       boolean;
   onPress:     (code: CountryCode) => void;
   onFavToggle: (code: CountryCode) => void;
 }) {
+  const { colors, isDark } = useTheme();
+  const shadowStyle = Platform.OS === 'ios'
+    ? (isDark ? Shadows.cardDark : Shadows.card)
+    : { elevation: 2 };
   return (
-    <Pressable
-      style={({ pressed }) => [
-        styles.metroCard,
-        pressed && { opacity: 0.85, transform: [{ scale: 0.985 }] },
-      ]}
-      onPress={() => onPress(metro.code)}
-    >
-      <View style={[styles.cardStrip, { backgroundColor: metro.color }]} />
-      <Text style={styles.metroCardIcon}>{metro.icon}</Text>
-      <View style={styles.metroCardInfo}>
-        <View style={styles.metroCardNameRow}>
-          <Text style={styles.metroCardFlag}>{metro.flag}</Text>
-          <Text style={styles.metroCardCity}>{metro.city}</Text>
-        </View>
-        <Text style={styles.metroCardLines}>{metro.lines}</Text>
-      </View>
-
-      {/* Speed lines */}
-      <View style={styles.speedLines}>
-        <View style={[styles.speedLine, { width: 32, opacity: 0.55, backgroundColor: metro.color }]} />
-        <View style={[styles.speedLine, { width: 22, opacity: 0.35, backgroundColor: metro.color }]} />
-        <View style={[styles.speedLine, { width: 14, opacity: 0.2,  backgroundColor: metro.color }]} />
-      </View>
-
-      {/* Favorito */}
+    <View style={[styles.cardShadow, shadowStyle, { backgroundColor: colors.bg.card, borderRadius: Radius.lg }]}>
       <Pressable
-        style={[styles.favBtn, isFav && styles.favBtnActive]}
-        onPress={(e) => { e.stopPropagation?.(); onFavToggle(metro.code); }}
-        hitSlop={10}
+        style={({ pressed }) => [
+          styles.card,
+          { backgroundColor: colors.bg.card, borderColor: colors.border.card },
+          pressed && { opacity: 0.88, transform: [{ scale: 0.982 }] },
+        ]}
+        onPress={() => onPress(metro.code)}
       >
-        <Text style={styles.favIcon}>{isFav ? '❤️' : '♡'}</Text>
+        <View style={styles.cardFlag}>
+          <FlagCircle countryCode={isoFromCode(metro.code)} size="lg" />
+        </View>
+        <View style={styles.cardInfo}>
+          <Text style={[styles.cardName, { color: colors.text.primary }]}>{metro.city}</Text>
+          <Text style={[styles.cardSub,  { color: colors.text.secondary }]}>{metro.lines}</Text>
+        </View>
+        <Pressable
+          style={styles.favBtn}
+          onPress={(e) => { e.stopPropagation?.(); onFavToggle(metro.code); }}
+          hitSlop={12}
+        >
+          <Ionicons
+            name={isFav ? 'heart' : 'heart-outline'}
+            size={22}
+            color={isFav ? '#FF3B30' : colors.text.muted}
+          />
+        </Pressable>
+        <Text style={[styles.cardArrow, { color: colors.text.muted }]}>›</Text>
       </Pressable>
-
-      <Text style={styles.metroCardArrow}>›</Text>
-    </Pressable>
+    </View>
   );
 }
 
-// ── Pantalla principal ──────────────────────────────────────────────────────
+// ── Speed lines — efecto de velocidad junto al logo ──────────────────────────
+function SpeedLines() {
+  return (
+    <Svg width={90} height={32} style={{ marginLeft: -2 }}>
+      <Defs>
+        <SvgGrad id="spd1" x1="0" y1="0" x2="1" y2="0">
+          <Stop offset="0"   stopColor="#FFFFFF" stopOpacity="0.55" />
+          <Stop offset="1"   stopColor="#FFFFFF" stopOpacity="0.00" />
+        </SvgGrad>
+        <SvgGrad id="spd2" x1="0" y1="0" x2="1" y2="0">
+          <Stop offset="0"   stopColor="#A78BFA" stopOpacity="0.45" />
+          <Stop offset="1"   stopColor="#A78BFA" stopOpacity="0.00" />
+        </SvgGrad>
+        <SvgGrad id="spd3" x1="0" y1="0" x2="1" y2="0">
+          <Stop offset="0"   stopColor="#FFFFFF" stopOpacity="0.30" />
+          <Stop offset="1"   stopColor="#FFFFFF" stopOpacity="0.00" />
+        </SvgGrad>
+      </Defs>
+      {/* Línea superior — blanca brillante */}
+      <Line x1="0"  y1="7"  x2="88" y2="7"  stroke="url(#spd1)" strokeWidth="1.6" />
+      {/* Línea media — violeta */}
+      <Line x1="8"  y1="16" x2="88" y2="16" stroke="url(#spd2)" strokeWidth="1.2" />
+      {/* Línea inferior — blanca suave */}
+      <Line x1="4"  y1="25" x2="80" y2="25" stroke="url(#spd3)" strokeWidth="1.6" />
+    </Svg>
+  );
+}
+
+// ── Pantalla principal ────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const router = useRouter();
+  const { colors, isDark } = useTheme();
   const [filter,     setFilter]     = useState<FilterTab>('trenes');
   const [gpsLoading, setGpsLoading] = useState(false);
-  const [translator, setTranslator] = useState(false);
+  const [translator,    setTranslator]    = useState(false);
+  const [notifVisible,  setNotifVisible]  = useState(false);
+  const { unreadCount, addNotification }  = useNotifications();
+  const prevUnread = React.useRef(unreadCount);
+
+  // Vibrar cuando llega una notificación nueva
+  useEffect(() => {
+    if (unreadCount > prevUnread.current) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    }
+    prevUnread.current = unreadCount;
+  }, [unreadCount]);
   const [favs,       setFavs]       = useState<CountryCode[]>([]);
 
-  // Cargar favoritos al montar
   useEffect(() => { getFavoritos().then(setFavs); }, []);
 
   const handleFavToggle = useCallback(async (code: CountryCode) => {
@@ -247,32 +258,27 @@ export default function HomeScreen() {
     setFavs(updated);
   }, []);
 
-  // Navegar a país intercity
   const handleCountryPress = useCallback((country: CountryEntry) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setActiveCountry(country.code).catch(() => {});
     router.push({ pathname: '/split-screen', params: { country: country.code, mode: 'country' } });
   }, [router]);
 
-  // Navegar a metro urbano
   const handleMetroPress = useCallback((code: CountryCode, label?: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setActiveCountry(code).catch(() => {});
     router.push({ pathname: '/split-screen', params: { country: code, mode: 'country', metroCity: label ?? '' } });
   }, [router]);
 
-  // GPS — ubicación automática
   const handleGPS = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setGpsLoading(true);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') { setGpsLoading(false); return; }
-
       const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       const coords: Coordinates = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
       const station = await findNearestStation(coords);
-
       router.push({
         pathname: '/split-screen',
         params: { lat: String(coords.latitude), lon: String(coords.longitude), mode: 'tourist', originStationId: station?.id ?? '' },
@@ -281,63 +287,125 @@ export default function HomeScreen() {
     finally { setGpsLoading(false); }
   }, [router]);
 
-  return (
-    <SafeAreaView style={styles.root} edges={['top']}>
+  // Países ordenados: favoritos primero
+  const sortedCountries = [...COUNTRIES].sort((a, b) =>
+    (favs.includes(a.code) ? 0 : 1) - (favs.includes(b.code) ? 0 : 1)
+  );
 
-      {/* ── Scroll principal ── */}
+  const sortedMetros = [...METRO_CITIES].sort((a, b) =>
+    (favs.includes(a.code) ? 0 : 1) - (favs.includes(b.code) ? 0 : 1)
+  );
+
+  const TABS: { key: FilterTab; label: string; icon: keyof typeof Ionicons.glyphMap; iconOut: keyof typeof Ionicons.glyphMap }[] = [
+    { key: 'trenes',        label: 'Trenes',    icon: 'train',  iconOut: 'train-outline'  },
+    { key: 'metro',         label: 'Metro',     icon: 'map',    iconOut: 'map-outline'    },
+    { key: 'internacional', label: 'Internat.', icon: 'globe',  iconOut: 'globe-outline'  },
+  ];
+
+  return (
+    <SafeAreaView style={[styles.root, { backgroundColor: colors.bg.base }]} edges={['top']}>
+
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Header logo ── */}
+        {/* ── Logo + Bell ── */}
         <View style={styles.header}>
-          <Text style={styles.logoWow}>WoW </Text>
-          <Text style={styles.logoTrenes}>TRENES</Text>
-        </View>
-
-        {/* ── Hero texto ── */}
-        <View style={styles.hero}>
-          <Text style={styles.heroTitle}>
-            Tu viaje <Text style={styles.heroAccent}>empieza aquí.</Text>
-          </Text>
-          <Text style={styles.heroSub}>Fácil, rápido y hecho para viajeros como vos.</Text>
-        </View>
-
-        {/* ── Badges ── */}
-        <View style={styles.badgeRow}>
-          {['+13 países', 'Miles de rutas', 'Tiempo real'].map((b) => (
-            <View key={b} style={styles.badge}>
-              <Text style={styles.badgeText}>{b}</Text>
+          <View>
+            {/* Logo — WoW italic + TRENES espaciado + speed lines */}
+            <View style={styles.logoRow}>
+              <Text style={[styles.logoWow, { color: colors.brand.primary }]}>WoW</Text>
+              <Text style={[styles.logoTrenes, { color: colors.text.primary }]}> TRENES</Text>
+              <SpeedLines />
             </View>
-          ))}
+            <Text style={[styles.logoSub, { color: colors.text.secondary }]}>
+              Tu tren. Tu mundo.
+            </Text>
+          </View>
+          {/* Campana — anillo glow violeta siempre, badge rojo con número cuando llegan notifs */}
+          <Pressable
+            style={[
+              styles.bellBtn,
+              { backgroundColor: colors.bg.elevated },
+              Platform.OS === 'ios'
+                ? { shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.85, shadowRadius: 14, borderWidth: 1.5, borderColor: '#9F67FA' }
+                : { borderWidth: 1.5, borderColor: '#9F67FA', elevation: 10 },
+            ]}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setNotifVisible(true);
+            }}
+            accessibilityLabel="Notificaciones"
+          >
+            <Ionicons
+              name={unreadCount > 0 ? 'notifications' : 'notifications-outline'}
+              size={20}
+              color={unreadCount > 0 ? '#FF3B30' : '#E0D0FF'}
+            />
+            {/* Sin notificaciones → punto violeta. Con notificaciones → badge rojo con número */}
+            {unreadCount === 0 ? (
+              <View style={[styles.bellDot, { backgroundColor: colors.brand.primary }]} />
+            ) : (
+              <View style={styles.bellBadge}>
+                <Text style={styles.bellBadgeText}>
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </Text>
+              </View>
+            )}
+          </Pressable>
         </View>
 
-        {/* ── Tabs de filtro ── */}
-        <View style={styles.filterRow}>
-          {(['trenes', 'metro', 'internacional'] as FilterTab[]).map((f) => (
-            <Pressable
-              key={f}
-              style={[styles.filterTab, filter === f && styles.filterTabActive]}
-              onPress={() => { Haptics.selectionAsync(); setFilter(f); }}
-            >
-              <Text style={[styles.filterTabText, filter === f && styles.filterTabTextActive]}>
-                {f.charAt(0).toUpperCase() + f.slice(1)}
-              </Text>
-            </Pressable>
-          ))}
+        {/* ── Segmented control con íconos + borde degradé violeta ── */}
+        <View style={[styles.segmentedWrap, { backgroundColor: colors.bg.elevated }]}>
+          {TABS.map((t) => {
+            const active = filter === t.key;
+            return (
+              <Pressable
+                key={t.key}
+                style={[styles.segmentBtn, active && styles.segmentBtnActive]}
+                onPress={() => { Haptics.selectionAsync(); setFilter(t.key); }}
+              >
+                {/* Borde degradé violeta — solo en tab activo */}
+                {active && (
+                  <>
+                    <LinearGradient
+                      colors={['rgba(109,40,217,0.55)', 'rgba(167,139,250,1.00)', 'rgba(109,40,217,0.55)']}
+                      start={{ x: 0, y: 0.5 }}
+                      end={{ x: 1, y: 0.5 }}
+                      style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.sm }]}
+                      pointerEvents="none"
+                    />
+                    <View style={[StyleSheet.absoluteFillObject, {
+                      margin: 1.2,
+                      borderRadius: Radius.sm - 1,
+                      backgroundColor: colors.bg.card,
+                    }]} pointerEvents="none" />
+                  </>
+                )}
+                <Ionicons
+                  name={active ? t.icon : t.iconOut}
+                  size={15}
+                  color={active ? colors.brand.primary : colors.text.muted}
+                />
+                <Text style={[
+                  styles.segmentText,
+                  { color: active ? colors.text.primary : colors.text.secondary },
+                  active && { fontWeight: '700' },
+                ]}>
+                  {t.label}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
 
         {/* ── Sección Trenes ── */}
         {filter === 'trenes' && (
           <>
-            <Text style={styles.sectionLabel}>EXPLORÁ EL MUNDO EN TREN</Text>
+            <Text style={[styles.sectionLabel, { color: colors.text.muted }]}>PAÍSES DISPONIBLES</Text>
             <View style={styles.list}>
-              {[...COUNTRIES].sort((a, b) => {
-                const aFav = favs.includes(a.code) ? 0 : 1;
-                const bFav = favs.includes(b.code) ? 0 : 1;
-                return aFav - bFav;
-              }).map((c) => (
+              {sortedCountries.map((c) => (
                 <CountryCard
                   key={c.code}
                   country={c}
@@ -354,9 +422,9 @@ export default function HomeScreen() {
         {/* ── Sección Metro ── */}
         {filter === 'metro' && (
           <>
-            <Text style={styles.sectionLabel}>METROS URBANOS</Text>
-            <View style={styles.metroList}>
-              {METRO_CITIES.map((m) => (
+            <Text style={[styles.sectionLabel, { color: colors.text.muted }]}>METROS URBANOS</Text>
+            <View style={styles.list}>
+              {sortedMetros.map((m) => (
                 <MetroCard
                   key={m.code}
                   metro={m}
@@ -369,35 +437,51 @@ export default function HomeScreen() {
           </>
         )}
 
-        {/* ── Sección Internacional ── */}
+        {/* ── Internacional — próximamente ── */}
         {filter === 'internacional' && (
-          <View style={styles.comingSoon}>
-            <Text style={styles.comingSoonIcon}>🌍</Text>
-            <Text style={styles.comingSoonTitle}>Rutas internacionales</Text>
-            <Text style={styles.comingSoonSub}>
-              Eurostar · Thalys · Nightjet · Rail Europe{'\n'}Próximamente disponible.
+          <View style={styles.empty}>
+            <Ionicons name="globe-outline" size={56} color={colors.text.muted} style={{ marginBottom: 18 }} />
+            <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>Rutas internacionales</Text>
+            <Text style={[styles.emptySub,   { color: colors.text.secondary }]}>
+              Eurostar · Thalys · Nightjet · Rail Europe{'\n'}Próximamente.
             </Text>
           </View>
         )}
 
-        <View style={{ height: 16 }} />
+        <View style={{ height: 12 }} />
       </ScrollView>
 
-      {/* ── GPS CTA fijo sobre el tab bar ── */}
+      {/* ── Fade hint — indica que hay más contenido debajo ── */}
+      <LinearGradient
+        colors={['transparent', colors.bg.base + 'CC', colors.bg.base]}
+        locations={[0, 0.6, 1]}
+        style={styles.scrollFade}
+        pointerEvents="none"
+      />
+
+      {/* ── GPS Banner — estilo original mejorado ── */}
       <Pressable
-        style={({ pressed }) => [styles.gpsBanner, pressed && { opacity: 0.88 }]}
+        style={({ pressed }) => [
+          styles.gpsBanner,
+          { backgroundColor: colors.bg.elevated, borderColor: colors.border.default },
+          pressed && { opacity: 0.88 },
+        ]}
         onPress={handleGPS}
         disabled={gpsLoading}
       >
-        <View style={styles.gpsPinWrap}>
-          <Text style={styles.gpsPinIcon}>📍</Text>
+        <View style={[styles.gpsPinWrap, { backgroundColor: colors.brand.primary }]}>
+          <Ionicons name="location" size={20} color="#fff" />
         </View>
-        <View style={styles.gpsBannerLeft}>
-          <Text style={styles.gpsBannerTitle} numberOfLines={1}>¿No sabés por dónde empezar?</Text>
-          <Text style={styles.gpsBannerSub} numberOfLines={1}>Te mostramos los trenes más cercanos</Text>
+        <View style={styles.gpsBannerInfo}>
+          <Text style={[styles.gpsBannerTitle, { color: colors.text.primary }]} numberOfLines={1}>
+            ¿No sabés por dónde empezar?
+          </Text>
+          <Text style={[styles.gpsBannerSub, { color: colors.text.secondary }]} numberOfLines={1}>
+            Detectamos tu ubicación y mostramos los mejores trenes cerca de vos.
+          </Text>
         </View>
         <Pressable
-          style={({ pressed }) => [styles.gpsBtn, pressed && { opacity: 0.85 }]}
+          style={[styles.gpsBtn, { backgroundColor: colors.brand.primary, ...Shadows.glow }]}
           onPress={handleGPS}
           disabled={gpsLoading}
         >
@@ -408,153 +492,186 @@ export default function HomeScreen() {
         </Pressable>
       </Pressable>
 
-      {/* ── Tab Bar fijo ── */}
       <BottomTabBar active="inicio" onTranslatePress={() => setTranslator(true)} />
-
-      {/* ── Translator Sheet ── */}
       <TranslatorSheet visible={translator} onClose={() => setTranslator(false)} />
+      <NotificationSheet visible={notifVisible} onClose={() => setNotifVisible(false)} />
     </SafeAreaView>
   );
 }
 
-// ── Estilos ─────────────────────────────────────────────────────────────────
+// ── Estilos ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  root:   { flex: 1, backgroundColor: Colors.bg.base },
-  scroll: { flex: 1 },
-  scrollContent: { paddingBottom: 8 },
+  root:          { flex: 1 },
+  scroll:        { flex: 1 },
+  scrollContent: { paddingBottom: 12 },
 
-  // Header
-  header: { flexDirection: 'row', alignItems: 'baseline', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 4 },
-  logoWow:    { fontSize: 34, fontWeight: '900', color: Colors.brand.glow },
-  logoTrenes: { fontSize: 34, fontWeight: '900', color: Colors.text.primary },
-
-  // Hero
-  hero: { paddingHorizontal: 20, paddingBottom: 16 },
-  heroTitle:  { fontSize: 22, fontWeight: '700', color: Colors.text.primary, lineHeight: 30 },
-  heroAccent: { color: Colors.brand.glow },
-  heroSub:    { fontSize: 14, color: Colors.text.secondary, marginTop: 4 },
-
-  // Badges
-  badgeRow: { flexDirection: 'row', paddingHorizontal: 20, gap: 8, marginBottom: 20 },
-  badge:     { backgroundColor: Colors.bg.elevated, borderRadius: Radius.full, paddingVertical: 6, paddingHorizontal: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
-  badgeText: { fontSize: 12, color: Colors.text.secondary, fontWeight: '500' },
-
-  // Filter tabs
-  filterRow: { flexDirection: 'row', paddingHorizontal: 20, gap: 8, marginBottom: 20 },
-  filterTab: {
-    paddingVertical: 8, paddingHorizontal: 18,
-    borderRadius: Radius.full,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
+  // Header — limpio, tipografía pura
+  header: {
+    paddingHorizontal: 22,
+    paddingTop: 20,
+    paddingBottom: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  filterTabActive: {
-    backgroundColor: Colors.brand.primary,
-    borderColor: Colors.brand.primary,
+  // Bell — círculo neumórfico con badge rojo
+  bellBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  filterTabText:       { fontSize: 14, color: Colors.text.secondary, fontWeight: '600' },
-  filterTabTextActive: { color: Colors.text.primary },
-
-  // Section label
-  sectionLabel: {
-    fontSize: 11, fontWeight: '700', letterSpacing: 1.2,
-    color: Colors.text.muted, paddingHorizontal: 20, marginBottom: 14,
+  bellDot: {
+    position:     'absolute',
+    top:          4,
+    right:        4,
+    width:        9,
+    height:       9,
+    borderRadius: 5,
+  },
+  bellBadge: {
+    position:        'absolute',
+    top:             4,
+    right:           4,
+    minWidth:        16,
+    height:          16,
+    borderRadius:    8,
+    backgroundColor: '#FF3B30',
+    alignItems:      'center',
+    justifyContent:  'center',
+    paddingHorizontal: 3,
+  },
+  bellBadgeText: {
+    fontSize:   9,
+    fontWeight: '800',
+    color:      '#fff',
   },
 
-  // Country cards — horizontal list
-  list: { paddingHorizontal: 16, gap: 10 },
-  card: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#13131A',
-    borderRadius: Radius.lg,
+  // Logo — fila con WoW italic + TRENES espaciado + speed lines
+  logoRow: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    overflow:      'visible',
+  },
+  logoWow: {
+    fontSize:      32,
+    fontWeight:    '800',
+    fontStyle:     'italic',
+    letterSpacing: -0.5,
+    lineHeight:    36,
+  },
+  logoTrenes: {
+    fontSize:      22,
+    fontWeight:    '300',
+    letterSpacing: 5,
+    lineHeight:    36,
+  },
+  logoSub: { fontSize: 13, marginTop: 3, letterSpacing: 0.1 },
+
+  // Segmented control — Apple UISegmentedControl
+  segmentedWrap: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    marginBottom: 24,
+    borderRadius: Radius.md,
+    padding: 3,
+  },
+  segmentBtn: {
+    flex: 1,
+    paddingVertical: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: Radius.sm,
+    flexDirection: 'row',
+    gap: 5,
     overflow: 'hidden',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)',
-    minHeight: 72,
   },
-  cardStrip: { width: 4, alignSelf: 'stretch' },
-  cardIcon:  { fontSize: 32, marginHorizontal: 14 },
-  cardInfo:  { flex: 1, paddingVertical: 12, gap: 3 },
-  cardNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  cardFlag: { fontSize: 16 },
-  cardName: { fontSize: 16, fontWeight: '700', color: Colors.text.primary },
-  cardTrain: { fontSize: 12, color: Colors.text.secondary },
-  metroRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
-  metroPill: {
-    backgroundColor: 'rgba(124,58,237,0.18)',
-    borderRadius: Radius.full,
-    paddingVertical: 3, paddingHorizontal: 8,
-    borderWidth: 1, borderColor: 'rgba(124,58,237,0.35)',
+  segmentBtnActive: {
+    borderRadius: Radius.sm,
   },
-  metroPillText: { fontSize: 11, color: Colors.brand.glow, fontWeight: '600' },
-  cardArrow: { fontSize: 22, color: Colors.text.muted, paddingRight: 14, paddingLeft: 6, fontWeight: '300' },
+  segmentText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
 
-  // Favorite button & badge
-  favBtn: {
-    width: 34, height: 34,
-    borderRadius: 17,
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
-    alignItems: 'center', justifyContent: 'center',
-    marginRight: 4,
+  // Section label — Apple Settings style
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.8,
+    paddingHorizontal: 22,
+    marginBottom: 12,
   },
-  favBtnActive: {
-    backgroundColor: 'rgba(220,53,69,0.18)',
-    borderColor: 'rgba(220,53,69,0.4)',
+
+  // Fade hint al final del scroll
+  scrollFade: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 130,
   },
-  favIcon:  { fontSize: 17, color: Colors.text.secondary },
-  favBadge: { fontSize: 13, marginLeft: 2 },
 
-  // Speed lines
-  speedLines: { justifyContent: 'center', gap: 5, paddingRight: 2 },
-  speedLine:  { height: 2, borderRadius: 2 },
+  // Lista
+  list: { paddingHorizontal: 16, gap: 10 },
 
-  // Metro list
-  metroList: { paddingHorizontal: 16, gap: 10 },
-  metroCard: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#13131A',
+  // Wrapper de sombra (separado del contenido para evitar recorte en Android)
+  cardShadow: {
     borderRadius: Radius.lg,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)',
-    overflow: 'hidden', minHeight: 72,
+    marginBottom: 0, // gap lo maneja el list
   },
-  metroCardIcon:    { fontSize: 28, marginHorizontal: 14 },
-  metroCardInfo:    { flex: 1, paddingVertical: 12, gap: 3 },
-  metroCardNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  metroCardFlag:    { fontSize: 16 },
-  metroCardCity:    { fontSize: 16, fontWeight: '700', color: Colors.text.primary },
-  metroCardLines:   { fontSize: 12, color: Colors.text.secondary },
-  metroCardArrow:   { fontSize: 22, color: Colors.text.muted, paddingHorizontal: 14, fontWeight: '300' },
+  // Card — sin strips, sin speed lines
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: Radius.lg,
+    borderWidth: 0.5,
+    paddingLeft: 12,
+    paddingRight: 8,
+    paddingVertical: 14,
+    minHeight: 80,
+  },
+  cardFlag:  { marginRight: 14 },
+  cardInfo:  { flex: 1, gap: 2 },
+  cardName:  { fontSize: 16, fontWeight: '600', letterSpacing: -0.2 },
+  cardSub:   { fontSize: 13 },
+  cardArrow: { fontSize: 22, paddingHorizontal: 10, fontWeight: '300' },
 
-  // Coming soon
-  comingSoon: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: 40 },
-  comingSoonIcon:  { fontSize: 64, marginBottom: 16 },
-  comingSoonTitle: { fontSize: 20, fontWeight: '700', color: Colors.text.primary, marginBottom: 10 },
-  comingSoonSub:   { fontSize: 15, color: Colors.text.secondary, textAlign: 'center', lineHeight: 24 },
+  // Metro pills
+  metroRow:     { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
+  metroPill:    { borderRadius: Radius.full, paddingVertical: 3, paddingHorizontal: 9, borderWidth: 0.5 },
+  metroPillText:{ fontSize: 11, fontWeight: '600' },
 
-  // GPS banner — estilo Uber, compacto
+  // Favorito
+  // Corazón — Ionicons vector, nunca se recorta
+  favBtn: { paddingHorizontal: 10, paddingVertical: 8, flexShrink: 0 },
+
+  // Empty state
+  empty:      { alignItems: 'center', paddingVertical: 72, paddingHorizontal: 40 },
+  emptyIcon:  { fontSize: 56, marginBottom: 18 },
+  emptyTitle: { fontSize: 19, fontWeight: '600', marginBottom: 8, letterSpacing: -0.3 },
+  emptySub:   { fontSize: 14, textAlign: 'center', lineHeight: 22 },
+
+  // GPS banner
   gpsBanner: {
     flexDirection: 'row', alignItems: 'center',
     marginHorizontal: 12, marginBottom: 4,
-    backgroundColor: '#1C1525',
-    borderRadius: Radius.xl, padding: 10,
-    borderWidth: 1, borderColor: 'rgba(124,58,237,0.25)',
+    borderRadius: Radius.xl, padding: 10, borderWidth: 0.5,
     gap: 10,
   },
   gpsPinWrap: {
-    width: 38, height: 38,
-    backgroundColor: Colors.brand.primary,
-    borderRadius: Radius.md,
-    alignItems: 'center', justifyContent: 'center',
-    flexShrink: 0,
+    width: 40, height: 40, borderRadius: Radius.md,
+    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
   },
-  gpsPinIcon:     { fontSize: 18 },
-  gpsBannerLeft:  { flex: 1, overflow: 'hidden' },
-  gpsBannerTitle: { fontSize: 12, fontWeight: '700', color: Colors.text.primary, marginBottom: 1 },
-  gpsBannerSub:   { fontSize: 11, color: Colors.text.secondary },
+  gpsPinIcon:    { fontSize: 20 },
+  gpsBannerInfo: { flex: 1, overflow: 'hidden' },
+  gpsBannerTitle:{ fontSize: 12, fontWeight: '700', marginBottom: 2 },
+  gpsBannerSub:  { fontSize: 11, lineHeight: 15 },
   gpsBtn: {
-    backgroundColor: Colors.brand.primary,
-    borderRadius: 50,
+    borderRadius: Radius.full,
     paddingVertical: 11, paddingHorizontal: 14,
-    alignItems: 'center', justifyContent: 'center',
-    flexShrink: 0,
+    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
   },
-  gpsBtnText: { fontSize: 12, fontWeight: '700', color: Colors.text.primary },
+  gpsBtnText: { fontSize: 12, fontWeight: '700', color: '#fff' },
 });

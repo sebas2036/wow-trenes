@@ -1,237 +1,200 @@
 /**
  * WoW TRENES — Design System
- * Filosofía: Cero Fricción · Alto Contraste · WCAG 2.2 Level AAA (≥7:1)
- * Estética: negro profundo, gradientes cinematográficos, acento violeta/índigo
+ * Soporta modo oscuro y claro automático según configuración del sistema.
  */
 
-// ─── COLOR PALETTE ──────────────────────────────────────────────────────────
-export const Colors = {
-  // Backgrounds — deep blacks / dark navy
+import type { ColorSchemeName } from 'react-native';
+
+// ─── PALETA OSCURA — Apple Dark (default) ────────────────────────────────────
+const DarkColors = {
   bg: {
-    base:    '#09090B', // zinc-950
-    surface: '#111113', // card background
-    elevated:'#18181B', // zinc-900
-    overlay: '#27272A', // zinc-800
+    base:      '#000000',          // systemBackground dark
+    surface:   '#1C1C1E',          // secondarySystemBackground dark
+    elevated:  '#2C2C2E',          // tertiarySystemBackground dark
+    overlay:   '#3A3A3C',
+    card:      '#1C1C1E',          // card surface
+    tabBar:    'rgba(28,28,30,0.92)',
+    gpsBanner: '#1C1C1E',
   },
-
-  // Brand — violet to indigo gradient anchor
   brand: {
-    primary:   '#7C3AED', // violet-600
-    secondary: '#6D28D9', // violet-700
-    accent:    '#4F46E5', // indigo-600
-    glow:      '#8B5CF6', // violet-500 (for shadow/glow effects)
+    primary:   '#8B5CF6',          // ligeramente más brillante en dark
+    secondary: '#7C3AED',
+    accent:    '#A78BFA',
+    glow:      '#A78BFA',
   },
-
-  // Semantic status — predictive clock colors
   status: {
-    safe:    '#22C55E', // green-500  — Llegas bien
-    warn:    '#EAB308', // yellow-500 — Al límite
-    danger:  '#EF4444', // red-500    — Tren perdido
-    neutral: '#71717A', // zinc-500
+    safe:    '#30D158',            // Apple green dark
+    warn:    '#FFD60A',            // Apple yellow dark
+    danger:  '#FF453A',            // Apple red dark
+    neutral: '#8E8E93',
   },
-
-  // Text — ensures ≥7:1 ratio on bg.base (WCAG AAA)
   text: {
-    primary:   '#FAFAFA', // zinc-50   — 18.7:1 on bg.base
-    secondary: '#A1A1AA', // zinc-400  — 7.2:1  on bg.base
-    muted:     '#71717A', // zinc-500  — 4.6:1  on bg.base (body only)
-    inverse:   '#09090B',
-    brand:     '#C4B5FD', // violet-300 on dark
+    primary:   '#FFFFFF',
+    secondary: 'rgba(235,235,245,0.60)',   // Apple label secondary dark
+    muted:     'rgba(235,235,245,0.30)',
+    inverse:   '#000000',
+    brand:     '#C4B5FD',
   },
-
-  // Borders
   border: {
-    subtle:  'rgba(255,255,255,0.06)',
-    default: 'rgba(255,255,255,0.10)',
-    strong:  'rgba(255,255,255,0.20)',
+    subtle:  'rgba(255,255,255,0.05)',
+    default: 'rgba(255,255,255,0.09)',
+    strong:  'rgba(255,255,255,0.18)',
+    card:    'rgba(255,255,255,0.08)',
   },
-
-  // Pure
+  shadow: {
+    color:   '#000000',
+    opacity:  0.28,
+    radius:   16,
+  },
   white: '#FFFFFF',
   black: '#000000',
   transparent: 'transparent',
 } as const;
 
+// ─── PALETA CLARA — Apple Light ───────────────────────────────────────────────
+const LightColors = {
+  bg: {
+    base:      '#F2F2F7',          // systemGroupedBackground light
+    surface:   '#FFFFFF',          // secondarySystemGroupedBackground
+    elevated:  '#E5E5EA',          // tertiarySystemGroupedBackground
+    overlay:   '#D1D1D6',
+    card:      '#FFFFFF',
+    tabBar:    'rgba(255,255,255,0.92)',
+    gpsBanner: '#F2F2F7',
+  },
+  brand: {
+    primary:   '#7C3AED',
+    secondary: '#6D28D9',
+    accent:    '#5B21B6',
+    glow:      '#7C3AED',
+  },
+  status: {
+    safe:    '#34C759',            // Apple green light
+    warn:    '#FF9F0A',            // Apple orange light
+    danger:  '#FF3B30',            // Apple red light
+    neutral: '#8E8E93',
+  },
+  text: {
+    primary:   '#000000',
+    secondary: 'rgba(60,60,67,0.60)',     // Apple label secondary light
+    muted:     'rgba(60,60,67,0.30)',
+    inverse:   '#FFFFFF',
+    brand:     '#6D28D9',
+  },
+  border: {
+    subtle:  'rgba(0,0,0,0.04)',
+    default: 'rgba(0,0,0,0.08)',
+    strong:  'rgba(0,0,0,0.16)',
+    card:    'rgba(0,0,0,0.06)',
+  },
+  shadow: {
+    color:   '#000000',
+    opacity:  0.06,
+    radius:   16,
+  },
+  white: '#FFFFFF',
+  black: '#000000',
+  transparent: 'transparent',
+} as const;
+
+// ─── FUNCIÓN PRINCIPAL ────────────────────────────────────────────────────────
+export type AppColors = typeof DarkColors;
+
+export function getColors(scheme: ColorSchemeName): AppColors {
+  return scheme === 'light' ? LightColors : DarkColors;
+}
+
+// Exportación de compatibilidad (dark por defecto — solo para StyleSheet estáticos)
+export const Colors = DarkColors;
+
 // ─── GRADIENTS ───────────────────────────────────────────────────────────────
 export const Gradients = {
-  // Card overlay — bottom scrim, ensures 7:1+ on any image
   cardScrim: ['transparent', 'rgba(9,9,11,0.55)', 'rgba(9,9,11,0.92)', '#09090B'] as string[],
   cardScrimLocations: [0, 0.35, 0.75, 1] as number[],
-
-  // Hero gradient top bar
   heroTop: ['rgba(9,9,11,0.85)', 'transparent'] as string[],
-
-  // Brand gradient — button, highlights
   brand: ['#7C3AED', '#4F46E5'] as string[],
   brandVertical: ['#8B5CF6', '#7C3AED', '#6D28D9'] as string[],
-
-  // Status gradients
   safe:   ['rgba(34,197,94,0.15)', 'rgba(34,197,94,0)'] as string[],
   warn:   ['rgba(234,179,8,0.15)',  'rgba(234,179,8,0)'] as string[],
   danger: ['rgba(239,68,68,0.15)', 'rgba(239,68,68,0)'] as string[],
 } as const;
 
-// ─── TYPOGRAPHY ──────────────────────────────────────────────────────────────
+// ─── TYPOGRAPHY ───────────────────────────────────────────────────────────────
 export const Typography = {
-  // Font families (system fonts — no extra loading)
-  family: {
-    regular: 'System',
-    bold:    'System',
-  },
-
-  // Scale (rem-equivalent, base 16px)
-  size: {
-    xs:   11,
-    sm:   13,
-    base: 16,
-    md:   18,
-    lg:   22,
-    xl:   28,
-    '2xl':36,
-    '3xl':48,
-  },
-
+  family: { regular: 'System', bold: 'System' },
+  size: { xs: 11, sm: 13, base: 16, md: 18, lg: 22, xl: 28, '2xl': 36, '3xl': 48 },
   weight: {
-    regular: '400' as const,
-    medium:  '500' as const,
-    semibold:'600' as const,
-    bold:    '700' as const,
-    heavy:   '800' as const,
-    black:   '900' as const,
+    regular: '400' as const, medium: '500' as const, semibold: '600' as const,
+    bold: '700' as const, heavy: '800' as const, black: '900' as const,
   },
-
-  lineHeight: {
-    tight:  1.15,
-    normal: 1.45,
-    loose:  1.7,
-  },
+  lineHeight: { tight: 1.15, normal: 1.45, loose: 1.7 },
 } as const;
 
-// ─── SPACING ─────────────────────────────────────────────────────────────────
+// ─── SPACING ──────────────────────────────────────────────────────────────────
 export const Spacing = {
-  '0':   0,
-  '1':   4,
-  '2':   8,
-  '3':   12,
-  '4':   16,
-  '5':   20,
-  '6':   24,
-  '8':   32,
-  '10':  40,
-  '12':  48,
-  '16':  64,
-  '20':  80,
+  '0': 0, '1': 4, '2': 8, '3': 12, '4': 16, '5': 20,
+  '6': 24, '8': 32, '10': 40, '12': 48, '16': 64, '20': 80,
 } as const;
 
-// ─── BORDER RADIUS ───────────────────────────────────────────────────────────
+// ─── BORDER RADIUS ────────────────────────────────────────────────────────────
 export const Radius = {
-  sm:   8,
-  md:   12,
-  lg:   18,
-  xl:   24,
-  '2xl':32,
-  full: 9999,
+  sm: 8, md: 12, lg: 16, xl: 20, '2xl': 28, full: 9999,
 } as const;
 
-// ─── SHADOWS ─────────────────────────────────────────────────────────────────
+// ─── SHADOWS — Apple-style (soft, layered) ────────────────────────────────────
 export const Shadows = {
-  card: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.45,
-    shadowRadius: 24,
-    elevation: 12,
-  },
-  glow: {
-    shadowColor: '#7C3AED',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.55,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  statusSafe: {
-    shadowColor: '#22C55E',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  statusWarn: {
-    shadowColor: '#EAB308',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  statusDanger: {
-    shadowColor: '#EF4444',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
-  },
+  // Card sombra sutil — como Apple Cards
+  card:  { shadowColor: '#000', shadowOffset: { width: 0, height: 2  }, shadowOpacity: 0.07, shadowRadius: 12, elevation: 3  },
+  cardDark: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.30, shadowRadius: 16, elevation: 6 },
+  // Sombra de acento (GPS button, brand elements)
+  glow:  { shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 16, elevation: 8 },
+  // Segmented control shadow
+  segment: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
+  statusSafe:   { shadowColor: '#34C759', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6 },
+  statusWarn:   { shadowColor: '#FF9F0A', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6 },
+  statusDanger: { shadowColor: '#FF3B30', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6 },
 } as const;
 
-// ─── ANIMATION DURATIONS ─────────────────────────────────────────────────────
+// ─── ANIMATION ────────────────────────────────────────────────────────────────
 export const Motion = {
-  fast:    150,
-  normal:  280,
-  slow:    450,
-  spring:  { damping: 18, stiffness: 200, mass: 1 },
+  fast: 150, normal: 280, slow: 450,
+  spring: { damping: 18, stiffness: 200, mass: 1 },
 } as const;
 
-// ─── TOUCH TARGETS (WCAG 2.5.5 — min 44×44pt) ───────────────────────────────
-export const TouchTarget = {
-  min:    44,
-  chip:   48, // Mode chips (Step 2 requirement: ≥48×48)
-  button: 56, // Primary action buttons
-  fab:    64, // GPS CTA / Floating action
-} as const;
+// ─── TOUCH TARGETS ────────────────────────────────────────────────────────────
+export const TouchTarget = { min: 44, chip: 48, button: 56, fab: 64 } as const;
 
-// ─── AFFILIATE CONFIG ────────────────────────────────────────────────────────
+// ─── AFFILIATE CONFIG ─────────────────────────────────────────────────────────
 export const Affiliate = {
-  trackingId:      'WOWTRENES_AFF_001',
-  partnerizeTag:   'p11p',
-  impactSid:       'wow_trenes_sid',
-  commissionMin:   0.02, // 2%
-  commissionMax:   0.05, // 5%
-  merchantOfRecord:'trainline', // delegates PCI-DSS liability
+  trackingId:       'WOWTRENES_AFF_001',
+  partnerizeTag:    'p11p',
+  impactSid:        'wow_trenes_sid',
+  commissionMin:    0.02,
+  commissionMax:    0.05,
+  merchantOfRecord: 'trainline',
 } as const;
 
-// ─── RAIL OPERATOR ENDPOINTS ─────────────────────────────────────────────────
+// ─── RAIL ENDPOINTS ───────────────────────────────────────────────────────────
 export const RailEndpoints = {
-  // Real-time APIs (only active when journey is imminent)
   sncf:         'https://api.sncf.com/v1',
   db:           'https://apis.deutschebahn.com/db-api-marketplace/apis/timetables/v1',
   renfe:        'https://horarios.renfe.com/cer/HorariosServlet',
   trenitalia:   'https://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno',
   ns:           'https://gateway.apiportal.ns.nl/reisinformatie-api/api/v3',
   sbb:          'https://transport.opendata.ch/v1',
-
-  // Affiliate distribution
   trainlineApi: 'https://api.trainline.com/v1',
   railEurope:   'https://api.raileurope.com/v2',
 } as const;
 
-// ─── GEOFENCE RADII (meters) ─────────────────────────────────────────────────
-export const GeofenceRadius = {
-  outer: 1000, // Ring 1 — approaching station (bus/uber)
-  inner: 50,   // Ring 2 — station entrance / turnstile
-} as const;
+// ─── GEOFENCE RADII ───────────────────────────────────────────────────────────
+export const GeofenceRadius = { outer: 1000, inner: 50 } as const;
 
-// ─── CONSOLIDATED THEME EXPORT ───────────────────────────────────────────────
+// ─── CONSOLIDATED THEME ───────────────────────────────────────────────────────
 export const Theme = {
-  colors:    Colors,
-  gradients: Gradients,
-  typography:Typography,
-  spacing:   Spacing,
-  radius:    Radius,
-  shadows:   Shadows,
-  motion:    Motion,
-  touch:     TouchTarget,
-  affiliate: Affiliate,
-  rail:      RailEndpoints,
-  geofence:  GeofenceRadius,
+  colors: Colors, gradients: Gradients, typography: Typography,
+  spacing: Spacing, radius: Radius, shadows: Shadows,
+  motion: Motion, touch: TouchTarget, affiliate: Affiliate,
+  rail: RailEndpoints, geofence: GeofenceRadius,
 } as const;
 
 export type Theme = typeof Theme;

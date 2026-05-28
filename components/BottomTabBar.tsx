@@ -1,21 +1,30 @@
 /**
  * WoW TRENES — Bottom Tab Bar
- * Navegación fija en la parte inferior de la pantalla.
+ * Íconos vectoriales Ionicons. Tema claro/oscuro automático.
  */
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { Colors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 export type TabName = 'inicio' | 'salidas' | 'traducir' | 'ajustes';
 
-const TABS: { name: TabName; label: string; icon: string; path: string }[] = [
-  { name: 'inicio',   label: 'Inicio',   icon: '⊞',  path: '/'        },
-  { name: 'salidas',  label: 'Salidas',  icon: '🚆', path: '/salidas' },
-  { name: 'traducir', label: 'Traducir', icon: '◎',  path: '/'        },
-  { name: 'ajustes',  label: 'Ajustes',  icon: '⚙',  path: '/ajustes' },
+interface TabConfig {
+  name:       TabName;
+  label:      string;
+  icon:       keyof typeof Ionicons.glyphMap;
+  iconActive: keyof typeof Ionicons.glyphMap;
+  path:       string;
+}
+
+const TABS: TabConfig[] = [
+  { name: 'inicio',   label: 'Inicio',   icon: 'home-outline',     iconActive: 'home',          path: '/'        },
+  { name: 'salidas',  label: 'Salidas',  icon: 'train-outline',    iconActive: 'train',         path: '/salidas' },
+  { name: 'traducir', label: 'Traducir', icon: 'language-outline',  iconActive: 'language',      path: '/'        },
+  { name: 'ajustes',  label: 'Ajustes',  icon: 'settings-outline',  iconActive: 'settings',      path: '/ajustes' },
 ];
 
 interface Props {
@@ -26,8 +35,9 @@ interface Props {
 export default function BottomTabBar({ active, onTranslatePress }: Props) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
 
-  const handlePress = (tab: typeof TABS[0]) => {
+  const handlePress = (tab: TabConfig) => {
     Haptics.selectionAsync();
     if (tab.name === 'traducir') { onTranslatePress?.(); return; }
     if (tab.name === active) return;
@@ -35,9 +45,18 @@ export default function BottomTabBar({ active, onTranslatePress }: Props) {
   };
 
   return (
-    <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+    <View style={[
+      styles.bar,
+      {
+        backgroundColor: colors.bg.tabBar,
+        borderTopColor:  colors.border.subtle,
+        paddingBottom:   Math.max(insets.bottom, 8),
+      },
+    ]}>
       {TABS.map((tab) => {
         const isActive = tab.name === active;
+        const iconName = isActive ? tab.iconActive : tab.icon;
+        const iconColor = isActive ? colors.brand.primary : colors.text.muted;
         return (
           <Pressable
             key={tab.name}
@@ -46,13 +65,9 @@ export default function BottomTabBar({ active, onTranslatePress }: Props) {
             accessibilityRole="button"
             accessibilityLabel={tab.label}
           >
-            <Text style={[styles.icon, isActive && styles.iconActive]}>
-              {tab.icon}
-            </Text>
-            <Text style={[styles.label, isActive && styles.labelActive]}>
-              {tab.label}
-            </Text>
-            {isActive && <View style={styles.activeDot} />}
+            <Ionicons name={iconName} size={24} color={iconColor} />
+            <Text style={[styles.label, { color: iconColor }]}>{tab.label}</Text>
+            {isActive && <View style={[styles.dot, { backgroundColor: colors.brand.primary }]} />}
           </Pressable>
         );
       })}
@@ -62,37 +77,11 @@ export default function BottomTabBar({ active, onTranslatePress }: Props) {
 
 const styles = StyleSheet.create({
   bar: {
-    flexDirection:   'row',
-    backgroundColor: '#111113',
-    borderTopWidth:  1,
-    borderTopColor:  'rgba(255,255,255,0.07)',
-    paddingTop:      10,
+    flexDirection: 'row',
+    borderTopWidth: 0.5,
+    paddingTop: 10,
   },
-  tab: {
-    flex:           1,
-    alignItems:     'center',
-    gap:            3,
-  },
-  icon: {
-    fontSize:  20,
-    color:     Colors.text.muted,
-  },
-  iconActive: {
-    color: Colors.brand.glow,
-  },
-  label: {
-    fontSize:   10,
-    color:      Colors.text.muted,
-    fontWeight: '500',
-  },
-  labelActive: {
-    color: Colors.brand.glow,
-  },
-  activeDot: {
-    width:           4,
-    height:          4,
-    borderRadius:    2,
-    backgroundColor: Colors.brand.glow,
-    marginTop:       2,
-  },
+  tab:   { flex: 1, alignItems: 'center', gap: 3 },
+  label: { fontSize: 10, fontWeight: '500', letterSpacing: 0.1 },
+  dot:   { width: 4, height: 4, borderRadius: 2, marginTop: 1 },
 });

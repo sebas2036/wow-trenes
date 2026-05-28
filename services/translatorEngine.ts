@@ -19,8 +19,21 @@
 import type { AppLanguage } from '../types';
 import { getLanguage } from './i18n';
 
-const LIBRE_TRANSLATE_URL = 'https://libretranslate.com/translate';
+// MyMemory — 100% gratis, sin API key, 1000 palabras/día por IP (suficiente para MVP)
+// Docs: https://mymemory.translated.net/doc/spec.php
+const MYMEMORY_URL = 'https://api.mymemory.translated.net/get';
 const TIMEOUT_MS = 8_000;
+
+// ── Auto-detección de idioma por rangos Unicode ───────────────────────────────
+function detectScriptLanguage(text: string): string {
+  if (/[぀-ゟ゠-ヿ]/.test(text)) return 'ja'; // hiragana / katakana → japonés
+  if (/[가-힯ᄀ-ᇿ]/.test(text)) return 'ko'; // hangul → coreano
+  if (/[一-鿿㐀-䶿]/.test(text)) return 'zh'; // CJK → chino (sin kana)
+  if (/[؀-ۿ]/.test(text))               return 'ar'; // árabe
+  if (/[Ѐ-ӿ]/.test(text))               return 'ru'; // cirílico
+  if (/[ऀ-ॿ]/.test(text))               return 'hi'; // devanagari
+  return 'en'; // fallback: latín → asume inglés
+}
 
 // ── Frases ferroviarias offline ───────────────────────────────────────────────
 // Claves: `{sourceLang}:{texto en minúsculas}` → traducción al inglés (puente)
@@ -245,34 +258,34 @@ function lookupOffline(text: string, targetLang: AppLanguage): TranslationResult
   return null;
 }
 
-// ── LibreTranslate API ────────────────────────────────────────────────────────
+// ── MyMemory API (gratis, sin clave, soporta CJK) ────────────────────────────
 async function translateViaApi(
   text:       string,
   targetLang: AppLanguage,
   sourceLang: string = 'auto',
 ): Promise<TranslationResult | null> {
   try {
-    const res = await fetch(LIBRE_TRANSLATE_URL, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({
-        q:      text,
-        source: sourceLang,
-        target: targetLang,
-        format: 'text',
-      }),
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-    });
+    // MyMemory no soporta 'auto' — detectamos el script nosotros
+    const detectedSource = sourceLang === 'auto' ? detectScriptLanguage(text) : sourceLang;
+    const langpair = `${detectedSource}|${targetLang}`;
+
+    const url = `${MYMEMORY_URL}?q=${encodeURIComponent(text)}&langpair=${encodeURIComponent(langpair)}`;
+    const res  = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
 
     if (!res.ok) return null;
 
     const json = await res.json();
-    if (!json?.translatedText) return null;
+    // responseStatus 200 = OK, 429 = rate limit
+    if (json.responseStatus !== 200 || !json.responseData?.translatedText) return null;
+
+    const translated = json.responseData.translatedText as string;
+    // MyMemory a veces devuelve el texto original si no pudo traducir
+    if (translated.toLowerCase() === text.toLowerCase()) return null;
 
     return {
       originalText:   text,
-      translatedText: json.translatedText,
-      detectedLang:   json.detectedLanguage?.language ?? null,
+      translatedText: translated,
+      detectedLang:   detectedSource,
       source:         'api',
       confidence:     'high',
     };
