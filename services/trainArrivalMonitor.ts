@@ -21,6 +21,7 @@
  */
 import * as Notifications from 'expo-notifications';
 import type { TrainService } from '../types';
+import { emitToApp } from './notificationBridge';
 
 // ── Configuración ─────────────────────────────────────────────────────────
 const POLL_INTERVAL_MS  = 20_000; // 20 segundos
@@ -185,11 +186,13 @@ async function sendPlatformArrivalAlert(service: TrainService, minutes: number):
   const dep = service.departureTime.toLocaleTimeString('es-ES', {
     hour: '2-digit', minute: '2-digit',
   });
+  const title = `Tu tren llega al andén ${service.platform ?? ''} ¡YA!`;
+  const body  = `${service.operator.toUpperCase()} ${service.trainNumber} → ${service.destination.name} · Sale a las ${dep} · Tenés ~${Math.ceil(minutes)} min`;
 
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: `🚄 Tu tren llega al andén ${service.platform ?? ''} ¡YA!`,
-      body:  `${service.operator.toUpperCase()} ${service.trainNumber} → ${service.destination.name} · Sale a las ${dep} · Tenés ~${Math.ceil(minutes)} min`,
+      title: `🚄 ${title}`,
+      body,
       data:  { type: 'platform_arrival', serviceId: service.serviceId },
       sound: 'default',
       priority: Notifications.AndroidNotificationPriority.MAX,
@@ -197,6 +200,9 @@ async function sendPlatformArrivalAlert(service: TrainService, minutes: number):
     },
     trigger: null,
   });
+
+  // ── In-app bell ──────────────────────────────────────────────────────────
+  emitToApp({ type: 'arrival', title, body, icon: 'train-outline' });
 }
 
 // ── API pública ────────────────────────────────────────────────────────────

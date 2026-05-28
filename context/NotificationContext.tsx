@@ -15,8 +15,9 @@
  * addNotification() y la campanita actualiza su badge automáticamente.
  */
 import React, {
-  createContext, useContext, useState, useCallback, useRef,
+  createContext, useContext, useState, useCallback, useRef, useEffect,
 } from 'react';
+import { subscribeToNotifications } from '../services/notificationBridge';
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 export type NotifType = 'delay' | 'lastTrain' | 'geofence' | 'arrival' | 'info';
@@ -108,6 +109,12 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     },
     [],
   );
+
+  // ── Bridge: escuchar eventos de geofenceTask y trainArrivalMonitor ────────
+  useEffect(() => {
+    const unsub = subscribeToNotifications((n) => addNotification(n));
+    return unsub;
+  }, [addNotification]);
 
   const markAllRead = useCallback(() => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));

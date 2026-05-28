@@ -31,6 +31,8 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { Colors, Typography, Spacing, Radius, Shadows } from '../theme';
+import { useTheme } from '../context/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
 import TrainCountdown    from '../components/TrainCountdown';
 import ModeChip          from '../components/ModeChip';
 import AffiliateWebView  from '../components/AffiliateWebView';
@@ -103,7 +105,7 @@ function PurchaseSuccessBanner({
 }) {
   return (
     <Animated.View entering={FadeIn.duration(400)} exiting={FadeOut.duration(300)} style={styles.successBanner}>
-      <Text style={styles.successEmoji}>🎉</Text>
+      <Ionicons name="checkmark-circle" size={28} color="#30D158" style={{ marginTop: 2 }} />
       <View style={{ flex: 1 }}>
         <Text style={styles.successTitle}>¡Billete confirmado!</Text>
         <Text style={styles.successSub} numberOfLines={1}>
@@ -114,7 +116,7 @@ function PurchaseSuccessBanner({
         </Text>
       </View>
       <Pressable onPress={onDismiss} style={styles.successClose} accessibilityLabel="Cerrar">
-        <Text style={styles.successCloseText}>✕</Text>
+        <Ionicons name="close" size={16} color="rgba(235,235,245,0.60)" />
       </Pressable>
     </Animated.View>
   );
@@ -212,21 +214,22 @@ const liveStyles = StyleSheet.create({
 
 // ── Delay badge en el mapa ────────────────────────────────────────────────────
 function DelayBadge({ minutes, isLive }: { minutes: number; isLive: boolean }) {
+  const { colors } = useTheme();
   if (minutes === 0 && isLive) return null;
 
   const color = minutes > 10
-    ? Colors.status.danger
+    ? colors.status.danger
     : minutes > 3
-      ? Colors.status.warn
-      : Colors.status.safe;
+      ? colors.status.warn
+      : colors.status.safe;
 
   return (
-    <View style={delayStyles.badge}>
-      <View style={[delayStyles.dot, { backgroundColor: isLive ? '#3B82F6' : Colors.text.muted }]} />
+    <View style={[delayStyles.badge, { borderColor: colors.border.default }]}>
+      <View style={[delayStyles.dot, { backgroundColor: isLive ? '#3B82F6' : colors.text.muted }]} />
       <Text style={[delayStyles.text, { color }]}>
         {minutes > 0 ? `+${minutes} min` : 'En hora'}
       </Text>
-      {!isLive && <Text style={delayStyles.estimated}>est.</Text>}
+      {!isLive && <Text style={[delayStyles.estimated, { color: colors.text.muted }]}>est.</Text>}
     </View>
   );
 }
@@ -244,7 +247,7 @@ const delayStyles = StyleSheet.create({
     borderRadius:     Radius.full,
     backgroundColor:  'rgba(9,9,11,0.85)',
     borderWidth:      1,
-    borderColor:      Colors.border.default,
+    borderColor:      'rgba(255,255,255,0.09)',
   },
   dot: {
     width:        6,
@@ -258,7 +261,7 @@ const delayStyles = StyleSheet.create({
   },
   estimated: {
     fontSize: Typography.size.xs,
-    color:    Colors.text.muted,
+    color:    'rgba(235,235,245,0.30)',
   },
 });
 
@@ -276,6 +279,7 @@ export default function SplitScreen() {
     metroCity?:       string;   // Ciudad de metro urbano (e.g. "New York", "Madrid")
   }>();
   const router     = useRouter();
+  const { colors } = useTheme();
   const mapRef     = useRef<MapView>(null);
   const isTourist  = params.mode === 'tourist';
   // Modo metro: país con código de ciudad (US_NYC, ES_MAD, ES_BCN…)
@@ -544,9 +548,10 @@ export default function SplitScreen() {
 
           {/* Origin station pill */}
           {selectedStation && (
-            <View style={styles.stationPill}>
-              <Text style={styles.stationPillText} numberOfLines={1}>
-                📍 {selectedStation.name}
+            <View style={[styles.stationPill, { backgroundColor: colors.bg.elevated, borderColor: colors.border.default }]}>
+              <Ionicons name="location-outline" size={12} color={colors.brand.primary} />
+              <Text style={[styles.stationPillText, { color: colors.text.primary }]} numberOfLines={1}>
+                {selectedStation.name}
               </Text>
             </View>
           )}
@@ -561,14 +566,17 @@ export default function SplitScreen() {
           <Animated.View
             entering={FadeIn.duration(300)}
             exiting={FadeOut.duration(200)}
-            style={styles.destSearchWrap}
+            style={[styles.destSearchWrap, { backgroundColor: colors.bg.surface, borderBottomColor: colors.border.subtle }]}
           >
             <View style={styles.destSearchHeader}>
-              <Text style={styles.destSearchTitle}>
-                🚇 {params.metroCity}
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Ionicons name="subway-outline" size={14} color={colors.text.primary} />
+                <Text style={[styles.destSearchTitle, { color: colors.text.primary }]}>
+                  {params.metroCity}
+                </Text>
+              </View>
               <Pressable onPress={() => setShowDestSearch(false)} hitSlop={8}>
-                <Text style={styles.destSearchClose}>✕</Text>
+                <Ionicons name="close" size={16} color={colors.text.secondary} />
               </Pressable>
             </View>
             <DestinationSearch
@@ -582,19 +590,22 @@ export default function SplitScreen() {
         {/* ── Botón "¿A dónde vas?" para reabrir el buscador ── */}
         {isMetro && !showDestSearch && (
           <Pressable
-            style={styles.reopenSearchBtn}
+            style={[styles.reopenSearchBtn, { backgroundColor: colors.bg.elevated, borderColor: colors.border.default }]}
             onPress={() => setShowDestSearch(true)}
           >
-            <Text style={styles.reopenSearchIcon}>🔍</Text>
-            <Text style={styles.reopenSearchText} numberOfLines={1}>
+            <Ionicons name="search-outline" size={13} color={colors.text.secondary} />
+            <Text style={[styles.reopenSearchText, { color: colors.text.secondary }]} numberOfLines={1}>
               {destStation
                 ? `Destino: ${destStation.name}`
                 : `¿A dónde vas en ${params.metroCity}?`}
             </Text>
             {destStation && searchedDestWalk > 0 && (
-              <Text style={styles.reopenSearchWalk}>
-                🚶 {searchedDestWalk} min
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                <Ionicons name="walk-outline" size={12} color={colors.brand.primary} />
+                <Text style={[styles.reopenSearchWalk, { color: colors.brand.primary }]}>
+                  {searchedDestWalk} min
+                </Text>
+              </View>
             )}
           </Pressable>
         )}
@@ -602,8 +613,9 @@ export default function SplitScreen() {
         {/* Destination strip (tourist mode only) */}
         {isTourist && destLabel && (
           <View style={styles.destStrip}>
-            <Text style={styles.destStripLabel}>DESTINO</Text>
-            <Text style={styles.destStripName} numberOfLines={1}>🏛️ {destLabel}</Text>
+            <Text style={[styles.destStripLabel, { color: colors.status.safe }]}>DESTINO</Text>
+            <Ionicons name="business-outline" size={13} color={colors.status.safe} />
+            <Text style={[styles.destStripName, { color: colors.text.primary }]} numberOfLines={1}>{destLabel}</Text>
           </View>
         )}
 
@@ -651,7 +663,7 @@ export default function SplitScreen() {
           {routePolyline.length > 1 && (
             <Polyline
               coordinates={routePolyline}
-              strokeColor={Colors.brand.primary}
+              strokeColor={colors.brand.primary}
               strokeWidth={4}
               lineDashPattern={transportMode === 'walk' ? [8, 6] : undefined}
             />
@@ -663,7 +675,7 @@ export default function SplitScreen() {
               coordinate={selectedStation.coordinates}
               title={selectedStation.name}
               description="Estación de origen"
-              pinColor={Colors.brand.glow}
+              pinColor="#C4B5FD"
             />
           )}
 
@@ -673,7 +685,7 @@ export default function SplitScreen() {
               coordinate={destStation.coordinates}
               title={destLabel ?? destStation.name}
               description="Tu destino"
-              pinColor={Colors.status.safe}
+              pinColor="#30D158"
             />
           )}
 
@@ -738,14 +750,14 @@ export default function SplitScreen() {
 const styles = StyleSheet.create({
   root: {
     flex:            1,
-    backgroundColor: Colors.bg.base,
+    backgroundColor: '#000000',
   },
 
   // Upper 50%
   topHalf: {
     height:            HALF_H,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border.subtle,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
   },
   topNav: {
     flexDirection:    'row',
@@ -763,21 +775,21 @@ const styles = StyleSheet.create({
   },
   backText: {
     fontSize:   Typography.size.md,
-    color:      Colors.text.brand,
+    color:      '#C4B5FD',
     fontWeight: Typography.weight.semibold,
   },
   stationPill: {
     flex:              1,
     paddingVertical:   Spacing['2'],
     paddingHorizontal: Spacing['3'],
-    backgroundColor:   Colors.bg.elevated,
+    backgroundColor:   '#2C2C2E',
     borderRadius:      Radius.full,
     borderWidth:       1,
-    borderColor:       Colors.border.default,
+    borderColor:       'rgba(255,255,255,0.09)',
   },
   stationPillText: {
     fontSize:   Typography.size.sm,
-    color:      Colors.text.primary,
+    color:      '#FFFFFF',
     fontWeight: Typography.weight.medium,
     textAlign:  'center',
   },
@@ -789,7 +801,7 @@ const styles = StyleSheet.create({
   },
   refreshText: {
     fontSize: Typography.size.xl,
-    color:    Colors.text.secondary,
+    color:    'rgba(235,235,245,0.60)',
   },
 
   // Buscador de dirección (metro mode)
@@ -797,9 +809,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing['4'],
     paddingBottom:     Spacing['2'],
     gap:               Spacing['2'],
-    backgroundColor:   Colors.bg.surface,
+    backgroundColor:   '#1C1C1E',
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border.subtle,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
   },
   destSearchHeader: {
     flexDirection:  'row',
@@ -809,11 +821,11 @@ const styles = StyleSheet.create({
   destSearchTitle: {
     fontSize:   Typography.size.sm,
     fontWeight: Typography.weight.bold,
-    color:      Colors.text.primary,
+    color:      '#FFFFFF',
   },
   destSearchClose: {
     fontSize: Typography.size.sm,
-    color:    Colors.text.secondary,
+    color:    'rgba(235,235,245,0.60)',
     padding:  Spacing['1'],
   },
 
@@ -826,20 +838,20 @@ const styles = StyleSheet.create({
     marginBottom:      Spacing['2'],
     paddingVertical:   Spacing['2'],
     paddingHorizontal: Spacing['3'],
-    backgroundColor:   Colors.bg.elevated,
+    backgroundColor:   '#2C2C2E',
     borderRadius:      Radius.lg,
     borderWidth:       1,
-    borderColor:       Colors.border.default,
+    borderColor:       'rgba(255,255,255,0.09)',
   },
   reopenSearchIcon: { fontSize: 13 },
   reopenSearchText: {
     flex:       1,
     fontSize:   Typography.size.xs,
-    color:      Colors.text.secondary,
+    color:      'rgba(235,235,245,0.60)',
   },
   reopenSearchWalk: {
     fontSize:   Typography.size.xs,
-    color:      Colors.text.brand,
+    color:      '#C4B5FD',
     fontWeight: Typography.weight.semibold,
   },
 
@@ -857,14 +869,14 @@ const styles = StyleSheet.create({
   destStripLabel: {
     fontSize:     Typography.size.xs,
     fontWeight:   Typography.weight.bold,
-    color:        Colors.status.safe,
+    color:        '#30D158',
     letterSpacing:1.5,
   },
   destStripName: {
     flex:       1,
     fontSize:   Typography.size.sm,
     fontWeight: Typography.weight.semibold,
-    color:      Colors.text.primary,
+    color:      '#FFFFFF',
   },
 
   // Divider
@@ -874,17 +886,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing['4'],
     paddingVertical:   Spacing['1'],
     gap:               Spacing['2'],
-    backgroundColor:   Colors.bg.surface,
+    backgroundColor:   '#1C1C1E',
   },
   dividerLine: {
     flex:            1,
     height:          1,
-    backgroundColor: Colors.border.subtle,
+    backgroundColor: 'rgba(255,255,255,0.05)',
   },
   dividerLabel: {
     fontSize:     Typography.size.xs,
     fontWeight:   Typography.weight.bold,
-    color:        Colors.text.muted,
+    color:        'rgba(235,235,245,0.30)',
     letterSpacing:2,
   },
 
@@ -908,30 +920,26 @@ const styles = StyleSheet.create({
     gap:              Spacing['3'],
     padding:          Spacing['4'],
     paddingBottom:    Platform.select({ ios: 34, android: 20 }),
-    backgroundColor:  Colors.bg.elevated,
+    backgroundColor:  '#2C2C2E',
     borderTopWidth:   1,
-    borderTopColor:   Colors.status.safe,
+    borderTopColor:   '#30D158',
     ...Shadows.card,
-  },
-  successEmoji: {
-    fontSize: 28,
-    marginTop: 2,
   },
   successTitle: {
     fontSize:   Typography.size.md,
     fontWeight: Typography.weight.bold,
-    color:      Colors.text.primary,
+    color:      '#FFFFFF',
     marginBottom: 2,
   },
   successSub: {
     fontSize:   Typography.size.sm,
-    color:      Colors.text.brand,
+    color:      '#C4B5FD',
     fontWeight: Typography.weight.semibold,
     marginBottom: 4,
   },
   successHint: {
     fontSize: Typography.size.xs,
-    color:    Colors.text.secondary,
+    color:    'rgba(235,235,245,0.60)',
     lineHeight: 16,
   },
   successClose: {
@@ -940,10 +948,6 @@ const styles = StyleSheet.create({
     alignItems:     'center',
     justifyContent: 'center',
     borderRadius:   Radius.full,
-    backgroundColor: Colors.bg.overlay,
-  },
-  successCloseText: {
-    fontSize: Typography.size.sm,
-    color:    Colors.text.secondary,
+    backgroundColor: 'rgba(0,0,0,0.6)',
   },
 });

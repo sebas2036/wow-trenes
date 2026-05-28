@@ -1,41 +1,50 @@
 /**
- * WoW TRENES — Favoritos · Tema claro/oscuro automático
+ * WoW TRENES — Favoritos
+ * Mismo lenguaje visual que Home: FlagCircle neumórfico, Ionicons, sin emoji.
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import {
+  View, Text, StyleSheet, Pressable, ScrollView, Platform,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
+import { Ionicons } from '@expo/vector-icons';
 
-import { Radius } from '../theme';
+import { Radius, Shadows } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 import { setActiveCountry } from '../services/gtfsDatabase';
 import BottomTabBar from '../components/BottomTabBar';
 import TranslatorSheet from '../components/TranslatorSheet';
+import FlagCircle from '../components/FlagCircle';
 import type { CountryCode } from '../types';
 
 const STORAGE_KEY = '@wowtrenes_favoritos';
 
-export const ALL_COUNTRIES = [
-  { code: 'ES' as CountryCode, flag: '🇪🇸', icon: '🏟️', name: 'España',       sub: 'AVE · Renfe',       color: '#C0392B' },
-  { code: 'IT' as CountryCode, flag: '🇮🇹', icon: '🏛️', name: 'Italia',        sub: 'Frecciarossa',      color: '#27AE60' },
-  { code: 'FR' as CountryCode, flag: '🇫🇷', icon: '🗼', name: 'Francia',       sub: 'TGV · SNCF',        color: '#2980B9' },
-  { code: 'DE' as CountryCode, flag: '🇩🇪', icon: '🏰', name: 'Alemania',      sub: 'ICE · DB',          color: '#E74C3C' },
-  { code: 'CH' as CountryCode, flag: '🇨🇭', icon: '🏔️', name: 'Suiza',         sub: 'SBB · Glacier',     color: '#DC143C' },
-  { code: 'GB' as CountryCode, flag: '🇬🇧', icon: '🎡', name: 'Reino Unido',   sub: 'Avanti · LNER',     color: '#C0192B' },
-  { code: 'NL' as CountryCode, flag: '🇳🇱', icon: '🌷', name: 'Países Bajos',  sub: 'Intercity · NS',    color: '#E67E22' },
-  { code: 'AT' as CountryCode, flag: '🇦🇹', icon: '🎭', name: 'Austria',       sub: 'Railjet · ÖBB',     color: '#C0392B' },
-  { code: 'NO' as CountryCode, flag: '🇳🇴', icon: '🌊', name: 'Noruega',       sub: 'Bergensbanen',      color: '#003F87' },
-  { code: 'PT' as CountryCode, flag: '🇵🇹', icon: '🏖️', name: 'Portugal',      sub: 'Alfa Pendular',     color: '#27AE60' },
-  { code: 'BE' as CountryCode, flag: '🇧🇪', icon: '🏅', name: 'Bélgica',       sub: 'IC · Thalys',       color: '#F39C12' },
-  { code: 'US' as CountryCode, flag: '🇺🇸', icon: '🗽', name: 'USA',           sub: 'Amtrak',            color: '#1A6BBE' },
-  { code: 'JP' as CountryCode, flag: '🇯🇵', icon: '⛩️', name: 'Japón',         sub: 'Shinkansen',        color: '#E74C3C' },
-  { code: 'US_NYC' as CountryCode, flag: '🇺🇸', icon: '🗽', name: 'New York',     sub: 'MTA Subway',      color: '#1A6BBE' },
-  { code: 'ES_MAD' as CountryCode, flag: '🇪🇸', icon: '🏟️', name: 'Madrid Metro', sub: '13 líneas',      color: '#C0392B' },
-  { code: 'GB_LON' as CountryCode, flag: '🇬🇧', icon: '🎡', name: 'London Tube',  sub: 'TfL · Elizabeth', color: '#C0192B' },
-  { code: 'US_CHI' as CountryCode, flag: '🇺🇸', icon: '🌆', name: 'Chicago',      sub: 'CTA L Train',    color: '#0057A8' },
-  { code: 'US_LAX' as CountryCode, flag: '🇺🇸', icon: '🌴', name: 'Los Angeles',  sub: 'LA Metro Rail',  color: '#7C3AED' },
+function isoFromCode(code: string): string {
+  return code.split('_')[0].toLowerCase();
+}
+
+export const ALL_COUNTRIES: { code: CountryCode; name: string; sub: string }[] = [
+  { code: 'ES',     name: 'España',        sub: 'AVE · Renfe'      },
+  { code: 'IT',     name: 'Italia',         sub: 'Frecciarossa'     },
+  { code: 'FR',     name: 'Francia',        sub: 'TGV · SNCF'       },
+  { code: 'DE',     name: 'Alemania',       sub: 'ICE · DB'         },
+  { code: 'CH',     name: 'Suiza',          sub: 'SBB · Glacier'    },
+  { code: 'GB',     name: 'Reino Unido',    sub: 'Avanti · LNER'    },
+  { code: 'NL',     name: 'Países Bajos',   sub: 'Intercity · NS'   },
+  { code: 'AT',     name: 'Austria',        sub: 'Railjet · ÖBB'    },
+  { code: 'NO',     name: 'Noruega',        sub: 'Bergensbanen'     },
+  { code: 'PT',     name: 'Portugal',       sub: 'Alfa Pendular'    },
+  { code: 'BE',     name: 'Bélgica',        sub: 'IC · Thalys'      },
+  { code: 'US',     name: 'USA',            sub: 'Amtrak'           },
+  { code: 'JP',     name: 'Japón',          sub: 'Shinkansen'       },
+  { code: 'US_NYC', name: 'New York',       sub: 'MTA Subway'       },
+  { code: 'ES_MAD', name: 'Madrid Metro',   sub: '13 líneas · CRTM' },
+  { code: 'GB_LON', name: 'London Tube',    sub: 'TfL · Elizabeth'  },
+  { code: 'US_CHI', name: 'Chicago',        sub: 'CTA L Train'      },
+  { code: 'US_LAX', name: 'Los Angeles',    sub: 'LA Metro Rail'    },
 ];
 
 export async function toggleFavorito(code: CountryCode): Promise<CountryCode[]> {
@@ -52,6 +61,58 @@ export async function getFavoritos(): Promise<CountryCode[]> {
   return raw ? JSON.parse(raw) : [];
 }
 
+// ── Tarjeta de favorito ───────────────────────────────────────────────────────
+function FavCard({
+  country, onPress, onRemove,
+}: {
+  country:  typeof ALL_COUNTRIES[number];
+  onPress:  (code: CountryCode) => void;
+  onRemove: (code: CountryCode) => void;
+}) {
+  const { colors, isDark } = useTheme();
+  const shadowStyle = Platform.OS === 'ios'
+    ? (isDark ? Shadows.cardDark : Shadows.card)
+    : { elevation: 2 };
+
+  return (
+    <View style={[styles.cardShadow, shadowStyle, {
+      backgroundColor: colors.bg.card, borderRadius: Radius.lg,
+    }]}>
+      <Pressable
+        style={({ pressed }) => [
+          styles.card,
+          { backgroundColor: colors.bg.card, borderColor: colors.border.card },
+          pressed && { opacity: 0.88, transform: [{ scale: 0.982 }] },
+        ]}
+        onPress={() => onPress(country.code)}
+      >
+        <View style={styles.cardFlag}>
+          <FlagCircle countryCode={isoFromCode(country.code)} size="lg" />
+        </View>
+
+        <View style={styles.cardInfo}>
+          <Text style={[styles.cardName, { color: colors.text.primary }]}>
+            {country.name}
+          </Text>
+          <View style={styles.subRow}>
+            <Ionicons name="train-outline" size={12} color={colors.text.muted} />
+            <Text style={[styles.cardSub, { color: colors.text.secondary }]}>
+              {country.sub}
+            </Text>
+          </View>
+        </View>
+
+        <Pressable style={styles.heartBtn} onPress={() => onRemove(country.code)} hitSlop={12}>
+          <Ionicons name="heart" size={22} color="#FF3B30" />
+        </Pressable>
+
+        <Text style={[styles.arrow, { color: colors.text.muted }]}>›</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+// ── Pantalla ──────────────────────────────────────────────────────────────────
 export default function FavoritosScreen() {
   const router = useRouter();
   const { colors } = useTheme();
@@ -76,10 +137,13 @@ export default function FavoritosScreen() {
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: colors.bg.base }]} edges={['top']}>
+
       <View style={styles.header}>
         <Text style={[styles.title,    { color: colors.text.primary   }]}>Favoritos</Text>
         <Text style={[styles.subtitle, { color: colors.text.secondary }]}>
-          {favCountries.length > 0 ? 'Tus destinos guardados' : 'Guardá tus destinos favoritos desde el inicio'}
+          {favCountries.length > 0
+            ? 'Tus destinos guardados'
+            : 'Guardá tus destinos favoritos desde el inicio'}
         </Text>
       </View>
 
@@ -88,47 +152,29 @@ export default function FavoritosScreen() {
 
         {favCountries.length === 0 ? (
           <View style={styles.empty}>
-            <Text style={styles.emptyIcon}>❤️</Text>
-            <Text style={[styles.emptyTitle, { color: colors.text.primary   }]}>Sin favoritos aún</Text>
-            <Text style={[styles.emptySub,   { color: colors.text.secondary }]}>
-              Tocá el corazón en cualquier tarjeta de país para guardarlo acá.
+            <View style={[styles.emptyIconWrap, { backgroundColor: colors.bg.elevated }]}>
+              <Ionicons name="heart-outline" size={40} color={colors.text.muted} />
+            </View>
+            <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>
+              Sin favoritos aún
+            </Text>
+            <Text style={[styles.emptySub, { color: colors.text.secondary }]}>
+              Tocá el corazón en cualquier tarjeta{'\n'}de país para guardarlo acá.
             </Text>
             <Pressable
-              style={({ pressed }) => [styles.emptyBtn, { backgroundColor: colors.brand.primary }, pressed && { opacity: 0.8 }]}
+              style={({ pressed }) => [
+                styles.emptyBtn, { backgroundColor: colors.brand.primary },
+                pressed && { opacity: 0.85 },
+              ]}
               onPress={() => router.push('/')}
             >
+              <Ionicons name="compass-outline" size={16} color="#fff" />
               <Text style={styles.emptyBtnText}>Explorar países</Text>
             </Pressable>
           </View>
         ) : (
-          favCountries.map((d) => (
-            <Pressable
-              key={d.code}
-              style={({ pressed }) => [
-                styles.card,
-                { backgroundColor: colors.bg.card, borderColor: colors.border.card },
-                pressed && { opacity: 0.8 },
-              ]}
-              onPress={() => handlePress(d.code)}
-            >
-              <View style={[styles.strip, { backgroundColor: d.color }]} />
-              <Text style={styles.icon}>{d.icon}</Text>
-              <View style={styles.info}>
-                <View style={styles.nameRow}>
-                  <Text style={styles.flag}>{d.flag}</Text>
-                  <Text style={[styles.name, { color: colors.text.primary }]}>{d.name}</Text>
-                </View>
-                <Text style={[styles.sub, { color: colors.text.secondary }]}>🚄 {d.sub}</Text>
-              </View>
-              <Pressable
-                style={styles.heartBtn}
-                onPress={() => handleRemove(d.code)}
-                hitSlop={12}
-              >
-                <Text style={styles.heartFilled}>❤️</Text>
-              </Pressable>
-              <Text style={[styles.arrow, { color: colors.text.muted }]}>›</Text>
-            </Pressable>
+          favCountries.map((c) => (
+            <FavCard key={c.code} country={c} onPress={handlePress} onRemove={handleRemove} />
           ))
         )}
         <View style={{ height: 8 }} />
@@ -142,32 +188,30 @@ export default function FavoritosScreen() {
 
 const styles = StyleSheet.create({
   root:     { flex: 1 },
-  header:   { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
-  title:    { fontSize: 28, fontWeight: '800' },
+  header:   { paddingHorizontal: 22, paddingTop: 20, paddingBottom: 14 },
+  title:    { fontSize: 30, fontWeight: '800', letterSpacing: -0.3 },
   subtitle: { fontSize: 13, marginTop: 4 },
   scroll:   { flex: 1 },
   list:     { paddingHorizontal: 16, gap: 10 },
 
+  cardShadow: { borderRadius: Radius.lg },
   card: {
     flexDirection: 'row', alignItems: 'center',
-    borderRadius: Radius.lg, borderWidth: 1,
-    overflow: 'hidden', minHeight: 64,
+    borderRadius: Radius.lg, borderWidth: 0.5,
+    paddingLeft: 12, paddingRight: 8, paddingVertical: 14, minHeight: 80,
   },
-  strip:    { width: 4, alignSelf: 'stretch' },
-  icon:     { fontSize: 28, marginHorizontal: 14 },
-  info:     { flex: 1, paddingVertical: 12, gap: 3 },
-  nameRow:  { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  flag:     { fontSize: 16 },
-  name:     { fontSize: 16, fontWeight: '700' },
-  sub:      { fontSize: 12 },
-  heartBtn: { padding: 8 },
-  heartFilled: { fontSize: 18 },
-  arrow:    { fontSize: 22, paddingHorizontal: 14, fontWeight: '300' },
+  cardFlag: { marginRight: 14 },
+  cardInfo: { flex: 1, gap: 4 },
+  cardName: { fontSize: 16, fontWeight: '700' },
+  subRow:   { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  cardSub:  { fontSize: 12 },
+  heartBtn: { padding: 6 },
+  arrow:    { fontSize: 22, paddingHorizontal: 10, fontWeight: '300' },
 
-  empty:      { alignItems: 'center', paddingTop: 80, paddingHorizontal: 40 },
-  emptyIcon:  { fontSize: 64, marginBottom: 20 },
-  emptyTitle: { fontSize: 22, fontWeight: '700', marginBottom: 10 },
-  emptySub:   { fontSize: 15, textAlign: 'center', lineHeight: 24, marginBottom: 28 },
-  emptyBtn:   { borderRadius: Radius.full, paddingVertical: 13, paddingHorizontal: 28 },
-  emptyBtnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  empty:         { alignItems: 'center', paddingTop: 80, paddingHorizontal: 40, gap: 14 },
+  emptyIconWrap: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+  emptyTitle:    { fontSize: 20, fontWeight: '700', textAlign: 'center' },
+  emptySub:      { fontSize: 14, textAlign: 'center', lineHeight: 22 },
+  emptyBtn:      { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, paddingVertical: 13, paddingHorizontal: 24, borderRadius: Radius.full },
+  emptyBtnText:  { fontSize: 15, fontWeight: '700', color: '#fff' },
 });

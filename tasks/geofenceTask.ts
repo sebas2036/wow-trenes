@@ -14,6 +14,7 @@ import * as Notifications from 'expo-notifications';
 import { GeofenceRadius } from '../theme';
 import { loadTicketForStation }   from '../services/ticketStorage';
 import { getAllGeofenceStations }  from '../services/gtfsDatabase';
+import { emitToApp }              from '../services/notificationBridge';
 
 // ── Task name (único — no cambiar entre builds) ───────────────────────────
 const GEOFENCE_TASK_NAME = 'WOW_GEOFENCE_MONITOR';
@@ -85,13 +86,18 @@ async function handleEnter(ring: 'outer' | 'inner' | 'dest', stationId: string) 
     const dep = svc.departureTime.toLocaleTimeString('es-ES', {
       hour: '2-digit', minute: '2-digit',
     });
+    const title = `Te acercás a ${svc.origin.name}`;
+    const body  = `Tu tren ${svc.operator.toUpperCase()} ${svc.trainNumber} sale a las ${dep}${svc.platform ? ` · Andén ${svc.platform}` : ''}. ¡Empezá a caminar!`;
 
     await notify({
-      title: `🚄 Te acercás a ${svc.origin.name}`,
-      body:  `Tu tren ${svc.operator.toUpperCase()} ${svc.trainNumber} sale a las ${dep}${svc.platform ? ` · Andén ${svc.platform}` : ''}. ¡Empezá a caminar!`,
+      title: `🚄 ${title}`,
+      body,
       data:  { type: 'outer_ring', stationId, ticketId: ticket.id },
       priority: 'high',
     });
+
+    // ── In-app bell ────────────────────────────────────────────────────
+    emitToApp({ type: 'geofence', title, body, icon: 'walk-outline' });
 
   } else if (ring === 'inner') {
     // ── ANILLO 2 (50m) — QR automático, brillo 100% ───────────────────
@@ -102,10 +108,12 @@ async function handleEnter(ring: 'outer' | 'inner' | 'dest', stationId: string) 
     const dep = svc.departureTime.toLocaleTimeString('es-ES', {
       hour: '2-digit', minute: '2-digit',
     });
+    const title = `Mostrá tu QR — ${svc.operator.toUpperCase()} ${svc.trainNumber}`;
+    const body  = `${dep} · ${svc.destination.name}${svc.platform ? ` · Andén ${svc.platform}` : ''}`;
 
     await notify({
-      title: `🛂 Mostrá tu QR — ${svc.operator.toUpperCase()} ${svc.trainNumber}`,
-      body:  `${dep} · ${svc.destination.name}${svc.platform ? ` · Andén ${svc.platform}` : ''}`,
+      title: `🛂 ${title}`,
+      body,
       data:  {
         type:    'inner_ring',
         stationId,
@@ -116,14 +124,20 @@ async function handleEnter(ring: 'outer' | 'inner' | 'dest', stationId: string) 
       timeSensitive: true,
     });
 
+    // ── In-app bell ────────────────────────────────────────────────────
+    emitToApp({ type: 'arrival', title, body, icon: 'qr-code-outline' });
+
   } else if (ring === 'dest') {
     // ── ANILLO 3 (500m) — "Preparate para bajar" ─────────────────────
     const destInfo = destinationRegistry.get(stationId);
     if (!destInfo) return;
 
+    const title = `Próxima parada: ${destInfo.destinationName}`;
+    const body  = `${destInfo.operator.toUpperCase()} ${destInfo.trainNumber} · Preparate para bajar${destInfo.platform ? ` en Andén ${destInfo.platform}` : ''}`;
+
     await notify({
-      title: `📍 Próxima parada: ${destInfo.destinationName}`,
-      body:  `${destInfo.operator.toUpperCase()} ${destInfo.trainNumber} · Preparate para bajar${destInfo.platform ? ` en Andén ${destInfo.platform}` : ''}`,
+      title: `${title}`,
+      body,
       data:  {
         type:    'dest_ring',
         stationId,
@@ -132,6 +146,9 @@ async function handleEnter(ring: 'outer' | 'inner' | 'dest', stationId: string) 
       priority: 'max',
       timeSensitive: true,
     });
+
+    // ── In-app bell ────────────────────────────────────────────────────
+    emitToApp({ type: 'geofence', title, body, icon: 'exit-outline' });
 
     // Auto-clear after arrival
     clearDestinationGeofence(stationId);
