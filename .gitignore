@@ -16,6 +16,13 @@ assets/*.db
 # Env
 .env
 .env.local
+
+# Credentials (nunca subir a git)
+google-play-service-account.json
+google-services.json
+*.p12
+*.mobileprovision
+credentials.json
 assets/*.db-wal
 assets/*.db-shm
 assets/.fuse_hidden*
