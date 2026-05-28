@@ -23,7 +23,7 @@ _POSSIBLE_DIRS = [
     Path.home() / "Downloads" / "comboios",]
 GTFS_DIR   = next((d for d in _POSSIBLE_DIRS if d.exists()), _POSSIBLE_DIRS[0])
 OUTPUT_DIR = Path(__file__).parent.parent / "assets"
-OUTPUT_DB  = OUTPUT_DIR / "gtfs_pt.db"
+OUTPUT_DB  = OUTPUT_DIR / "gtfs_portugal.db"
 COUNTRY    = "PT"
 
 MAX_ST = 200_000
@@ -97,7 +97,7 @@ def main():
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    tmp_db = Path("/tmp/gtfs_pt_build.db")
+    tmp_db = Path("/tmp/gtfs_portugal_build.db")
     if tmp_db.exists(): tmp_db.unlink()
 
     print(f"  Origen:  {GTFS_DIR}")
