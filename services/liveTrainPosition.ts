@@ -279,6 +279,116 @@ async function fetchNSPosition(service: TrainService): Promise<LiveTrainPosition
   }
 }
 
+// ── SNCF — Francia ────────────────────────────────────────────────────────────
+/**
+ * Usa la API pública de SNCF (Navitia) para obtener el delay real de un tren.
+ * Requiere EXPO_PUBLIC_SNCF_API_KEY — registro gratuito en:
+ *   https://data.sncf.com/api  →  genera token en tu perfil
+ *
+ * No devuelve coordenadas GPS (SNCF no expone posición en tiempo real),
+ * solo el retraso actualizado. La posición se interpola igual que el fallback.
+ */
+async function fetchSNCFDelay(service: TrainService): Promise<LiveTrainPosition | null> {
+  const apiKey = process.env.EXPO_PUBLIC_SNCF_API_KEY;
+  if (!apiKey) return null;
+
+  try {
+    // Buscar el viaje por número de tren (vehicle_journey)
+    const depISO = service.departureTime.toISOString().replace(/[-:]/g, '').slice(0, 15);
+    const url    = `https://api.sncf.com/v1/coverage/sncf/vehicle_journeys?headsign=${encodeURIComponent(service.trainNumber)}&since=${depISO}&count=1`;
+
+    const raw = await fetchSafe(url, {
+      Authorization: `Basic ${btoa(apiKey + ':')}`,
+    });
+    if (!raw) return null;
+
+    const data = JSON.parse(raw);
+    const journeys = data?.vehicle_journeys;
+    if (!Array.isArray(journeys) || journeys.length === 0) return null;
+
+    // Extraer delay del primer stop-time que no haya pasado
+    const stopTimes: any[] = journeys[0]?.stop_times ?? [];
+    const now = Date.now();
+    let delayMinutes = 0;
+
+    for (const st of stopTimes) {
+      const base = st.departure_time ?? st.arrival_time;
+      const rtDep = st.data_freshness === 'realtime' ? (st.departure_time_rt ?? st.arrival_time_rt) : null;
+      if (!rtDep || !base) continue;
+
+      // Ambos están en segundos desde medianoche — convertir a ms
+      const baseMs = parseInt(base, 10) * 1000;
+      const rtMs   = parseInt(rtDep, 10) * 1000;
+      const diff   = Math.round((rtMs - baseMs) / 60_000);
+
+      // Usar el delay del próximo stop que no haya pasado aún
+      const stopDateStr = journeys[0]?.calendars?.[0]?.active_periods?.[0]?.begin ?? '';
+      const stopDate    = stopDateStr ? new Date(stopDateStr).getTime() : service.departureTime.getTime();
+      const absMs       = stopDate + baseMs;
+      if (absMs > now) { delayMinutes = diff; break; }
+    }
+
+    // Posición interpolada con delay actualizado
+    const fb = buildFallbackPosition({ ...service, delayMinutes });
+    return { ...fb, delayMinutes, isLive: false };
+
+  } catch {
+    return null;
+  }
+}
+
+// ── DB — Deutsche Bahn ────────────────────────────────────────────────────────
+/**
+ * Usa la API pública de DB Fahrplan para obtener el delay del tren.
+ * Requiere EXPO_PUBLIC_DB_API_KEY — registro gratuito en:
+ *   https://developer.deutschebahn.com  →  FahrPlan API (free tier)
+ *
+ * Al igual que SNCF, solo devuelve el delay — posición interpolada.
+ */
+async function fetchDBDelay(service: TrainService): Promise<LiveTrainPosition | null> {
+  const apiKey = process.env.EXPO_PUBLIC_DB_API_KEY;
+  if (!apiKey) return null;
+
+  try {
+    // Buscar llegadas en la estación de origen para encontrar el tren por número
+    const stationId = service.origin.id; // IBNR / Eva-Nummer de la estación DB
+    const dateStr   = service.departureTime.toISOString().slice(0, 10).replace(/-/g, '');
+    const hourStr   = service.departureTime.toTimeString().slice(0, 5).replace(':', '');
+
+    const url = `https://api.deutschebahn.com/fahrplan-plus/v1/departureBoard/${encodeURIComponent(stationId)}?date=${dateStr}&time=${hourStr}`;
+    const raw = await fetchSafe(url, {
+      Authorization: `Bearer ${apiKey}`,
+      Accept: 'application/json',
+    });
+    if (!raw) return null;
+
+    const data = JSON.parse(raw);
+    const trains: any[] = Array.isArray(data) ? data : (data?.DepartureBoard?.Departure ?? []);
+
+    // Buscar el tren por número
+    const match = trains.find((t: any) => {
+      const name = (t.name ?? t.train ?? '').replace(/\s+/g, '');
+      return name.includes(service.trainNumber.replace(/\s+/g, ''));
+    });
+    if (!match) return null;
+
+    // rtTime está presente solo cuando hay retraso real
+    let delayMinutes = 0;
+    if (match.rtTime && match.rtTime !== match.time) {
+      const [bH, bM] = match.time.split(':').map(Number);
+      const [rH, rM] = match.rtTime.split(':').map(Number);
+      delayMinutes = (rH * 60 + rM) - (bH * 60 + bM);
+      if (delayMinutes < 0) delayMinutes += 1440; // cruce de medianoche
+    }
+
+    const fb = buildFallbackPosition({ ...service, delayMinutes });
+    return { ...fb, delayMinutes, isLive: false };
+
+  } catch {
+    return null;
+  }
+}
+
 // ── Fallback — interpolación pura por horario teórico ─────────────────────────
 function buildFallbackPosition(service: TrainService): LiveTrainPosition {
   const now        = Date.now();
@@ -341,6 +451,20 @@ async function fetchPosition(service: TrainService): Promise<LiveTrainPosition> 
     // API key gratuita: https://api-portal.tfl.gov.uk/signup
     // Por ahora usa fallback interpolado hasta integrar TfL Unified API
     case 'tfl':
+      break;
+    // ── SNCF — Francia ───────────────────────────────────────────────────────
+    // Requiere EXPO_PUBLIC_SNCF_API_KEY
+    // Registro gratuito: https://data.sncf.com/api → tu perfil → token
+    // Solo delay real — posición interpolada
+    case 'sncf':
+      result = await fetchSNCFDelay(service);
+      break;
+    // ── DB — Deutsche Bahn ────────────────────────────────────────────────────
+    // Requiere EXPO_PUBLIC_DB_API_KEY
+    // Registro gratuito: https://developer.deutschebahn.com → FahrPlan API
+    // Solo delay real — posición interpolada
+    case 'db':
+      result = await fetchDBDelay(service);
       break;
     // ── UK National Rail ─────────────────────────────────────────────────────
     // Darwin PUSH Port / OpenLDBWS — requiere registro Network Rail
