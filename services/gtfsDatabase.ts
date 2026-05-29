@@ -60,8 +60,8 @@ const COUNTRY_ASSETS: Partial<Record<CountryCode, { dbName: string; module: numb
   NL: { dbName: 'gtfs_netherlands.db', module: require('../assets/gtfs_netherlands.db') },
   // AT: ÖBB — placeholder, ejecutar import_gtfs_at.py con datos de data.oebb.at
   AT: { dbName: 'gtfs_austria.db',     module: require('../assets/gtfs_austria.db')     },
-  // BE: SNCB/NMBS via iRail — 557 estaciones, red completa Bélgica
-  BE: { dbName: 'gtfs_belgium.db',     module: require('../assets/gtfs_belgium.db')     },
+  // BE: SNCB/NMBS via iRail — 557 estaciones, 200k stop_times, red completa Bélgica
+  BE: { dbName: 'gtfs_be.db',          module: require('../assets/gtfs_be.db')          },
   // PT: CP Comboios de Portugal — placeholder (CP no publica GTFS abierto)
   PT: { dbName: 'gtfs_portugal.db',    module: require('../assets/gtfs_portugal.db')    },
   // NO: Entur feed nacional NLOD — 902 estaciones, red completa Noruega
@@ -89,8 +89,8 @@ const COUNTRY_ASSETS: Partial<Record<CountryCode, { dbName: string; module: numb
   ES_MAD: { dbName: 'gtfs_es_mad.db',  module: require('../assets/gtfs_es_mad.db')  },
   // US_CHI: Chicago CTA L — 8 líneas · 298 estaciones (datos reales)
   US_CHI: { dbName: 'gtfs_us_chi.db',  module: require('../assets/gtfs_us_chi.db')  },
-  // ES_BCN: Barcelona TMB — placeholder · ejecutar import_gtfs_es_bcn.py cuando tengas feed
-  // ES_BCN: { dbName: 'gtfs_es_bcn.db',  module: require('../assets/gtfs_es_bcn.db')  },
+  // ES_BCN: Barcelona TMB — L1-L11 · FGC · Rodalies · 166 estaciones
+  ES_BCN: { dbName: 'gtfs_es_bcn.db',  module: require('../assets/gtfs_es_bcn.db')  },
   US_LAX: { dbName: 'gtfs_us_lax.db',  module: require('../assets/gtfs_us_lax.db')  },
 
   // ── Gran Bretaña ──────────────────────────────────────────────────────────

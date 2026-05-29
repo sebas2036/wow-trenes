@@ -12,6 +12,8 @@ assets/*.db
 !assets/gtfs_gb_tfl.db
 # Excepción: CP Portugal es pequeño (6 MB) y sin URL de descarga directa estable — sí se versiona
 !assets/gtfs_portugal.db
+# Excepción: Barcelona TMB (8 MB) — generado con create_gtfs_es_bcn.py — sí se versiona
+!assets/gtfs_es_bcn.db
 # Excepción: National Rail GB (37 MB) — requiere credenciales NRDP para regenerar, se versiona
 !assets/gtfs_gb.db
 
