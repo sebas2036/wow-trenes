@@ -38,6 +38,7 @@ export type TrainOperator =
   | 'eurostar'    // London ↔ Paris / Brussels
   | 'thalys'      // Brussels ↔ Paris / Amsterdam
   | 'oebb'        // Austria — Railjet / Nightjet (ÖBB)
+  | 'dsb'         // Denmark — DSB InterCity / IC3
   | 'avanti'      // UK — West Coast Mainline
   | 'lner'        // UK — East Coast Mainline
   | 'gwr'         // UK — Great Western Railway
@@ -56,6 +57,10 @@ export type TrainOperator =
   | 'mta_nyc'     // NYC — MTA Subway + LIRR + Metro-North
   | 'cta'         // Chicago — CTA L train
   | 'la_metro'    // Los Angeles — LA Metro Rail (Swiftly RT)
+  // ── Metro urbano ──────────────────────────────────────────────────────────
+  | 'tmb'         // Barcelona — TMB (L1-L11 + FGC + Rodalies)
+  | 'ratp'        // Paris — RATP (Métro + RER via IDFM)
+  | 'emt'         // Madrid — EMT + Metro Madrid
   | 'other';
 
 export type TrainType = 'high-speed' | 'intercity' | 'regional' | 'night';
@@ -105,10 +110,13 @@ export interface RouteSegment {
 export type CountryCode =
   // Europa — todos con GTFS abierto verificado
   | 'ES' | 'IT' | 'FR' | 'DE' | 'NL' | 'CH' | 'AT' | 'GB' | 'PT' | 'BE'
-  | 'NO' | 'US' | 'US_NYC'
+  | 'NO' | 'DK' | 'US' | 'US_NYC'
   // Metro urbano — sub-ciudades con sistema de metro independiente
   | 'ES_MAD'   // Madrid Metro (EMT)
   | 'ES_BCN'   // Barcelona Metro (TMB)
+  | 'FR_PAR'   // Paris Métro + RER (RATP/IDFM)
+  | 'DE_BER'   // Berlin U-Bahn + S-Bahn (BVG)
+  | 'DE_MUN'   // Munich U-Bahn + S-Bahn (MVG)
   | 'US_CHI'   // Chicago CTA L
   | 'US_LAX'   // LA Metro Rail
   | 'GB_LON'   // London Underground / TfL (Tube + Elizabeth + DLR + Overground)

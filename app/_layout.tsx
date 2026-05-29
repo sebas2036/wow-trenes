@@ -25,10 +25,9 @@ function AppStack() {
   const { colors, isDark } = useTheme();
 
   useEffect(() => {
-    (async () => {
-      await initDatabase();
-      await initGeofenceTask();
-    })();
+    // Fire-and-forget — no bloquea el render. La app muestra [] mientras carga.
+    initDatabase().catch(console.warn);
+    initGeofenceTask().catch(console.warn);
   }, []);
 
   return (

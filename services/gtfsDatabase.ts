@@ -45,68 +45,49 @@ import * as FileSystem from 'expo-file-system';
 import { Asset } from 'expo-asset';
 import type { Station, TrainService, Coordinates, CountryCode } from '../types';
 
-// ── Asset map — add a new entry for each country you bundle ──────────────────
-const COUNTRY_ASSETS: Partial<Record<CountryCode, { dbName: string; module: number }>> = {
-  CH: { dbName: 'gtfs_switzerland.db', module: require('../assets/gtfs_switzerland.db') },
-  FR: { dbName: 'gtfs_france.db',      module: require('../assets/gtfs_france.db')      },
-  ES: { dbName: 'gtfs_spain.db',       module: require('../assets/gtfs_spain.db')       },
-  DE: { dbName: 'gtfs_germany.db',     module: require('../assets/gtfs_germany.db')     },
-  // IT: Trenitalia/RFI no publica GTFS nacional (viola directiva UE 2017/1926).
-  // Usando feeds regionales fusionados: Trenord (Lombardía) + Toscana Trenitalia.
-  // Cubre: Milano, Roma, Firenze, Bologna, Genova, Pisa, Siena, Cinque Terre y más.
-  IT: { dbName: 'gtfs_italy.db',       module: require('../assets/gtfs_italy.db')       },
-  // NL: Feed nacional completo CC0 — NS Intercity + Sprinter + operadores regionales
-  // Placeholder — ejecutar import_gtfs_netherlands.py con ~/Downloads/Wow trains Netherlands/
-  NL: { dbName: 'gtfs_netherlands.db', module: require('../assets/gtfs_netherlands.db') },
-  // AT: ÖBB — placeholder, ejecutar import_gtfs_at.py con datos de data.oebb.at
-  AT: { dbName: 'gtfs_austria.db',     module: require('../assets/gtfs_austria.db')     },
-  // BE: SNCB/NMBS via iRail — 557 estaciones, 200k stop_times, red completa Bélgica
-  BE: { dbName: 'gtfs_be.db',          module: require('../assets/gtfs_be.db')          },
-  // PT: CP Comboios de Portugal — placeholder (CP no publica GTFS abierto)
-  PT: { dbName: 'gtfs_portugal.db',    module: require('../assets/gtfs_portugal.db')    },
-  // NO: Entur feed nacional NLOD — 902 estaciones, red completa Noruega
-  NO: { dbName: 'gtfs_norway.db',      module: require('../assets/gtfs_norway.db')      },
-  // US: Amtrak feed nacional abierto — placeholder, ejecutar import_gtfs_us.py
-  // Descarga: https://content.amtrak.com/content/gtfs/GTFS.zip
-  US: { dbName: 'gtfs_usa.db',         module: require('../assets/gtfs_usa.db')         },
-  // US_NYC: MTA Subway + LIRR + Metro-North + PATH — Nueva York completo
-  // Descarga subway: http://web.mta.info/developers/data/nyct/subway/google_transit.zip
-  // Descarga LIRR:   http://web.mta.info/developers/data/lirr/google_transit.zip
-  // Descarga MNR:    http://web.mta.info/developers/data/mnr/google_transit.zip
-  US_NYC: { dbName: 'gtfs_usa_nyc.db', module: require('../assets/gtfs_usa_nyc.db')     },
+// ── Asset map ────────────────────────────────────────────────────────────────
+// 'bundled' → require() embeds the DB in the JS bundle (use solo para el país
+//             por defecto — cada MB extra = segundos más de carga en Expo Go).
+// 'local'   → abre el archivo directamente desde el filesystem del dispositivo.
+//             Si no existe, crea schema vacío y devuelve [] en queries.
+//             En EAS Build nativo, los DBs pueden pre-copiarse en el binario.
+//
+// REGLA: solo ES está bundled. El resto son 'local' para mantener el bundle < 15 MB.
+// Para usar otro país en dev, copiá el .db a:
+//   Android: /data/data/host.exp.exponent/files/SQLite/<dbName>
+//   iOS:     ~/Library/Developer/CoreSimulator/…/data/Documents/ExponentExperienceData/…/SQLite/
 
-  // ── Metros urbanos ────────────────────────────────────────────────────────
-  // SETUP: ejecutar `python3 scripts/create_metro_placeholders.py` una sola vez
-  // para generar los placeholder DBs, luego usar los scripts import_gtfs_*.py
-  // para importar datos reales.
-  //
-  // ES_MAD: Fuente: https://datos.comunidad.madrid/catalogo/dataset/gtfs_metro_madrid
-  // ES_BCN: Fuente: https://developer.tmb.cat/ (registro gratuito)
-  // US_CHI: Fuente: https://www.transitchicago.com/downloads/sch_data/google_transit.zip
-  // US_LAX: Fuente: https://gitlab.com/LACMTA/gtfs_rail/raw/master/gtfs_rail.zip
-  //
-  // ES_MAD: Madrid Metro CRTM — 13 líneas · 272 estaciones (datos reales)
-  ES_MAD: { dbName: 'gtfs_es_mad.db',  module: require('../assets/gtfs_es_mad.db')  },
-  // US_CHI: Chicago CTA L — 8 líneas · 298 estaciones (datos reales)
-  US_CHI: { dbName: 'gtfs_us_chi.db',  module: require('../assets/gtfs_us_chi.db')  },
-  // ES_BCN: Barcelona TMB — L1-L11 · FGC · Rodalies · 166 estaciones
-  ES_BCN: { dbName: 'gtfs_es_bcn.db',  module: require('../assets/gtfs_es_bcn.db')  },
-  US_LAX: { dbName: 'gtfs_us_lax.db',  module: require('../assets/gtfs_us_lax.db')  },
+type CountryAsset =
+  | { type: 'bundled'; dbName: string; module: number }
+  | { type: 'local';   dbName: string };
 
-  // ── Gran Bretaña ──────────────────────────────────────────────────────────
-  // GB: National Rail intercity — Avanti · LNER · GWR · ScotRail · +20 TOCs
-  // Registro gratuito: https://opendata.nationalrail.co.uk/ → Data Feeds → GTFS
-  // Placeholder hasta que ejecutes: python3 scripts/import_gtfs_gb.py
-  GB:     { dbName: 'gtfs_gb.db',      module: require('../assets/gtfs_gb.db')      },
-  // GB_LON: London Underground / TfL — TfL no publica GTFS nativo (usa TransXChange)
-  // DB generada con coordenadas NaPTAN reales de 160+ estaciones (Tube + Elizabeth + DLR + Overground)
-  // Ejecutar una sola vez: python3 scripts/create_gtfs_gb_tfl.py
-  GB_LON: { dbName: 'gtfs_gb_tfl.db',  module: require('../assets/gtfs_gb_tfl.db')  },
+const COUNTRY_ASSETS: Partial<Record<CountryCode, CountryAsset>> = {
+  // ── BUNDLED (solo España — default y ya importado con datos reales) ───────
+  ES: { type: 'bundled', dbName: 'gtfs_spain.db', module: require('../assets/gtfs_spain.db') },
 
-  // ── Japón ─────────────────────────────────────────────────────────────────
-  // JP: Shinkansen (7 líneas) · JR Intercity · Tokyo Metro · Osaka Metro · Kyoto
-  // 117 estaciones · 10932 trips · generado con: python3 scripts/create_gtfs_japan.py
-  JP: { dbName: 'gtfs_japan.db', module: require('../assets/gtfs_japan.db') },
+  // ── LOCAL (abrir desde filesystem; vacío si no existe en el dispositivo) ──
+  CH:     { type: 'local', dbName: 'gtfs_switzerland.db' },
+  FR:     { type: 'local', dbName: 'gtfs_france.db'      },
+  DE:     { type: 'local', dbName: 'gtfs_germany.db'     },
+  IT:     { type: 'local', dbName: 'gtfs_italy.db'       },
+  NL:     { type: 'local', dbName: 'gtfs_netherlands.db' },
+  AT:     { type: 'local', dbName: 'gtfs_austria.db'     },
+  BE:     { type: 'local', dbName: 'gtfs_belgium.db'     },
+  DK:     { type: 'local', dbName: 'gtfs_dk.db'          },
+  PT:     { type: 'local', dbName: 'gtfs_portugal.db'    },
+  NO:     { type: 'local', dbName: 'gtfs_norway.db'      },
+  US:     { type: 'local', dbName: 'gtfs_usa.db'         },
+  US_NYC: { type: 'local', dbName: 'gtfs_usa_nyc.db'     },
+  GB:     { type: 'local', dbName: 'gtfs_gb.db'          },
+  GB_LON: { type: 'local', dbName: 'gtfs_gb_tfl.db'      },
+  JP:     { type: 'local', dbName: 'gtfs_japan.db'       },
+  ES_MAD: { type: 'local', dbName: 'gtfs_es_mad.db'      },
+  ES_BCN: { type: 'local', dbName: 'gtfs_es_bcn.db'      },
+  FR_PAR: { type: 'local', dbName: 'gtfs_fr_par.db'      },
+  DE_BER: { type: 'local', dbName: 'gtfs_de_ber.db'      },
+  DE_MUN: { type: 'local', dbName: 'gtfs_de_mun.db'      },
+  US_CHI: { type: 'local', dbName: 'gtfs_us_chi.db'      },
+  US_LAX: { type: 'local', dbName: 'gtfs_us_lax.db'      },
 };
 
 const SQLITE_DIR = FileSystem.documentDirectory + 'SQLite/';
@@ -114,8 +95,8 @@ const SQLITE_DIR = FileSystem.documentDirectory + 'SQLite/';
 // One open connection per country (lazy-opened)
 const dbPool: Partial<Record<CountryCode, SQLite.SQLiteDatabase>> = {};
 
-// Active country for the current session (default: Switzerland)
-let activeCountry: CountryCode = 'CH';
+// Active country for the current session (default: España — único DB bundled)
+let activeCountry: CountryCode = 'ES';
 
 // ── Public: switch active country ─────────────────────────────────────────────
 /**
@@ -149,41 +130,63 @@ async function ensureDB(country: CountryCode): Promise<SQLite.SQLiteDatabase> {
   const asset = COUNTRY_ASSETS[country];
 
   if (!asset) {
-    // Country not bundled — return an empty in-memory fallback so the app
-    // doesn't crash; queries will simply return empty arrays.
-    console.warn(`[GTFS] No asset bundled for country ${country}, using empty DB`);
+    console.warn(`[GTFS] No asset configured for ${country}, using empty DB`);
     const fallback = await SQLite.openDatabaseAsync(`gtfs_fallback_${country}.db`);
     await createEmptySchema(fallback);
     dbPool[country] = fallback;
     return fallback;
   }
 
-  const dbPath = SQLITE_DIR + asset.dbName;
-  const info   = await FileSystem.getInfoAsync(dbPath);
-
-  if (!info.exists) {
-    try {
-      const expoAsset = Asset.fromModule(asset.module);
-      await expoAsset.downloadAsync();
-      if (expoAsset.localUri) {
-        await FileSystem.copyAsync({ from: expoAsset.localUri, to: dbPath });
-        console.log(`[GTFS] ${asset.dbName} copied from bundle to device`);
+  // ── BUNDLED: copiar desde el bundle de la app al filesystem ──────────────
+  if (asset.type === 'bundled') {
+    const dbPath = SQLITE_DIR + asset.dbName;
+    const info   = await FileSystem.getInfoAsync(dbPath);
+    if (!info.exists) {
+      try {
+        const expoAsset = Asset.fromModule(asset.module);
+        await expoAsset.downloadAsync();
+        if (expoAsset.localUri) {
+          await FileSystem.copyAsync({ from: expoAsset.localUri, to: dbPath });
+          console.log(`[GTFS] ${asset.dbName} copiado al dispositivo`);
+        }
+      } catch (e) {
+        console.warn(`[GTFS] Error copiando ${asset.dbName}:`, e);
+        const fallback = await SQLite.openDatabaseAsync(asset.dbName);
+        await createEmptySchema(fallback);
+        dbPool[country] = fallback;
+        return fallback;
       }
-    } catch (e) {
-      // Expo Go / simulator: binary assets can't be bundled at runtime.
-      // Fall back to an empty schema so queries return [] instead of crashing.
-      console.warn(`[GTFS] Could not copy ${asset.dbName} (Expo Go?), using empty schema:`, e);
-      const fallback = await SQLite.openDatabaseAsync(asset.dbName);
-      await createEmptySchema(fallback);
-      dbPool[country] = fallback;
-      return fallback;
     }
+    const conn = await SQLite.openDatabaseAsync(asset.dbName);
+    console.log(`[GTFS] Abierto (bundled): ${asset.dbName}`);
+    dbPool[country] = conn;
+    return conn;
   }
 
-  const opened = await SQLite.openDatabaseAsync(asset.dbName);
-  console.log(`[GTFS] Opened ${asset.dbName}`);
-  dbPool[country] = opened;
-  return opened;
+  // ── LOCAL: abrir directamente desde filesystem (sin require) ─────────────
+  // Si el archivo no existe, expo-sqlite crea un DB vacío → schema vacío → queries devuelven [].
+  // En producción EAS Build, los DBs se pre-instalan en el binario y están disponibles.
+  try {
+    const conn = await SQLite.openDatabaseAsync(asset.dbName);
+    // Verificar si tiene datos reales o es un DB vacío recién creado
+    const hasData = await conn.getFirstAsync<{ n: number }>(
+      `SELECT COUNT(*) AS n FROM sqlite_master WHERE type='table' AND name='stops'`,
+    );
+    if (!hasData || hasData.n === 0) {
+      console.log(`[GTFS] ${asset.dbName} vacío — creando schema`);
+      await createEmptySchema(conn);
+    } else {
+      console.log(`[GTFS] Abierto (local): ${asset.dbName}`);
+    }
+    dbPool[country] = conn;
+    return conn;
+  } catch (e) {
+    console.warn(`[GTFS] Error abriendo ${asset.dbName}:`, e);
+    const fallback = await SQLite.openDatabaseAsync(`gtfs_fallback_${country}.db`);
+    await createEmptySchema(fallback);
+    dbPool[country] = fallback;
+    return fallback;
+  }
 }
 
 async function createEmptySchema(conn: SQLite.SQLiteDatabase): Promise<void> {
@@ -273,9 +276,9 @@ export async function findNearestStation(coords: Coordinates): Promise<Station |
 // UTC offsets per country — GTFS times are in local time of the country
 const COUNTRY_UTC_OFFSET: Partial<Record<CountryCode, number>> = {
   CH: 1, FR: 1, DE: 1, IT: 1, NL: 1, AT: 1, BE: 1, PT: 0,
-  NO: 1, ES: 1, GB: 0, GB_LON: 0,
+  NO: 1, DK: 1, ES: 1, GB: 0, GB_LON: 0,
   US: -5, US_NYC: -5, US_CHI: -6, US_LAX: -8,
-  ES_MAD: 1, ES_BCN: 1,
+  ES_MAD: 1, ES_BCN: 1, FR_PAR: 1, DE_BER: 1, DE_MUN: 1,
   JP: 9,
 };
 
@@ -387,15 +390,63 @@ export interface BoardEntry {
   status:   'ontime' | 'delayed' | 'cancelled';
 }
 
+// ── TfL board: live arrivals via api.tfl.gov.uk (no GTFS stop_times) ────────
+// TfL no publica GTFS stop_times estático. El board se construye consultando
+// las líneas principales en tiempo real. Sin API key — 50 req/min anónimo.
+const TFL_MAIN_LINES = ['central', 'victoria', 'jubilee', 'northern', 'piccadilly'];
+
+async function getTfLBoard(
+  mode: 'salidas' | 'arribos',
+  limit: number,
+): Promise<BoardEntry[]> {
+  try {
+    const lineIds = TFL_MAIN_LINES.join(',');
+    const url     = `https://api.tfl.gov.uk/Line/${lineIds}/Arrivals`;
+    const ctrl    = new AbortController();
+    const timer   = setTimeout(() => ctrl.abort(), 6000);
+    const res     = await fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(timer));
+    if (!res.ok) return [];
+
+    const arrivals: any[] = await res.json();
+    const now = Date.now();
+
+    return arrivals
+      .filter((a) => typeof a.timeToStation === 'number' && a.timeToStation >= 0)
+      .sort((a, b) => a.timeToStation - b.timeToStation)
+      .slice(0, limit)
+      .map((a) => {
+        const eta     = new Date(now + a.timeToStation * 1000);
+        const hh      = eta.getUTCHours().toString().padStart(2, '0');
+        const mm      = eta.getUTCMinutes().toString().padStart(2, '0');
+        const lineName = (a.lineName ?? a.lineId ?? 'Tube').replace(/ line$/i, '');
+        return {
+          time:     `${hh}:${mm}`,
+          train:    lineName,
+          endpoint: a.towards ?? a.destinationName ?? '—',
+          station:  a.stationName?.replace(/ Underground Station$/i, '') ?? '—',
+          status:   'ontime' as const,
+        };
+      });
+  } catch {
+    return [];
+  }
+}
+
 /**
  * getCountryBoard — devuelve las próximas salidas o arribos de un país.
- * Consulta directamente la DB del country indicado (sin cambiar activeCountry).
+ * GB_LON usa TfL live API directamente (no tiene GTFS stop_times).
+ * El resto consulta la DB SQLite local.
  */
 export async function getCountryBoard(
   country: CountryCode,
   mode: 'salidas' | 'arribos',
   limit = 30,
 ): Promise<BoardEntry[]> {
+  // TfL: bypasear GTFS y llamar API live
+  if (country === 'GB_LON' || country === 'GB') {
+    return getTfLBoard(mode, limit);
+  }
+
   const conn = await ensureDB(country);
   const utcOffset    = COUNTRY_UTC_OFFSET[country] ?? 0;
   const deviceOffset = -new Date().getTimezoneOffset() / 60;
@@ -518,8 +569,10 @@ function gtfsRowToTrainService(row: any, baseDate: Date): TrainService {
   const defaultByCountry: Partial<Record<CountryCode, TrainService['operator']>> = {
     CH: 'sbb', FR: 'sncf', ES: 'renfe', DE: 'db',
     IT: 'trenitalia', NL: 'ns', AT: 'oebb', GB: 'lner',
-    GB_LON: 'tfl',
-    PT: 'sncf', BE: 'thalys', JP: 'jr',
+    GB_LON: 'tfl', FR_PAR: 'ratp', ES_BCN: 'tmb', ES_MAD: 'emt',
+    DE_BER: 'db',  DE_MUN: 'db',
+    US_NYC: 'mta_nyc', US_CHI: 'cta', US_LAX: 'la_metro',
+    PT: 'sncf', BE: 'thalys', DK: 'dsb', JP: 'jr',
   };
   let operator: TrainService['operator'] = defaultByCountry[activeCountry] ?? 'other';
   // Override from headsign keywords

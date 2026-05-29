@@ -6,18 +6,15 @@ node_modules/
 dist/
 web-build/
 
-# DB assets (regenerar con scripts/import_gtfs_*.py) — demasiado grandes para git
+# DB assets — excluir todos excepto los generados por scripts propios (sin GTFS externo)
 assets/*.db
-# Excepción: TfL es hardcoded y pequeño (96 KB) — sí se versiona
-!assets/gtfs_gb_tfl.db
-# Excepción: CP Portugal es pequeño (6 MB) y sin URL de descarga directa estable — sí se versiona
-!assets/gtfs_portugal.db
-# Excepción: Barcelona TMB (8 MB) — generado con create_gtfs_es_bcn.py — sí se versiona
+# DBs generados por scripts internos — pequeños, reproducibles, se versionan
 !assets/gtfs_es_bcn.db
-# Excepción: Japón (8 MB) — generado con create_gtfs_japan.py — sí se versiona
 !assets/gtfs_japan.db
-# Excepción: National Rail GB (37 MB) — requiere credenciales NRDP para regenerar, se versiona
-!assets/gtfs_gb.db
+!assets/gtfs_dk.db
+!assets/gtfs_fr_par.db
+!assets/gtfs_de_ber.db
+!assets/gtfs_de_mun.db
 
 # OS
 .DS_Store
@@ -35,6 +32,7 @@ google-services.json
 credentials.json
 assets/*.db-wal
 assets/*.db-shm
+assets/*.db-journal
 assets/.fuse_hidden*
 assets/test_write.txt
 
@@ -43,4 +41,3 @@ assets/test_write.txt
 
 expo-env.d.ts
 # @end expo-cli
-.env

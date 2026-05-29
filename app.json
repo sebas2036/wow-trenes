@@ -41,7 +41,6 @@
         "VIBRATE",
         "POST_NOTIFICATIONS"
       ],
-      "googleServicesFile": "./google-services.json",
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyD-ni6YpWpx1c6igqsIiPn_ywbwG__3kqY"

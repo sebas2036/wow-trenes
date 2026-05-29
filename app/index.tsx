@@ -45,10 +45,12 @@ const COUNTRIES: CountryEntry[] = [
   { code: 'ES', flag: '🇪🇸', name: 'España',       trainLabel: 'AVE · Renfe',       color: '#C0392B',
     metroOptions: [{ code: 'ES_MAD', label: 'Madrid' }, { code: 'ES_BCN', label: 'Barcelona' }] },
   { code: 'IT', flag: '🇮🇹', name: 'Italia',        trainLabel: 'Frecciarossa',      color: '#27AE60' },
-  { code: 'FR', flag: '🇫🇷', name: 'Francia',       trainLabel: 'TGV · SNCF',        color: '#2980B9' },
+  { code: 'FR', flag: '🇫🇷', name: 'Francia',       trainLabel: 'TGV · SNCF',        color: '#2980B9',
+    metroOptions: [{ code: 'FR_PAR', label: 'París Métro' }] },
   { code: 'US', flag: '🇺🇸', name: 'USA',           trainLabel: 'Amtrak',            color: '#1A6BBE',
     metroOptions: [{ code: 'US_NYC', label: 'New York' }] },
-  { code: 'DE', flag: '🇩🇪', name: 'Alemania',      trainLabel: 'ICE · DB',          color: '#E74C3C' },
+  { code: 'DE', flag: '🇩🇪', name: 'Alemania',      trainLabel: 'ICE · DB',          color: '#E74C3C',
+    metroOptions: [{ code: 'DE_BER', label: 'Berlin U-Bahn' }, { code: 'DE_MUN', label: 'Munich U-Bahn' }] },
   { code: 'GB', flag: '🇬🇧', name: 'Reino Unido',   trainLabel: 'Avanti · LNER',     color: '#C0192B',
     metroOptions: [{ code: 'GB_LON', label: 'London Underground' }] },
   { code: 'CH', flag: '🇨🇭', name: 'Suiza',         trainLabel: 'SBB · Glacier',     color: '#DC143C' },
@@ -58,6 +60,7 @@ const COUNTRIES: CountryEntry[] = [
   { code: 'NO', flag: '🇳🇴', name: 'Noruega',       trainLabel: 'Bergensbanen',      color: '#003F87' },
   { code: 'PT', flag: '🇵🇹', name: 'Portugal',      trainLabel: 'Alfa Pendular',     color: '#27AE60' },
   { code: 'BE', flag: '🇧🇪', name: 'Bélgica',       trainLabel: 'IC · Thalys',       color: '#F39C12' },
+  { code: 'DK', flag: '🇩🇰', name: 'Dinamarca',     trainLabel: 'DSB · IC3',         color: '#C8102E' },
 ];
 
 /** Extrae el código ISO de país a partir del CountryCode (e.g. 'US_NYC' → 'us') */
@@ -75,12 +78,16 @@ interface MetroCity {
 }
 
 const METRO_CITIES: MetroCity[] = [
-  { code: 'US_NYC', city: 'New York',    flag: '🇺🇸', lines: 'MTA · 27 líneas',          color: '#1A6BBE' },
-  { code: 'ES_MAD', city: 'Madrid',      flag: '🇪🇸', lines: 'Metro Madrid · 13 líneas', color: '#C0392B' },
-  { code: 'GB_LON', city: 'London',      flag: '🇬🇧', lines: 'TfL · Elizabeth line',     color: '#C0192B' },
-  { code: 'US_CHI', city: 'Chicago',     flag: '🇺🇸', lines: 'CTA L Train · 8 líneas',   color: '#0057A8' },
-  { code: 'US_LAX', city: 'Los Angeles', flag: '🇺🇸', lines: 'LA Metro Rail · 6 líneas', color: '#7C3AED' },
-  { code: 'ES_BCN', city: 'Barcelona',   flag: '🇪🇸', lines: 'TMB · próximamente',       color: '#F39C12' },
+  { code: 'US_NYC', city: 'New York',    flag: '🇺🇸', lines: 'MTA · 27 líneas',              color: '#1A6BBE' },
+  { code: 'ES_MAD', city: 'Madrid',      flag: '🇪🇸', lines: 'Metro Madrid · 13 líneas',     color: '#C0392B' },
+  { code: 'GB_LON', city: 'London',      flag: '🇬🇧', lines: 'TfL · Elizabeth line',         color: '#C0192B' },
+  { code: 'ES_BCN', city: 'Barcelona',   flag: '🇪🇸', lines: 'TMB · L1-L11 · 166 estaciones',    color: '#F39C12' },
+  { code: 'FR_PAR', city: 'París',       flag: '🇫🇷', lines: 'RATP · M1-M14 · RER A-E',         color: '#003CA6' },
+  { code: 'DE_BER', city: 'Berlín',      flag: '🇩🇪', lines: 'BVG · U1-U9 · S-Bahn',             color: '#224F9F' },
+  { code: 'DE_MUN', city: 'Múnich',      flag: '🇩🇪', lines: 'MVG · U1-U6 · S1/S8 Aeropuerto',  color: '#428BC1' },
+  { code: 'JP',     city: 'Tokio',       flag: '🇯🇵', lines: 'Tokyo Metro · Shinkansen',          color: '#E60012' },
+  { code: 'US_CHI', city: 'Chicago',     flag: '🇺🇸', lines: 'CTA L Train · 8 líneas',       color: '#0057A8' },
+  { code: 'US_LAX', city: 'Los Angeles', flag: '🇺🇸', lines: 'LA Metro Rail · 6 líneas',     color: '#7C3AED' },
 ];
 
 // ── Tarjeta de país — Dieter Rams / Apple ────────────────────────────────────
