@@ -102,6 +102,11 @@ const COUNTRY_ASSETS: Partial<Record<CountryCode, { dbName: string; module: numb
   // DB generada con coordenadas NaPTAN reales de 160+ estaciones (Tube + Elizabeth + DLR + Overground)
   // Ejecutar una sola vez: python3 scripts/create_gtfs_gb_tfl.py
   GB_LON: { dbName: 'gtfs_gb_tfl.db',  module: require('../assets/gtfs_gb_tfl.db')  },
+
+  // ── Japón ─────────────────────────────────────────────────────────────────
+  // JP: Shinkansen (7 líneas) · JR Intercity · Tokyo Metro · Osaka Metro · Kyoto
+  // 117 estaciones · 10932 trips · generado con: python3 scripts/create_gtfs_japan.py
+  JP: { dbName: 'gtfs_japan.db', module: require('../assets/gtfs_japan.db') },
 };
 
 const SQLITE_DIR = FileSystem.documentDirectory + 'SQLite/';

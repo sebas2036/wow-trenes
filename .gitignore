@@ -14,6 +14,8 @@ assets/*.db
 !assets/gtfs_portugal.db
 # Excepción: Barcelona TMB (8 MB) — generado con create_gtfs_es_bcn.py — sí se versiona
 !assets/gtfs_es_bcn.db
+# Excepción: Japón (8 MB) — generado con create_gtfs_japan.py — sí se versiona
+!assets/gtfs_japan.db
 # Excepción: National Rail GB (37 MB) — requiere credenciales NRDP para regenerar, se versiona
 !assets/gtfs_gb.db
 
@@ -41,3 +43,4 @@ assets/test_write.txt
 
 expo-env.d.ts
 # @end expo-cli
+.env
