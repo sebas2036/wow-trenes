@@ -249,7 +249,52 @@ async function fetchSwiftlyPosition(
 }
 
 // ── NS (Países Bajos) ────────────────────────────────────────────────────────
+/**
+ * Estrategia de dos capas — sin key obligatoria:
+ *
+ * 1. v0.ovapi.nl — API abierta holandesa (no requiere key).
+ *    Cubre NS intercity + sprinter en tiempo real (GTFS-RT derivado).
+ *    Endpoint: /trein/{ritnum}  →  { Stops: [{ Stop: { StopCode }, ExpectedDepartureTime, Delay }] }
+ *
+ * 2. NS apiportal.ns.nl — oficial, más completa, requiere EXPO_PUBLIC_NS_API_KEY.
+ *    Se usa como fallback si ovapi no devuelve el tren.
+ *
+ * Delay en segundos en ovapi, en ISO 8601 duration en NS oficial.
+ */
 async function fetchNSPosition(service: TrainService): Promise<LiveTrainPosition | null> {
+  const trainNum = service.trainNumber.replace(/\s+/g, '');
+
+  // ── Capa 1: ovapi (open, sin key) ──────────────────────────────────────────
+  try {
+    const res = await fetchSafe(`https://v0.ovapi.nl/trein/${trainNum}`);
+    if (res) {
+      const json = JSON.parse(res);
+      // Estructura: { [ritnum]: { Stops: [...] } }
+      const journey = Object.values(json as Record<string, any>)[0];
+      const stops: any[] = journey?.Stops ?? [];
+
+      // Buscar la parada de origen o la siguiente sin pasar
+      const now = Date.now();
+      const nextStop = stops.find((s: any) => {
+        const t = new Date(s.ExpectedDepartureTime ?? s.TargetDepartureTime ?? 0).getTime();
+        return t > now;
+      });
+
+      if (nextStop) {
+        const delaySeconds = parseInt(nextStop.Delay ?? '0', 10) || 0;
+        return {
+          coordinates:  null,
+          bearing:      0,
+          delayMinutes: Math.round(delaySeconds / 60),
+          lastUpdated:  new Date(),
+          isLive:       true,
+          isLoading:    false,
+        };
+      }
+    }
+  } catch { /* fall through */ }
+
+  // ── Capa 2: NS apiportal (requiere key) ────────────────────────────────────
   const apiKey = process.env.EXPO_PUBLIC_NS_API_KEY;
   if (!apiKey) return null;
 
@@ -262,14 +307,21 @@ async function fetchNSPosition(service: TrainService): Promise<LiveTrainPosition
 
     const json = JSON.parse(res);
     const dep  = (json?.payload?.departures ?? []).find(
-      (d: any) => (d.trainCategory + d.name) === service.trainNumber,
+      (d: any) => String(d.product?.number ?? '') === trainNum,
     );
     if (!dep) return null;
+
+    // delay en ISO 8601 Duration p.ej. "PT5M" → 5 min
+    let delayMinutes = 0;
+    if (dep.delay) {
+      const m = String(dep.delay).match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
+      delayMinutes = (parseInt(m?.[1] ?? '0', 10) * 60) + parseInt(m?.[2] ?? '0', 10);
+    }
 
     return {
       coordinates:  null,
       bearing:      0,
-      delayMinutes: Math.round((dep.delay ?? 0) / 60),
+      delayMinutes,
       lastUpdated:  new Date(),
       isLive:       false,
       isLoading:    false,
@@ -339,50 +391,42 @@ async function fetchSNCFDelay(service: TrainService): Promise<LiveTrainPosition 
 
 // ── DB — Deutsche Bahn ────────────────────────────────────────────────────────
 /**
- * Usa la API pública de DB Fahrplan para obtener el delay del tren.
- * Requiere EXPO_PUBLIC_DB_API_KEY — registro gratuito en:
- *   https://developer.deutschebahn.com  →  FahrPlan API (free tier)
+ * v6.db.transport.rest — wrapper comunitario de HAFAS (el sistema interno de DB).
+ * API KEY: NO requerida. Open source, mantenida por la comunidad.
+ * Docs: https://v6.db.transport.rest/
  *
- * Al igual que SNCF, solo devuelve el delay — posición interpolada.
+ * Endpoint: GET /stops/{eva}/departures?results=20&duration=60
+ *   Eva = código EVA de la estación (p.ej. 8000105 = Frankfurt Hbf)
+ *   Respuesta: { departures: [{ tripId, line: { name }, when, delay, direction }] }
+ *   `delay`: segundos de retraso (null = puntual o sin datos RT)
+ *
+ * EXPO_PUBLIC_DB_API_KEY: OBSOLETO — ya no necesario. Se mantiene en .env.example
+ * como placeholder por si en el futuro se quiere usar la API oficial de DB.
  */
 async function fetchDBDelay(service: TrainService): Promise<LiveTrainPosition | null> {
-  const apiKey = process.env.EXPO_PUBLIC_DB_API_KEY;
-  if (!apiKey) return null;
-
   try {
-    // Buscar llegadas en la estación de origen para encontrar el tren por número
-    const stationId = service.origin.id; // IBNR / Eva-Nummer de la estación DB
-    const dateStr   = service.departureTime.toISOString().slice(0, 10).replace(/-/g, '');
-    const hourStr   = service.departureTime.toTimeString().slice(0, 5).replace(':', '');
+    const eva = service.origin.id; // EVA-Nummer de la estación DB (p.ej. "8000105")
+    const url = `https://v6.db.transport.rest/stops/${encodeURIComponent(eva)}/departures?results=30&duration=90&language=en`;
 
-    const url = `https://api.deutschebahn.com/fahrplan-plus/v1/departureBoard/${encodeURIComponent(stationId)}?date=${dateStr}&time=${hourStr}`;
-    const raw = await fetchSafe(url, {
-      Authorization: `Bearer ${apiKey}`,
-      Accept: 'application/json',
-    });
+    const raw = await fetchSafe(url);
     if (!raw) return null;
 
-    const data = JSON.parse(raw);
-    const trains: any[] = Array.isArray(data) ? data : (data?.DepartureBoard?.Departure ?? []);
+    const data        = JSON.parse(raw);
+    const departures: any[] = data?.departures ?? [];
+    const trainNum    = service.trainNumber.replace(/\s+/g, '').toUpperCase();
 
-    // Buscar el tren por número
-    const match = trains.find((t: any) => {
-      const name = (t.name ?? t.train ?? '').replace(/\s+/g, '');
-      return name.includes(service.trainNumber.replace(/\s+/g, ''));
+    // Buscar el tren por número de línea (p.ej. "ICE 598", "IC 2212")
+    const match = departures.find((d: any) => {
+      const name = (d.line?.name ?? d.line?.fahrtNr ?? '').replace(/\s+/g, '').toUpperCase();
+      return name.includes(trainNum) || trainNum.includes(name);
     });
     if (!match) return null;
 
-    // rtTime está presente solo cuando hay retraso real
-    let delayMinutes = 0;
-    if (match.rtTime && match.rtTime !== match.time) {
-      const [bH, bM] = match.time.split(':').map(Number);
-      const [rH, rM] = match.rtTime.split(':').map(Number);
-      delayMinutes = (rH * 60 + rM) - (bH * 60 + bM);
-      if (delayMinutes < 0) delayMinutes += 1440; // cruce de medianoche
-    }
+    // `delay` en segundos; null = sin dato RT (puntual)
+    const delayMinutes = match.delay != null ? Math.round(match.delay / 60) : 0;
 
     const fb = buildFallbackPosition({ ...service, delayMinutes });
-    return { ...fb, delayMinutes, isLive: false };
+    return { ...fb, delayMinutes, isLive: match.delay != null };
 
   } catch {
     return null;
