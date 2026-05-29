@@ -10,6 +10,8 @@ web-build/
 assets/*.db
 # Excepción: TfL es hardcoded y pequeño (96 KB) — sí se versiona
 !assets/gtfs_gb_tfl.db
+# Excepción: CP Portugal es pequeño (6 MB) y sin URL de descarga directa estable — sí se versiona
+!assets/gtfs_portugal.db
 
 # OS
 .DS_Store
