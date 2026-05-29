@@ -1,46 +1,59 @@
 #!/usr/bin/env python3
 """
 WoW TRENES — Importar GTFS Barcelona TMB via API oficial
-Usa las credenciales de developer.tmb.cat para descargar datos reales.
+Usa las credenciales de developer.tmb.cat
+
+NOTA: El plan gratuito de TMB solo expone:
+  ✓ GET /transit/linies/metro         → 11 líneas con colores reales
+  ✓ GET /transit/parades/{id}/properes-arribades → tiempo real por parada
+  ✗ GET /transit/linies/metro/{codi}/parades → 404 en plan free
+
+Para la DB estática usa: python3 scripts/create_gtfs_es_bcn.py (hardcoded, funciona)
+Este script es útil solo para obtener los colores oficiales de líneas desde la API.
 
 Uso:
-    python3 scripts/import_gtfs_es_bcn_api.py --app-id e69d854f --app-key TU_KEY
-
-Qué hace:
-  1. Descarga todas las paradas de metro via /transit/parades
-  2. Descarga todas las líneas via /transit/linies/metro
-  3. Construye stop_times aproximados (la API TMB no expone GTFS completo,
-     solo tiempo real — para horarios estáticos usamos frecuencias reales)
-  4. Genera assets/gtfs_es_bcn.db con coordenadas GPS reales de TMB
+  python3 scripts/import_gtfs_es_bcn_api.py --app-id e69d854f --app-key TU_KEY
 """
-import argparse, sqlite3, shutil, time, json, urllib.request
+import argparse, sqlite3, shutil, time, json, urllib.request, ssl, sys
 from pathlib import Path
 
 OUTPUT_DIR = Path(__file__).parent.parent / "assets"
 OUTPUT_DB  = OUTPUT_DIR / "gtfs_es_bcn.db"
 BASE_URL   = "https://api.tmb.cat/v1"
 
-# Colores oficiales TMB
-LINE_COLORS = {
-    "1": "DB1F25", "2": "A455A4", "3": "3FA63D",
-    "4": "FFD616", "5": "0059A7", "9": "F06B00",
-    "10": "0095B7", "11": "7ED348",
-    "91": "F06B00",  # L9S
-}
+# Fix SSL Mac+pyenv
+try:
+    import certifi
+    _SSL_CTX = ssl.create_default_context(cafile=certifi.where())
+except ImportError:
+    _SSL_CTX = ssl.create_default_context()
+    _SSL_CTX.check_hostname = False
+    _SSL_CTX.verify_mode = ssl.CERT_NONE
 
-HEADWAY = {  # minutos entre trenes (día laborable punta)
-    "1": 3, "2": 5, "3": 3, "4": 4, "5": 4,
-    "9": 6, "10": 6, "11": 10, "91": 8,
+# Headway real por línea (minutos, hora punta día laborable)
+HEADWAY = {
+    "L1": 3, "L2": 5, "L3": 3, "L4": 4, "L5": 4,
+    "L9N": 6, "L9S": 8, "L10N": 6, "L10S": 8, "L11": 10,
+    "FM": 7,
 }
-_FIRST_MIN = 300    # 05:00
-_LAST_MIN  = 1440   # 00:00
+_FIRST_MIN = 300   # 05:00
+_LAST_MIN  = 1440  # 00:00
+_DWELL     = 2     # minutos entre paradas
 
 
 def tmb_get(path: str, app_id: str, app_key: str) -> dict:
     url = f"{BASE_URL}{path}?app_id={app_id}&app_key={app_key}"
     req = urllib.request.Request(url, headers={"Accept": "application/json"})
-    with urllib.request.urlopen(req, timeout=30) as r:
-        return json.loads(r.read())
+    try:
+        with urllib.request.urlopen(req, timeout=30, context=_SSL_CTX) as r:
+            return json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        body = e.read().decode(errors="replace")[:300]
+        print(f"  HTTP {e.code} — {path}: {body}", file=sys.stderr)
+        raise
+    except urllib.error.URLError as e:
+        print(f"  URLError — {path}: {e.reason}", file=sys.stderr)
+        raise
 
 
 def fmt_time(minutes: int) -> str:
@@ -89,22 +102,55 @@ def main():
     print("=" * 42)
     t0 = time.time()
 
-    # ── 1. Descargar líneas ───────────────────────────────────────────────────
-    print("  Descargando líneas metro TMB...")
+    # ── 1. Líneas ─────────────────────────────────────────────────────────────
+    print("  Descargando líneas...")
     linies_data = tmb_get("/transit/linies/metro", args.app_id, args.app_key)
-    linies = linies_data.get("data", {}).get("features", [])
-    print(f"  → {len(linies)} líneas")
+    linies = linies_data.get("features", [])
+    print(f"  → {len(linies)} líneas encontradas")
 
-    # ── 2. Descargar paradas ──────────────────────────────────────────────────
-    print("  Descargando paradas metro TMB...")
-    parades_data = tmb_get("/transit/parades", args.app_id, args.app_key)
-    parades = parades_data.get("data", {}).get("features", [])
-    # Filtrar solo metro (TIPUS_PARADA = "M")
-    metro_parades = [
-        p for p in parades
-        if p.get("properties", {}).get("TIPUS_PARADA") == "M"
-    ]
-    print(f"  → {len(metro_parades)} paradas metro")
+    # ── 2. Para cada línea, descargar sus paradas en orden ────────────────────
+    # Endpoint: /transit/linies/metro/{codi_linia}/parades
+    all_stops: dict[str, tuple] = {}   # stop_id → (name, lat, lon)
+    line_stop_seqs: dict[str, list] = {}  # route_id → [stop_id, ...]
+
+    for linia in linies:
+        props    = linia.get("properties", {})
+        codi     = props.get("CODI_LINIA", "")
+        nom      = props.get("NOM_LINIA", str(codi))   # "L1", "L9S", "FM", etc.
+        route_id = nom  # usar NOM_LINIA directamente como route_id
+
+        print(f"  Descargando paradas {route_id} (codi {codi})...", end=" ")
+        try:
+            p_data = tmb_get(
+                f"/transit/linies/metro/{codi}/parades",
+                args.app_id, args.app_key
+            )
+        except Exception:
+            print("ERROR — saltando")
+            continue
+
+        p_feats = p_data.get("features", [])
+        print(f"{len(p_feats)} paradas")
+
+        seq = []
+        for feat in p_feats:
+            pp  = feat.get("properties", {})
+            geo = feat.get("geometry", {}).get("coordinates", [0, 0])
+            codi_parada = pp.get("CODI_PARADA") or pp.get("ID_PARADA", "")
+            sid  = f"TMB_{codi_parada}"
+            name = pp.get("NOM_PARADA") or pp.get("NOM_ESTACIO", f"Parada {codi_parada}")
+            lat  = float(geo[1]) if geo and geo[1] else 0.0
+            lon  = float(geo[0]) if geo and geo[0] else 0.0
+            if not name or not lat:
+                continue
+            all_stops[sid] = (name, lat, lon)
+            seq.append(sid)
+
+        if len(seq) >= 2:
+            line_stop_seqs[route_id] = seq
+
+    print(f"\n  Total paradas únicas: {len(all_stops)}")
+    print(f"  Líneas con secuencia: {len(line_stop_seqs)}")
 
     # ── 3. Construir DB ───────────────────────────────────────────────────────
     tmp_db = Path("/tmp/gtfs_es_bcn_api.db")
@@ -114,84 +160,52 @@ def main():
     conn = sqlite3.connect(str(tmp_db))
     setup(conn)
 
-    # Agency
     conn.execute("INSERT OR IGNORE INTO agency VALUES (?,?,?,?)",
         ("TMB", "Transports Metropolitans de Barcelona",
          "https://www.tmb.cat", "Europe/Madrid"))
     conn.commit()
 
-    # Routes
-    route_names = {}
+    # Routes — usar colores reales de la API
     for linia in linies:
-        props = linia.get("properties", {})
-        codi  = str(props.get("CODI_LINIA", ""))
-        nom   = props.get("NOM_LINIA", f"L{codi}")
-        color = LINE_COLORS.get(codi, "888888")
-        route_id = f"L{codi}" if codi not in ("9", "91", "10") else (
-            "L9N" if codi == "9" else ("L9S" if codi == "91" else "L10N"))
-        route_names[codi] = route_id
+        props    = linia.get("properties", {})
+        codi     = props.get("CODI_LINIA", "")
+        nom      = props.get("NOM_LINIA", str(codi))
+        desc     = props.get("DESC_LINIA", nom)
+        color    = props.get("COLOR_LINIA", "888888")
+        transport = props.get("NOM_TIPUS_TRANSPORT", "METRO")
+        rtype    = 0 if transport == "FUNICULAR" else 1  # 0=tram/funicular, 1=metro
         conn.execute("INSERT OR IGNORE INTO routes VALUES (?,?,?,?,?,?,?)",
-            (route_id, "TMB", route_id, nom, 1, color, "Barcelona"))
+            (nom, "TMB", nom, desc, rtype, color, "Barcelona"))
     conn.commit()
-    print(f"  Rutas: {len(route_names)}")
+    print(f"  Rutas insertadas: {len(linies)}")
 
     # Stops
-    stop_rows = []
-    for p in metro_parades:
-        props = p.get("properties", {})
-        geo   = p.get("geometry", {}).get("coordinates", [0, 0])
-        sid   = f"TMB_{props.get('CODI_PARADA', '')}"
-        name  = props.get("NOM_PARADA", "")
-        lat   = float(geo[1]) if geo[1] else 0.0
-        lon   = float(geo[0]) if geo[0] else 0.0
-        if not name or not lat:
-            continue
-        stop_rows.append((sid, name, lat, lon, "ES", 0, ""))
+    stop_rows = [(sid, name, lat, lon, "ES", 0, "")
+                 for sid, (name, lat, lon) in all_stops.items()]
     conn.executemany("INSERT OR IGNORE INTO stops VALUES (?,?,?,?,?,?,?)", stop_rows)
     conn.commit()
-    print(f"  Paradas: {len(stop_rows)}")
+    print(f"  Paradas insertadas: {len(stop_rows)}")
 
-    # Trips + stop_times por línea y dirección ─────────────────────────────────
-    # La API TMB no expone GTFS con secuencias de paradas completas por viaje,
-    # solo /properes-arribades en tiempo real.
-    # Usamos frecuencias reales y orden geográfico aproximado.
-    trip_count = 0
-    st_count   = 0
+    # Trips + stop_times
     trips_batch = []
     st_batch    = []
+    trip_count  = 0
+    st_count    = 0
 
-    for codi, route_id in route_names.items():
-        # Paradas de esta línea
-        line_stops = []
-        for p in metro_parades:
-            props = p.get("properties", {})
-            linies_parada = str(props.get("LINIES", ""))
-            if codi in linies_parada.split(",") or \
-               f"L{codi}" in linies_parada or route_id in linies_parada:
-                sid = f"TMB_{props.get('CODI_PARADA', '')}"
-                geo = p.get("geometry", {}).get("coordinates", [0, 0])
-                line_stops.append((sid, float(geo[1]), float(geo[0])))
-
-        if len(line_stops) < 2:
-            continue
-
-        # Ordenar por latitud (aproximación para direcciones N↔S)
-        line_stops.sort(key=lambda x: x[1])
-        headway = HEADWAY.get(codi, 5)
-        dwell   = 2  # minutos entre paradas
-
+    for route_id, seq in line_stop_seqs.items():
+        headway = HEADWAY.get(route_id, 5)
         for direction in (0, 1):
-            seq = line_stops if direction == 0 else list(reversed(line_stops))
-            headsign = seq[-1][0]
+            stop_seq = seq if direction == 0 else list(reversed(seq))
+            headsign = stop_seq[-1]
             dep = _FIRST_MIN
             while dep <= _LAST_MIN:
                 trip_id = f"{route_id}_d{direction}_{dep:04d}"
                 trips_batch.append((trip_id, route_id, "ALL", headsign, direction))
-                for i, (sid, _, __) in enumerate(seq):
-                    ts = fmt_time(dep + i * dwell)
+                for i, sid in enumerate(stop_seq):
+                    ts = fmt_time(dep + i * _DWELL)
                     st_batch.append((trip_id, ts, ts, sid, i))
                 trip_count += 1
-                st_count   += len(seq)
+                st_count   += len(stop_seq)
                 dep        += headway
 
     conn.executemany("INSERT OR IGNORE INTO trips VALUES (?,?,?,?,?)", trips_batch)
@@ -201,12 +215,11 @@ def main():
     print(f"  Stop_times: {st_count:,}")
 
     # Calendar
-    conn.execute("INSERT OR IGNORE INTO calendar VALUES (?,?,?,?,?,?,?,?,?,?)",
-        ("WD",  1,1,1,1,1,0,0, "20260101","20261231"))
-    conn.execute("INSERT OR IGNORE INTO calendar VALUES (?,?,?,?,?,?,?,?,?,?)",
-        ("WE",  0,0,0,0,0,1,1, "20260101","20261231"))
-    conn.execute("INSERT OR IGNORE INTO calendar VALUES (?,?,?,?,?,?,?,?,?,?)",
-        ("ALL", 1,1,1,1,1,1,1, "20260101","20261231"))
+    for svc, m,t,w,th,f,sa,su in [
+        ("WD", 1,1,1,1,1,0,0), ("WE", 0,0,0,0,0,1,1), ("ALL", 1,1,1,1,1,1,1)
+    ]:
+        conn.execute("INSERT OR IGNORE INTO calendar VALUES (?,?,?,?,?,?,?,?,?,?)",
+            (svc, m,t,w,th,f,sa,su, "20260101","20261231"))
     conn.commit()
 
     # Índices
@@ -226,9 +239,6 @@ def main():
     mb = OUTPUT_DB.stat().st_size / 1_048_576
     print(f"\n  ✓ Listo en {elapsed:.1f}s  —  {mb:.2f} MB")
     print(f"  Archivo: {OUTPUT_DB}")
-    print(f"\n  Ejecuta en tu terminal:")
-    print(f"  python3 scripts/import_gtfs_es_bcn_api.py \\")
-    print(f"    --app-id {args.app_id} --app-key TU_APP_KEY")
 
 
 if __name__ == "__main__":
