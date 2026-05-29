@@ -1,33 +1,35 @@
 #!/usr/bin/env python3
 """
-WoW TRENES - Importador GTFS Portugal -> SQLite
-Lee ~/Downloads/Wow trains Portugal/ y genera assets/gtfs_pt.db
+WoW TRENES — Importador GTFS Portugal (CP) → SQLite
+Genera assets/gtfs_portugal.db
 
-Fuente: CP — CC BY 4.0
-  URL: https://www.transporlis.pt/Default.aspx?tabid=353
-  Requiere registro gratuito en Transporlis. Alternativa: https://transitfeeds.com/p/comboios-de-portugal
+FUENTE (sin registro, público):
+  https://publico.cp.pt/gtfs/gtfs.zip
+  Actualizado diariamente. Licencia: ver https://nap-portugal.imt-ip.pt/nap/multimodalsupplydetail/176
 
-Incluye: CP (Comboios de Portugal) — Lisboa, Porto, Coimbra, Faro, Braga
+Incluye: CP (Comboios de Portugal) — todas las líneas nacionales
+  Linha do Norte, Linha de Cascais, Linha de Sintra, Linha do Algarve,
+  Linha do Sul, Linha do Minho, Linha do Douro, Linha da Beira Alta/Baixa, etc.
 
-Resultado esperado: ~150-300 estaciones, ~30-60k stop_times, ~5-15 MB
+Resultado esperado: ~150-300 estaciones, ~30-100k stop_times, ~5-20 MB
+
+Uso:
+  python3 scripts/import_gtfs_pt.py
+  python3 scripts/import_gtfs_pt.py --local ~/Downloads/gtfs_cp.zip  # ZIP ya descargado
 """
-import sqlite3, csv, sys, time, shutil
+import sqlite3, csv, sys, time, shutil, zipfile, io, argparse
 from pathlib import Path
+try:
+    import urllib.request as urlreq
+except ImportError:
+    urlreq = None
 
-_POSSIBLE_DIRS = [
-    Path.home() / "Downloads" / "Wow trains Portugal",
-    Path.home() / "Downloads" / "Wow trains Portugal ",
-    Path.home() / "Downloads" / "PORTUGAL",
-    Path.home() / "Downloads" / "Portugal",
-    Path.home() / "Downloads" / "CP",
-    Path.home() / "Downloads" / "comboios",]
-GTFS_DIR   = next((d for d in _POSSIBLE_DIRS if d.exists()), _POSSIBLE_DIRS[0])
+GTFS_URL   = "https://publico.cp.pt/gtfs/gtfs.zip"
 OUTPUT_DIR = Path(__file__).parent.parent / "assets"
 OUTPUT_DB  = OUTPUT_DIR / "gtfs_portugal.db"
 COUNTRY    = "PT"
-
-MAX_ST = 200_000
-MAX_CD = 30_000
+MAX_ST     = 300_000
+MAX_CD     = 50_000
 
 RAIL_TYPES = {
     "2",
@@ -36,31 +38,32 @@ RAIL_TYPES = {
     "112","113","114","115","116","117",
 }
 
-def read_csv(path):
+
+def read_csv_zip(zf: zipfile.ZipFile, name: str):
+    """Lee un archivo CSV del ZIP. Devuelve lista de dicts."""
     try:
-        with open(path, encoding="utf-8-sig", newline="") as f:
-            return list(csv.DictReader(f))
-    except FileNotFoundError:
-        print(f"  WARN: {path} not found, skipping")
+        with zf.open(name) as f:
+            text = f.read().decode("utf-8-sig", errors="replace")
+            return list(csv.DictReader(text.splitlines()))
+    except KeyError:
+        print(f"  WARN: {name} no encontrado en el ZIP, ignorando")
         return []
+
 
 def setup(conn):
     conn.executescript("""
         PRAGMA journal_mode = WAL;
         PRAGMA synchronous  = NORMAL;
-        CREATE TABLE IF NOT EXISTS agency (
-            agency_id TEXT PRIMARY KEY, agency_name TEXT,
-            agency_url TEXT, agency_timezone TEXT);
         CREATE TABLE IF NOT EXISTS stops (
             stop_id TEXT PRIMARY KEY, stop_name TEXT NOT NULL,
             stop_lat REAL NOT NULL, stop_lon REAL NOT NULL,
             country_code TEXT DEFAULT 'PT', location_type INTEGER DEFAULT 0,
-            parent_station TEXT);
+            parent_station TEXT DEFAULT '');
         CREATE TABLE IF NOT EXISTS routes (
-            route_id TEXT PRIMARY KEY, agency_id TEXT,
-            route_short_name TEXT, route_long_name TEXT, route_type INTEGER);
+            route_id TEXT PRIMARY KEY, agency_id TEXT DEFAULT 'CP',
+            route_short_name TEXT, route_long_name TEXT, route_type INTEGER DEFAULT 2);
         CREATE TABLE IF NOT EXISTS trips (
-            trip_id TEXT PRIMARY KEY, route_id TEXT, service_id TEXT,
+            trip_id TEXT PRIMARY KEY, route_id TEXT, service_id TEXT DEFAULT 'WD',
             trip_headsign TEXT, direction_id INTEGER DEFAULT 0);
         CREATE TABLE IF NOT EXISTS stop_times (
             trip_id TEXT NOT NULL, arrival_time TEXT, departure_time TEXT,
@@ -76,112 +79,161 @@ def setup(conn):
     """)
     conn.commit()
 
+
 def main():
-    print(f"\nWoW TRENES - Importador GTFS Portugal (CP)")
+    parser = argparse.ArgumentParser(description='Importar GTFS CP Portugal → SQLite')
+    parser.add_argument('--local', help='Ruta a un ZIP GTFS ya descargado (opcional)')
+    args = parser.parse_args()
+
+    print("\nWoW TRENES — Importador GTFS CP Portugal")
     print("=" * 55)
 
-    if not GTFS_DIR.exists():
-        print(f"\nERROR: Carpeta no encontrada. Probé:")
-        for d in _POSSIBLE_DIRS: print(f"  {d}")
-        print("\nDescarga:")
-        print("  https://www.transporlis.pt/Default.aspx?tabid=353")
-        print("  Requiere registro gratuito en Transporlis. Alternativa: https://transitfeeds.com/p/comboios-de-portugal")
-        print(f"  Descomprime en: ~/Downloads/Wow trains Portugal/")
-        sys.exit(1)
+    # ── Obtener el ZIP ─────────────────────────────────────────────────────────
+    if args.local:
+        local_path = Path(args.local).expanduser()
+        if not local_path.exists():
+            print(f"\nERROR: Archivo no encontrado: {local_path}")
+            sys.exit(1)
+        print(f"  Usando ZIP local: {local_path}")
+        zip_bytes = local_path.read_bytes()
+    else:
+        print(f"  Descargando desde {GTFS_URL}")
+        print("  (sin registro, datos públicos de CP)")
+        t0 = time.time()
+        try:
+            req = urlreq.Request(GTFS_URL, headers={
+                'User-Agent': 'WoW-TRENES/1.0 (gtfs-importer)'
+            })
+            with urlreq.urlopen(req, timeout=120) as r:
+                zip_bytes = r.read()
+        except Exception as e:
+            print(f"\nERROR descargando: {e}")
+            print("Prueba con --local si ya tienes el ZIP:")
+            print("  curl -L -o /tmp/gtfs_cp.zip https://publico.cp.pt/gtfs/gtfs.zip")
+            print("  python3 scripts/import_gtfs_pt.py --local /tmp/gtfs_cp.zip")
+            sys.exit(1)
+        print(f"  Descargado: {len(zip_bytes)/1_048_576:.1f} MB en {time.time()-t0:.1f}s")
 
-    required = ["stops.txt", "routes.txt", "trips.txt", "stop_times.txt"]
-    missing  = [f for f in required if not (GTFS_DIR / f).exists()]
-    if missing:
-        print(f"\nERROR: Faltan archivos: {missing}")
-        sys.exit(1)
-
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-
-    tmp_db = Path("/tmp/gtfs_portugal_build.db")
-    if tmp_db.exists(): tmp_db.unlink()
-
-    print(f"  Origen:  {GTFS_DIR}")
     print(f"  Destino: {OUTPUT_DB}\n")
 
-    t0   = time.time()
+    # ── Parsear ZIP ────────────────────────────────────────────────────────────
+    t0 = time.time()
+    try:
+        zf = zipfile.ZipFile(io.BytesIO(zip_bytes))
+    except zipfile.BadZipFile:
+        print("\nERROR: El archivo descargado no es un ZIP válido.")
+        print("  Puede que el servidor haya devuelto una página de error.")
+        print("  Prueba a descargar manualmente: https://publico.cp.pt/gtfs/gtfs.zip")
+        sys.exit(1)
+
+    print("  Archivos en el ZIP:", [n for n in zf.namelist() if n.endswith('.txt')])
+    print()
+
+    tmp_db = Path("/tmp/gtfs_portugal_build.db")
+    if tmp_db.exists():
+        tmp_db.unlink()
     conn = sqlite3.connect(str(tmp_db))
 
     try:
         setup(conn)
 
-        rows = read_csv(GTFS_DIR / "agency.txt")
-        conn.executemany("INSERT OR IGNORE INTO agency VALUES (?,?,?,?)",
-            [(r.get("agency_id",""), r.get("agency_name",""),
-              r.get("agency_url",""), r.get("agency_timezone","Europe/Lisbon"))
-             for r in rows])
-        conn.commit()
+        # Agencia
+        rows = read_csv_zip(zf, "agency.txt")
         print(f"  Agencias: {len(rows)}")
 
-        rows = read_csv(GTFS_DIR / "routes.txt")
-        rail_routes = [(r["route_id"], r.get("agency_id",""),
-                        r.get("route_short_name",""), r.get("route_long_name",""),
-                        int(r.get("route_type","2")))
-                       for r in rows if r.get("route_type","") in RAIL_TYPES]
+        # Rutas ferroviarias
+        rows = read_csv_zip(zf, "routes.txt")
+        rail_routes = [
+            (r["route_id"], r.get("agency_id", "CP"),
+             r.get("route_short_name", ""), r.get("route_long_name", ""),
+             int(r.get("route_type", "2") or "2"))
+            for r in rows if r.get("route_type", "") in RAIL_TYPES
+        ]
+        # Fallback: si CP usa tipos no estándar, tomar todo
         if not rail_routes:
-            print("  WARN: No rail types found, using all routes as fallback")
-            all_types = {}
+            print("  WARN: Sin tipos ferroviarios estándar — importando todas las rutas")
+            type_count = {}
             for r in rows:
-                t = r.get("route_type","?")
-                all_types[t] = all_types.get(t,0) + 1
-            print("  Tipos encontrados:", dict(sorted(all_types.items())))
-            rail_routes = [(r["route_id"], r.get("agency_id",""),
-                            r.get("route_short_name",""), r.get("route_long_name",""),
-                            int(r.get("route_type","2"))) for r in rows]
+                t = r.get("route_type", "?")
+                type_count[t] = type_count.get(t, 0) + 1
+            print("  Tipos encontrados:", dict(sorted(type_count.items())))
+            rail_routes = [
+                (r["route_id"], r.get("agency_id", "CP"),
+                 r.get("route_short_name", ""), r.get("route_long_name", ""),
+                 int(r.get("route_type", "2") or "2"))
+                for r in rows
+            ]
         conn.executemany("INSERT OR IGNORE INTO routes VALUES (?,?,?,?,?)", rail_routes)
         conn.commit()
         rail_route_ids = {r[0] for r in rail_routes}
         print(f"  Rutas: {len(rail_routes)}")
 
-        rows = read_csv(GTFS_DIR / "trips.txt")
-        rail_trips = [(r["trip_id"], r["route_id"], r.get("service_id",""),
-                       r.get("trip_headsign",""), int(r.get("direction_id",0) or 0))
-                      for r in rows if r.get("route_id","") in rail_route_ids]
+        # Viajes
+        rows = read_csv_zip(zf, "trips.txt")
+        rail_trips = [
+            (r["trip_id"], r["route_id"], r.get("service_id", ""),
+             r.get("trip_headsign", ""), int(r.get("direction_id", 0) or 0))
+            for r in rows if r.get("route_id", "") in rail_route_ids
+        ]
         conn.executemany("INSERT OR IGNORE INTO trips VALUES (?,?,?,?,?)", rail_trips)
         conn.commit()
         rail_trip_ids = {r[0] for r in rail_trips}
         print(f"  Viajes: {len(rail_trips)}")
 
-        print(f"  Leyendo stop_times (max {MAX_ST:,})...")
-        st_data, rail_stop_ids, n = [], set(), 0
-        with open(GTFS_DIR / "stop_times.txt", encoding="utf-8-sig", newline="") as f:
-            for row in csv.DictReader(f):
-                if row.get("trip_id","") not in rail_trip_ids: continue
-                sid = row.get("stop_id","")
+        # Stop times (streaming para no saturar RAM)
+        print(f"  Leyendo stop_times (máx {MAX_ST:,})...")
+        rail_stop_ids = set()
+        st_data = []
+        n = 0
+        with zf.open("stop_times.txt") as raw_f:
+            text = raw_f.read().decode("utf-8-sig", errors="replace")
+            for row in csv.DictReader(text.splitlines()):
+                if row.get("trip_id", "") not in rail_trip_ids:
+                    continue
+                sid = row.get("stop_id", "")
                 rail_stop_ids.add(sid)
-                st_data.append((row["trip_id"], row.get("arrival_time",""),
-                                row.get("departure_time",""), sid,
-                                int(row.get("stop_sequence",0) or 0)))
+                st_data.append((
+                    row["trip_id"],
+                    row.get("arrival_time", ""),
+                    row.get("departure_time", ""),
+                    sid,
+                    int(row.get("stop_sequence", 0) or 0)
+                ))
                 n += 1
                 if n >= MAX_ST:
-                    print(f"  Límite {MAX_ST:,} alcanzado"); break
-                if n % 50_000 == 0: print(f"    {n:,} filas...")
+                    print(f"  Límite {MAX_ST:,} alcanzado")
+                    break
+                if n % 50_000 == 0:
+                    print(f"    {n:,} filas...")
         conn.executemany("INSERT OR IGNORE INTO stop_times VALUES (?,?,?,?,?)", st_data)
         conn.commit()
-        print(f"  Stop times: {n:,} | Estaciones: {len(rail_stop_ids)}")
+        print(f"  Stop times: {n:,} | Paradas únicas: {len(rail_stop_ids)}")
 
-        rows = read_csv(GTFS_DIR / "stops.txt")
+        # Paradas (solo las que aparecen en stop_times ferroviarios)
+        rows = read_csv_zip(zf, "stops.txt")
         stops_data = []
         for r in rows:
-            if r.get("stop_id","") not in rail_stop_ids: continue
+            if r.get("stop_id", "") not in rail_stop_ids:
+                continue
             try:
-                lat = float(r.get("stop_lat",0))
-                lon = float(r.get("stop_lon",0))
-                if lat == 0 and lon == 0: continue
-                stops_data.append((r["stop_id"], r.get("stop_name","").strip(),
-                                   lat, lon, COUNTRY,
-                                   int(r.get("location_type",0) or 0),
-                                   r.get("parent_station","")))
-            except: continue
+                lat = float(r.get("stop_lat", 0) or 0)
+                lon = float(r.get("stop_lon", 0) or 0)
+                if lat == 0.0 and lon == 0.0:
+                    continue
+                stops_data.append((
+                    r["stop_id"], r.get("stop_name", "").strip(),
+                    lat, lon, COUNTRY,
+                    int(r.get("location_type", 0) or 0),
+                    r.get("parent_station", "")
+                ))
+            except Exception:
+                continue
         conn.executemany("INSERT OR IGNORE INTO stops VALUES (?,?,?,?,?,?,?)", stops_data)
         conn.commit()
-        print(f"  Estaciones importadas: {len(stops_data)}")
+        print(f"  Estaciones: {len(stops_data)}")
 
-        rows = read_csv(GTFS_DIR / "calendar.txt")
+        # Calendario
+        rows = read_csv_zip(zf, "calendar.txt")
         if rows:
             conn.executemany("INSERT OR IGNORE INTO calendar VALUES (?,?,?,?,?,?,?,?,?,?)",
                 [(r.get("service_id",""), r.get("monday",0), r.get("tuesday",0),
@@ -191,18 +243,17 @@ def main():
             conn.commit()
             print(f"  Calendarios: {len(rows)}")
 
-        cd_file = GTFS_DIR / "calendar_dates.txt"
-        if cd_file.exists():
-            cd_data = []
-            with open(cd_file, encoding="utf-8-sig", newline="") as f:
-                for i, row in enumerate(csv.DictReader(f)):
-                    if i >= MAX_CD: break
-                    cd_data.append((row.get("service_id",""), row.get("date",""),
-                                    int(row.get("exception_type",1))))
-            conn.executemany("INSERT OR IGNORE INTO calendar_dates VALUES (?,?,?)", cd_data)
+        # Calendar dates
+        rows = read_csv_zip(zf, "calendar_dates.txt")
+        if rows:
+            cd = [(r.get("service_id",""), r.get("date",""),
+                   int(r.get("exception_type", 1) or 1))
+                  for r in rows[:MAX_CD]]
+            conn.executemany("INSERT OR IGNORE INTO calendar_dates VALUES (?,?,?)", cd)
             conn.commit()
-            print(f"  Excepciones calendario: {len(cd_data)}")
+            print(f"  Excepciones calendario: {len(cd)}")
 
+        # Índices
         print("  Creando índices...")
         conn.executescript("""
             CREATE INDEX IF NOT EXISTS idx_stops_ll    ON stops      (stop_lat, stop_lon);
@@ -214,15 +265,24 @@ def main():
 
         elapsed = time.time() - t0
         conn.close()
+        zf.close()
+
+        OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
         shutil.copy2(str(tmp_db), str(OUTPUT_DB))
         mb = OUTPUT_DB.stat().st_size / 1_048_576
-        print(f"\nListo en {elapsed:.1f}s | {mb:.1f} MB")
-        print(f"Archivo: {OUTPUT_DB}")
-        print(f"\nPortugal lista con datos de CP.")
+
+        print(f"\n✅  Portugal lista:")
+        print(f"    {len(stops_data)} estaciones CP")
+        print(f"    {n:,} stop_times")
+        print(f"    {mb:.1f} MB — {elapsed:.1f}s")
+        print(f"    {OUTPUT_DB}")
 
     except Exception:
-        import traceback; traceback.print_exc()
-        conn.close(); sys.exit(1)
+        import traceback
+        traceback.print_exc()
+        conn.close()
+        sys.exit(1)
+
 
 if __name__ == "__main__":
     main()
