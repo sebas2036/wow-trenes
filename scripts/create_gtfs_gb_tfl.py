@@ -372,6 +372,102 @@ STATIONS = [
     ("940GZZLUFRD", "Farringdon",               51.5202, -0.1052, ["elizabeth"]),
 ]
 
+# ── Secuencias de paradas por línea (dirección 0 = terminus A→B) ─────────────
+LINE_SEQUENCES = {
+    "bakerloo": [
+        "940GZZLUHAW","940GZZLUKSL","940GZZLUSTH","940GZZLUNWA","940GZZLUWMB",
+        "940GZZLUSTE","940GZZLUHSP","940GZZLUWKG","940GZZLUKBY","940GZZLUQPS",
+        "940GZZLUKPK","940GZZLUMAI","940GZZLUWLA","940GZZLUPCC","940GZZLUERB",
+        "940GZZLUMRB","940GZZLUBST","940GZZLURVL","940GZZLUOXC","940GZZLUPIC",
+        "940GZZLUCHX","940GZZLUEMB","940GZZLUWLO","940GZZLULEN","940GZZLUEPH",
+    ],
+    "victoria": [
+        "940GZZLUWLC","940GZZLUBLH","940GZZLUTTM","940GZZLUSFS","940GZZLUFPK",
+        "940GZZLUHBN2","940GZZLUEUS","940GZZLUWRN","940GZZLUOXC","940GZZLUVIC",
+        "940GZZLUPVL","940GZZLUVXL","940GZZLUSTK","940GZZLUBRX",
+    ],
+    "jubilee": [
+        "940GZZLUSBC","940GZZLUCGA","940GZZLUQBY","940GZZLUKGN","940GZZLUHRW",
+        "940GZZLUFCH","940GZZLUWJN","940GZZLUKIL","940GZZLUNBP","940GZZLUDGE",
+        "940GZZLUWLJ","940GZZLUSGW","940GZZLUSJW","940GZZLUBST","940GZZLUBND",
+        "940GZZLUGPK","940GZZLUWSM","940GZZLUWLO","940GZZLUSRP","940GZZLULBN",
+        "940GZZLUBMB","940GZZLUCWR","940GZZLUCAR","940GZZLUNHF","940GZZLUCUS",
+        "940GZZLUWFM","940GZZLUSTD",
+    ],
+    "northern": [
+        "940GZZLUMRD","940GZZLUSWD","940GZZLUCOL","940GZZLUTBY","940GZZLUTOT",
+        "940GZZLUBAL","940GZZLUCPS","940GZZLUCPC","940GZZLUCPN","940GZZLUSTK",
+        "940GZZLUOVL2","940GZZLUKNG","940GZZLUEPH","940GZZLUBNK2","940GZZLULBN",
+        "940GZZLUCHX","940GZZLUEMB","940GZZLUWRN","940GZZLUEUS","940GZZLUKSX",
+        "940GZZLUAGL","940GZZLUOVL","940GZZLUMGT2","940GZZLUCTN","940GZZLUMGT",
+        "940GZZLUCFM","940GZZLUBLM","940GZZLUHPD","940GZZLUGOL","940GZZLUBZP",
+        "940GZZLUHBT","940GZZLUCED","940GZZLUBBR","940GZZLUEDF",
+    ],
+    "central": [
+        "940GZZLUEAC","940GZZLUEBY","940GZZLUWCY","940GZZLUNAN","940GZZLUHAN",
+        "940GZZLUWTA","940GZZLUSGB","940GZZLUHLE","940GZZLUNTE","940GZZLUQWY",
+        "940GZZLUBND","940GZZLUOXC","940GZZLUTCR","940GZZLUHBN","940GZZLUCHL",
+        "940GZZLUSTB","940GZZLUBNK","940GZZLULGT","940GZZLUBSH","940GZZLUMIL",
+        "940GZZLUSTD","940GZZLULSQ","940GZZLULYS","940GZZLUWNS","940GZZLUSNB",
+        "940GZZLUGGE","940GZZLUREM","940GZZLUNHG","940GZZLUEBO",
+    ],
+    "piccadilly": [
+        "940GZZLUHR5","940GZZLUHR4","940GZZLUHAI","940GZZLUBOS","940GZZLUNFD",
+        "940GZZLUSOE","940GZZLUACY","940GZZLUTMH","940GZZLUKNB","940GZZLUHRC",
+        "940GZZLUGPK","940GZZLUPIC","940GZZLUCHX","940GZZLUCPT","940GZZLUHBN",
+        "940GZZLURSS","940GZZLUKSX","940GZZLUCGY","940GZZLUHBR","940GZZLUASP",
+        "940GZZLUFPK","940GZZLUMVL","940GZZLUTBR","940GZZLUWDG","940GZZLUBDG",
+        "940GZZLUARL","940GZZLUSFD","940GZZLUOAK","940GZZLUCHH",
+    ],
+    "elizabeth": [
+        "910GCRDTOTC","910GCRDMAIH","910GCRDSLOU","910GCRDLNGS","910GCRDIVR",
+        "910GCRDWRAY","910GCRDHAYD","940GZZLUSHF","940GZZLUHNL","940GZZLUHR4",
+        "940GZZLUPCC","940GZZLUBND","940GZZLUTCR","940GZZLUFSK","940GZZLUKSX",
+        "940GZZLULGT","940GZZLUWSM2","940GZZLUCAR","940GZZLUWSP","940GZZLUABB",
+    ],
+    "district": [
+        "940GZZLUWIM","940GZZLUWIP","940GZZLUSFD2","940GZZLUEAT","940GZZLUPUT",
+        "940GZZLUPBS","940GZZLUFUL","940GZZLUWBY","940GZZLUECT","940GZZLUGLR",
+        "940GZZLUSKS","940GZZLUHSC","940GZZLUNTE","940GZZLUPCC","940GZZLUWSM",
+        "940GZZLUVIC","940GZZLUEMB","940GZZLUTPL","940GZZLUBLK","940GZZLUMSK",
+        "940GZZLUCST","940GZZLUMMT","940GZZLUTWH","940GZZLUALD2","940GZZLUMIL",
+        "940GZZLUSTD","940GZZLUWFM","940GZZLUBKG",
+    ],
+    "circle": [
+        "940GZZLUPCC","940GZZLUEUS2","940GZZLUKSX","940GZZLUGRH","940GZZLUBST",
+        "940GZZLUFSK","940GZZLUBBN","940GZZLUMGT2","940GZZLUALD3","940GZZLUTWH",
+        "940GZZLUMMT","940GZZLUCST","940GZZLUMSK","940GZZLUBLK","940GZZLUTPL",
+        "940GZZLUEMB","940GZZLUWSM","940GZZLUVIC","940GZZLUSVS","940GZZLUGLR",
+        "940GZZLUSKS","940GZZLUHSC",
+    ],
+    "metropolitan": [
+        "940GZZLUAMS","940GZZLUCSS","940GZZLUCFD2","940GZZLURCM","940GZZLUMWD",
+        "940GZZLUNWD","940GZZLUNWH","940GZZLUPNR","940GZZLUNHD","940GZZLUHRW",
+        "940GZZLUFCH","940GZZLUBST","940GZZLUGRH","940GZZLUEUS2","940GZZLUKSX",
+        "940GZZLUBBN","940GZZLUMGT2","940GZZLUALD3",
+    ],
+    "hammersmith": [
+        "940GZZLUHSC2","940GZZLUSRN","940GZZLUSBM","940GZZLUNTE","940GZZLUPCC",
+        "940GZZLUBST","940GZZLUGRH","940GZZLUEUS2","940GZZLUKSX","940GZZLUFSK",
+        "940GZZLUBBN","940GZZLUMGT2","940GZZLULGT","940GZZLUWSM2","940GZZLUMIL",
+        "940GZZLUSTD","940GZZLUWFM","940GZZLUBKG",
+    ],
+    "dlr": [
+        "940GZZLUTWR","940GZZLUWAP","940GZZLULHS","940GZZLUWHI","940GZZLUCWF",
+        "940GZZLUHSD","940GZZLUSQD","940GZZLUMWL","940GZZLUIWG","940GZZLUCTR",
+        "940GZZLUGWC","940GZZLUDEP","940GZZLUEWY","940GZZLULEW",
+    ],
+    "waterloo_city": [
+        "940GZZLUWLO","940GZZLUBNK3",
+    ],
+}
+
+# Frecuencia: tren cada 10 min de 05:00 a 00:10
+_FIRST_MIN = 300   # 05:00
+_LAST_MIN  = 1450  # 24:10
+_HEADWAY   = 10    # minutos entre trenes
+
+
 def deduplicate(stations):
     seen = {}
     for s in stations:
@@ -439,6 +535,53 @@ def main():
             (sid, sname, lat, lon, "GB", 0, ""))
     conn.commit()
     print(f"  Estaciones: {len(stations)}")
+
+    # Trips + stop_times — generar a partir de LINE_SEQUENCES
+    valid_ids = {s[0] for s in stations}
+    trip_count = 0
+    st_count   = 0
+
+    def fmt_time(minutes):
+        """Convierte minutos desde medianoche a HH:MM:SS (permite >24h)."""
+        h, m = divmod(minutes, 60)
+        return f"{h:02d}:{m:02d}:00"
+
+    trips_batch = []
+    st_batch    = []
+
+    for line_id, seq in LINE_SEQUENCES.items():
+        # Filtrar paradas que existen en la DB
+        seq_valid = [s for s in seq if s in valid_ids]
+        if len(seq_valid) < 2:
+            continue
+        n_stops = len(seq_valid)
+        # Tiempo entre paradas consecutivas (aprox 2 min)
+        dwell = 2
+
+        for direction in (0, 1):
+            stop_seq = seq_valid if direction == 0 else list(reversed(seq_valid))
+            headsign = stop_seq[-1]  # ID del terminus
+
+            dep = _FIRST_MIN
+            while dep <= _LAST_MIN:
+                trip_id = f"{line_id}_d{direction}_{dep:04d}"
+                trips_batch.append((trip_id, line_id, "ALL", headsign, direction))
+
+                for i, sid in enumerate(stop_seq):
+                    t = dep + i * dwell
+                    ts = fmt_time(t)
+                    st_batch.append((trip_id, ts, ts, sid, i))
+
+                trip_count += 1
+                st_count   += n_stops
+                dep        += _HEADWAY
+
+    conn.executemany("INSERT OR IGNORE INTO trips VALUES (?,?,?,?,?)", trips_batch)
+    conn.executemany(
+        "INSERT OR IGNORE INTO stop_times VALUES (?,?,?,?,?)", st_batch)
+    conn.commit()
+    print(f"  Trips:      {trip_count:,}")
+    print(f"  Stop_times: {st_count:,}")
 
     # Calendar genérico
     conn.execute("INSERT OR IGNORE INTO calendar VALUES (?,?,?,?,?,?,?,?,?,?)",
