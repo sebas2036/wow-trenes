@@ -92,38 +92,52 @@ def osgb_to_wgs84(easting: float, northing: float):
 
 # ─── Parser MSN — Master Station Names ───────────────────────────────────────
 def parse_msn(text: str) -> dict:
-    """Returns {tiploc: (name, lat, lon, crs)}"""
+    """
+    Returns {tiploc: (name, lat, lon, crs)}
+
+    MSN 'A' record layout (Python 0-indexed, line length ~82):
+      [0]       'A'
+      [1:5]     spaces
+      [5:35]    Station name (30 chars)
+      [35]      Interchange flag digit
+      [36:43]   TIPLOC (7 chars)
+      [43:46]   CRS code (3 chars)
+      [46:49]   spaces
+      [49:52]   Subsidiary CRS (3 chars)
+      [52:57]   Easting encoded (5 digits)
+      [57]      separator (' ' or 'E')
+      [58:63]   Northing encoded (5 digits)
+      [63]      separator
+      [64]      Interchange grade
+
+    Coordinate encoding:
+      easting_metres  = (encoded_E - 10000) * 100
+      northing_metres = (encoded_N - 60000) * 100
+    """
     stations = {}
     for line in text.splitlines():
-        if not line.startswith('A') or len(line) < 60:
+        if not line.startswith('A') or len(line) < 65:
             continue
-        # Format (fixed-width 80 chars):
-        # [0]   'A'
-        # [1:5] spaces
-        # [5:12] TIPLOC (7 chars)
-        # [12]  space
-        # [13:43] name (30 chars)
-        # [43:49] easting (in 100m units)
-        # [49:55] northing (in 100m units)
-        # [55:58] CRS (3-char NLC/CRS code)
         try:
-            tiploc = line[5:12].strip()
-            name   = line[13:43].strip().title()
-            east_s = line[43:49].strip()
-            nrth_s = line[49:55].strip()
-            crs    = line[55:58].strip()
+            name   = line[5:35].strip().title()
+            tiploc = line[36:43].strip()
+            crs    = line[43:46].strip()
+            east_s = line[52:57].strip()
+            nrth_s = line[58:63].strip()
 
             if not tiploc or not name:
                 continue
+
+            lat, lon = 0.0, 0.0
             if east_s.isdigit() and nrth_s.isdigit():
-                e = float(east_s) * 100
-                n = float(nrth_s) * 100
-                if e > 0 and n > 0:
-                    lat, lon = osgb_to_wgs84(e, n)
-                else:
-                    lat, lon = 0.0, 0.0
-            else:
-                lat, lon = 0.0, 0.0
+                e_raw = int(east_s)
+                n_raw = int(nrth_s)
+                # Decode: offset + scale → OS National Grid metres
+                if e_raw > 10000 and n_raw > 60000:
+                    e = (e_raw - 10000) * 100
+                    n = (n_raw - 60000) * 100
+                    if e > 0 and n > 0:
+                        lat, lon = osgb_to_wgs84(e, n)
 
             stations[tiploc] = (name, lat, lon, crs or tiploc[:3])
         except Exception:
