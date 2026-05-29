@@ -281,54 +281,54 @@ async function fetchNSPosition(service: TrainService): Promise<LiveTrainPosition
 
 // ── SNCF — Francia ────────────────────────────────────────────────────────────
 /**
- * Usa la API pública de SNCF (Navitia) para obtener el delay real de un tren.
- * Requiere EXPO_PUBLIC_SNCF_API_KEY — registro gratuito en:
- *   https://data.sncf.com/api  →  genera token en tu perfil
+ * SNCF Open Data — Opendatasoft Explore v2.1
+ * Base: https://data.sncf.com/api/explore/v2.1
+ * API KEY: NO requerida (open data, licencia ODbL)
+ * EXPO_PUBLIC_SNCF_API_KEY: opcional — solo para aumentar rate-limit
  *
- * No devuelve coordenadas GPS (SNCF no expone posición en tiempo real),
- * solo el retraso actualizado. La posición se interpola igual que el fallback.
+ * Consulta el dataset de regularidad mensual TGV/Intercités para obtener
+ * el retraso típico en la ruta. No es posición GPS en tiempo real (SNCF
+ * no expone eso públicamente) — es el retraso promedio histórico del mes
+ * actual para el par origen/destino. Útil para mostrar "este tren suele
+ * retrasarse X minutos". Posición: interpolada por horario teórico.
+ *
+ * Dataset: regularite-mensuelle-tgv-aqst
+ *   Campos relevantes: gare_depart, gare_arrivee, date,
+ *                      retard_moyen_arrivee (minutos promedio de retraso)
  */
 async function fetchSNCFDelay(service: TrainService): Promise<LiveTrainPosition | null> {
-  const apiKey = process.env.EXPO_PUBLIC_SNCF_API_KEY;
-  if (!apiKey) return null;
-
   try {
-    // Buscar el viaje por número de tren (vehicle_journey)
-    const depISO = service.departureTime.toISOString().replace(/[-:]/g, '').slice(0, 15);
-    const url    = `https://api.sncf.com/v1/coverage/sncf/vehicle_journeys?headsign=${encodeURIComponent(service.trainNumber)}&since=${depISO}&count=1`;
+    const BASE    = 'https://data.sncf.com/api/explore/v2.1/catalog/datasets';
+    const DATASET = 'regularite-mensuelle-tgv-aqst';
 
-    const raw = await fetchSafe(url, {
-      Authorization: `Basic ${btoa(apiKey + ':')}`,
-    });
+    // Nombre de las estaciones en mayúsculas (formato SNCF)
+    const dep  = encodeURIComponent(service.origin.name.toUpperCase());
+    const arr  = encodeURIComponent(service.destination.name.toUpperCase());
+
+    // Mes actual en formato YYYY-MM para filtrar el registro más reciente
+    const now     = new Date();
+    const yearMon = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    // ODSQL: filtrar por ruta, ordenar por fecha desc, traer 1 registro
+    const where   = encodeURIComponent(`gare_depart like "${dep}" AND gare_arrivee like "${arr}"`);
+    const url     = `${BASE}/${DATASET}/records?where=${where}&order_by=date+desc&limit=1&select=retard_moyen_arrivee,taux_de_regularite,date`;
+
+    // Key opcional: si está → header Authorization aumenta rate-limit
+    const headers: Record<string, string> = {};
+    const apiKey = process.env.EXPO_PUBLIC_SNCF_API_KEY;
+    if (apiKey) headers.Authorization = `Apikey ${apiKey}`;
+
+    const raw = await fetchSafe(url, headers);
     if (!raw) return null;
 
-    const data = JSON.parse(raw);
-    const journeys = data?.vehicle_journeys;
-    if (!Array.isArray(journeys) || journeys.length === 0) return null;
+    const data    = JSON.parse(raw);
+    const records = data?.results as any[] | undefined;
+    if (!records || records.length === 0) return null;
 
-    // Extraer delay del primer stop-time que no haya pasado
-    const stopTimes: any[] = journeys[0]?.stop_times ?? [];
-    const now = Date.now();
-    let delayMinutes = 0;
+    // retard_moyen_arrivee: retraso promedio en minutos (float)
+    const delayAvg     = parseFloat(records[0]?.retard_moyen_arrivee ?? '0') || 0;
+    const delayMinutes = Math.round(delayAvg);
 
-    for (const st of stopTimes) {
-      const base = st.departure_time ?? st.arrival_time;
-      const rtDep = st.data_freshness === 'realtime' ? (st.departure_time_rt ?? st.arrival_time_rt) : null;
-      if (!rtDep || !base) continue;
-
-      // Ambos están en segundos desde medianoche — convertir a ms
-      const baseMs = parseInt(base, 10) * 1000;
-      const rtMs   = parseInt(rtDep, 10) * 1000;
-      const diff   = Math.round((rtMs - baseMs) / 60_000);
-
-      // Usar el delay del próximo stop que no haya pasado aún
-      const stopDateStr = journeys[0]?.calendars?.[0]?.active_periods?.[0]?.begin ?? '';
-      const stopDate    = stopDateStr ? new Date(stopDateStr).getTime() : service.departureTime.getTime();
-      const absMs       = stopDate + baseMs;
-      if (absMs > now) { delayMinutes = diff; break; }
-    }
-
-    // Posición interpolada con delay actualizado
     const fb = buildFallbackPosition({ ...service, delayMinutes });
     return { ...fb, delayMinutes, isLive: false };
 

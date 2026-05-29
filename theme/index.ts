@@ -178,12 +178,18 @@ export const Motion = {
 export const TouchTarget = { min: 44, chip: 48, button: 56, fab: 64 } as const;
 
 // ─── AFFILIATE CONFIG ─────────────────────────────────────────────────────────
+// Los IDs se leen desde variables de entorno (.env.local) en tiempo de build.
+// Si no están definidos, caen a los placeholders de desarrollo.
+// Para activar la monetización real añade a .env.local:
+//   EXPO_PUBLIC_PARTNERIZE_TAG=<camref asignado por Partnerize>
+//   EXPO_PUBLIC_IMPACT_SID=<SID asignado por Impact/Trainline>
+//   EXPO_PUBLIC_AFFILIATE_ID=<tu tracking ID negociado con Trainline>
 export const Affiliate = {
-  trackingId:       'WOWTRENES_AFF_001',
-  partnerizeTag:    'p11p',
-  impactSid:        'wow_trenes_sid',
-  commissionMin:    0.02,
-  commissionMax:    0.05,
+  trackingId:       process.env.EXPO_PUBLIC_AFFILIATE_ID    ?? 'WOWTRENES_AFF_001',
+  partnerizeTag:    process.env.EXPO_PUBLIC_PARTNERIZE_TAG  ?? 'p11p',
+  impactSid:        process.env.EXPO_PUBLIC_IMPACT_SID      ?? 'wow_trenes_sid',
+  commissionMin:    0.02,   // 2% mínimo garantizado por contrato Trainline
+  commissionMax:    0.05,   // 5% en rutas premium (TGV, AVE, Eurostar)
   merchantOfRecord: 'trainline',
 } as const;
 
