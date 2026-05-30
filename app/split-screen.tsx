@@ -21,6 +21,10 @@ import {
   Pressable,
   Linking,
   Animated as RNAnimated,
+  Modal,
+  TextInput,
+  ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import MapView, { Marker, Polyline, Circle, PROVIDER_GOOGLE } from 'react-native-maps';
@@ -40,7 +44,7 @@ import AffiliateWebView  from '../components/AffiliateWebView';
 import { useTrainSchedules }          from '../hooks/useTrainSchedules';
 import { useLocation }                from '../hooks/useLocation';
 import { useLiveTrainPosition }       from '../services/liveTrainPosition';
-import { findNearestStation, getStationById } from '../services/gtfsDatabase';
+import { findNearestStation, getStationById, getFirstStation, searchStations } from '../services/gtfsDatabase';
 import { optimizeRoute, calculateETA } from '../services/routeOptimizer';
 import { startPlatformMonitoring, stopPlatformMonitoring } from '../services/trainArrivalMonitor';
 import { registerDestinationGeofence, refreshGeofences }  from '../tasks/geofenceTask';
@@ -58,7 +62,8 @@ import type {
 } from '../types';
 
 const { height: H, width: W } = Dimensions.get('window');
-const HALF_H = H / 2;
+// Tarjetas dominantes: 58% superior para trenes, 42% para mapa + modos
+const HALF_H = H * 0.58;
 
 // ── Deep links for rideshare ─────────────────────────────────────────────
 // En Android 11+ canOpenURL() siempre falla para apps de terceros sin
@@ -290,6 +295,10 @@ export default function SplitScreen() {
   // ── State ──────────────────────────────────────────────────────────────
   const [transportMode,    setTransportMode]    = useState<TransportMode>('walk');
   const [selectedStation,  setSelectedStation]  = useState<Station | null>(null);
+  const [showStationPicker,  setShowStationPicker]  = useState(false);
+  const [stationQuery,       setStationQuery]       = useState('');
+  const [stationSuggestions, setStationSuggestions] = useState<Station[]>([]);
+  const [stationSearching,   setStationSearching]   = useState(false);
   const [destStation,      setDestStation]      = useState<Station | null>(null);
   const [selectedService,  setSelectedService]  = useState<TrainService | null>(null);
   const [routePolyline,    setRoutePolyline]    = useState<Coordinates[]>([]);
@@ -327,9 +336,13 @@ export default function SplitScreen() {
         } catch { /* fall through to GPS fallback */ }
       }
       // Country mode or fallback
-      if (!userCoords) return;
-      const station = await findNearestStation(userCoords);
-      if (station) setSelectedStation(station);
+      if (userCoords) {
+        const station = await findNearestStation(userCoords);
+        if (station) { setSelectedStation(station); return; }
+      }
+      // GPS not in country → use capital/main station as default
+      const fallback = await getFirstStation();
+      if (fallback) setSelectedStation(fallback);
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -357,7 +370,7 @@ export default function SplitScreen() {
     stationId:    selectedStation?.id ?? 'STOP_PLACEHOLDER',
     userLocation: userCoords,
     transportMode,
-    maxResults:   3,
+    maxResults:   8,
   });
 
   // ── Auto-seguimiento de cámara al tren en movimiento ─────────────────
@@ -421,6 +434,20 @@ export default function SplitScreen() {
       openRideshare(selectedStation.coordinates, selectedStation.name);
     }
   }, [transportMode, selectedStation]);
+
+  // ── Autocomplete para el picker manual de estación ───────────────────
+  useEffect(() => {
+    if (stationQuery.length < 2) { setStationSuggestions([]); return; }
+    const t = setTimeout(async () => {
+      setStationSearching(true);
+      try {
+        const results = await searchStations(stationQuery, 12);
+        setStationSuggestions(results);
+      } catch { setStationSuggestions([]); }
+      finally { setStationSearching(false); }
+    }, 280);
+    return () => clearTimeout(t);
+  }, [stationQuery]);
 
   // ── Destino encontrado por búsqueda de dirección ─────────────────────
   const handleDestinationFound = useCallback((station: Station, walkMinutes: number) => {
@@ -546,15 +573,17 @@ export default function SplitScreen() {
             <Text style={styles.backText}>‹ {isTourist ? 'Mapa' : 'Países'}</Text>
           </Pressable>
 
-          {/* Origin station pill */}
-          {selectedStation && (
-            <View style={[styles.stationPill, { backgroundColor: colors.bg.elevated, borderColor: colors.border.default }]}>
-              <Ionicons name="location-outline" size={12} color={colors.brand.primary} />
-              <Text style={[styles.stationPillText, { color: colors.text.primary }]} numberOfLines={1}>
-                {selectedStation.name}
-              </Text>
-            </View>
-          )}
+          {/* Origin station pill — tappeable para cambiar manualmente */}
+          <Pressable
+            style={[styles.stationPill, { backgroundColor: colors.bg.elevated, borderColor: colors.brand.primary + '66' }]}
+            onPress={() => { setStationQuery(''); setStationSuggestions([]); setShowStationPicker(true); }}
+          >
+            <Ionicons name="location-outline" size={12} color={colors.brand.primary} />
+            <Text style={[styles.stationPillText, { color: colors.text.primary }]} numberOfLines={1}>
+              {selectedStation?.name ?? 'Seleccionar estación'}
+            </Text>
+            <Ionicons name="chevron-down" size={11} color={colors.text.muted} />
+          </Pressable>
 
           <Pressable onPress={refresh} style={styles.refreshBtn} accessibilityLabel="Actualizar horarios">
             <Text style={styles.refreshText}>↻</Text>
@@ -624,13 +653,33 @@ export default function SplitScreen() {
           isLoading={isLoading}
           isLive={isLive}
           onSelect={handleClockSelect}
+          originName={selectedStation?.name}
         />
       </View>
 
-      {/* Divider */}
+      {/* Divider — dos acciones en paralelo */}
       <View style={styles.divider}>
         <View style={styles.dividerLine} />
-        <Text style={styles.dividerLabel}>CÓMO LLEGAR</Text>
+        <View style={styles.dividerActions}>
+          <Pressable style={styles.dividerPill} onPress={() => {}}>
+            <Ionicons name="navigate-outline" size={13} color="#A78BFA" />
+            <Text style={styles.dividerPillText}>CÓMO LLEGAR</Text>
+          </Pressable>
+          <View style={styles.dividerSep} />
+          <Pressable
+            style={[styles.dividerPill, styles.dividerPillBuy]}
+            onPress={() => router.push({
+              pathname: '/buscar-viaje',
+              params: {
+                originId:   selectedStation?.id   ?? '',
+                originName: selectedStation?.name ?? '',
+              },
+            })}
+          >
+            <Ionicons name="calendar-outline" size={13} color="#fff" />
+            <Text style={[styles.dividerPillText, { color: '#fff' }]}>OTROS HORARIOS</Text>
+          </Pressable>
+        </View>
         <View style={styles.dividerLine} />
       </View>
 
@@ -728,6 +777,54 @@ export default function SplitScreen() {
         />
       )}
 
+      {/* ── Modal picker de estación manual ── */}
+      <Modal visible={showStationPicker} animationType="slide" transparent onRequestClose={() => setShowStationPicker(false)}>
+        <View style={styles.pickerOverlay}>
+          <View style={[styles.pickerSheet, { backgroundColor: colors.bg.base }]}>
+            {/* Header */}
+            <View style={styles.pickerHeader}>
+              <Text style={[styles.pickerTitle, { color: colors.text.primary }]}>Cambiar estación</Text>
+              <Pressable onPress={() => setShowStationPicker(false)}>
+                <Ionicons name="close" size={22} color={colors.text.muted} />
+              </Pressable>
+            </View>
+            {/* Search input */}
+            <View style={[styles.pickerInputRow, { backgroundColor: colors.bg.elevated, borderColor: colors.border.subtle }]}>
+              <Ionicons name="search-outline" size={16} color={colors.text.muted} />
+              <TextInput
+                style={[styles.pickerInput, { color: colors.text.primary }]}
+                placeholder="Buscar estación..."
+                placeholderTextColor={colors.text.muted}
+                value={stationQuery}
+                onChangeText={setStationQuery}
+                autoFocus
+                autoCorrect={false}
+              />
+              {stationSearching && <ActivityIndicator size="small" color={colors.brand.primary} />}
+            </View>
+            {/* Sugerencias */}
+            <ScrollView keyboardShouldPersistTaps="handled" style={{ flex: 1 }}>
+              {stationSuggestions.map(s => (
+                <Pressable
+                  key={s.id}
+                  style={[styles.pickerItem, { borderBottomColor: colors.border.subtle }]}
+                  onPress={() => {
+                    setSelectedStation(s);
+                    setShowStationPicker(false);
+                  }}
+                >
+                  <Ionicons name="train-outline" size={15} color={colors.brand.primary} />
+                  <Text style={[styles.pickerItemText, { color: colors.text.primary }]} numberOfLines={1}>{s.name}</Text>
+                </Pressable>
+              ))}
+              {stationQuery.length >= 2 && !stationSearching && stationSuggestions.length === 0 && (
+                <Text style={[styles.pickerEmpty, { color: colors.text.muted }]}>Sin resultados para "{stationQuery}"</Text>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
       {/* ── Affiliate WebView checkout (primary) ── */}
       {selectedService && (
         <AffiliateWebView
@@ -791,8 +888,25 @@ const styles = StyleSheet.create({
     fontSize:   Typography.size.sm,
     color:      '#FFFFFF',
     fontWeight: Typography.weight.medium,
-    textAlign:  'center',
+    flex:       1,
   },
+
+  // Station picker modal
+  pickerOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+  pickerSheet: { borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '80%' },
+  pickerHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+  pickerTitle: { fontSize: Typography.size.base, fontWeight: Typography.weight.bold },
+  pickerInputRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    borderRadius: 12, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 12,
+  },
+  pickerInput: { flex: 1, fontSize: Typography.size.sm, padding: 0 },
+  pickerItem: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingVertical: 14, borderBottomWidth: 1,
+  },
+  pickerItemText: { fontSize: Typography.size.sm, flex: 1 },
+  pickerEmpty: { textAlign: 'center', marginTop: 30, fontSize: Typography.size.sm },
   refreshBtn: {
     width:          44,
     height:         44,
@@ -884,20 +998,73 @@ const styles = StyleSheet.create({
     flexDirection:     'row',
     alignItems:        'center',
     paddingHorizontal: Spacing['4'],
-    paddingVertical:   Spacing['1'],
-    gap:               Spacing['2'],
+    paddingVertical:   Spacing['2'],
+    gap:               Spacing['3'],
     backgroundColor:   '#1C1C1E',
+    borderTopWidth:    1,
+    borderTopColor:    'rgba(167,139,250,0.20)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(167,139,250,0.20)',
   },
   dividerLine: {
     flex:            1,
     height:          1,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: 'rgba(167,139,250,0.25)',
   },
-  dividerLabel: {
-    fontSize:     Typography.size.xs,
-    fontWeight:   Typography.weight.bold,
-    color:        'rgba(235,235,245,0.30)',
-    letterSpacing:2,
+  dividerActions: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           0,
+  },
+  dividerPill: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    gap:               5,
+    paddingVertical:   6,
+    paddingHorizontal: 12,
+    borderRadius:      20,
+    borderWidth:       1,
+    borderColor:       'rgba(167,139,250,0.45)',
+    backgroundColor:   'rgba(167,139,250,0.10)',
+  },
+  dividerPillBuy: {
+    marginLeft:      8,
+    backgroundColor: '#7C3AED',
+    borderColor:     '#7C3AED',
+  },
+  dividerSep: {
+    width:           1,
+    height:          16,
+    backgroundColor: 'rgba(167,139,250,0.20)',
+    marginHorizontal:4,
+  },
+  dividerPillText: {
+    fontSize:      10,
+    fontWeight:    '700',
+    color:         '#A78BFA',
+    letterSpacing: 1.5,
+  },
+
+  // WebView bar
+  wvBar: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    justifyContent:    'space-between',
+    paddingHorizontal: Spacing['3'],
+    paddingVertical:   Spacing['2'],
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.08)',
+    backgroundColor:   '#1C1C1E',
+  },
+  wvTitle: {
+    fontSize:   Typography.size.sm,
+    fontWeight: Typography.weight.bold,
+    color:      '#fff',
+  },
+  wvBtn: {
+    width: 36, height: 36,
+    alignItems: 'center', justifyContent: 'center',
+    borderRadius: 18,
   },
 
   // Lower 50%

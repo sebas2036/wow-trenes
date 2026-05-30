@@ -185,12 +185,13 @@ export const TouchTarget = { min: 44, chip: 48, button: 56, fab: 64 } as const;
 //   EXPO_PUBLIC_IMPACT_SID=<SID asignado por Impact/Trainline>
 //   EXPO_PUBLIC_AFFILIATE_ID=<tu tracking ID negociado con Trainline>
 export const Affiliate = {
-  trackingId:       process.env.EXPO_PUBLIC_AFFILIATE_ID    ?? 'WOWTRENES_AFF_001',
-  partnerizeTag:    process.env.EXPO_PUBLIC_PARTNERIZE_TAG  ?? 'p11p',
-  impactSid:        process.env.EXPO_PUBLIC_IMPACT_SID      ?? 'wow_trenes_sid',
-  commissionMin:    0.02,   // 2% mínimo garantizado por contrato Trainline
-  commissionMax:    0.05,   // 5% en rutas premium (TGV, AVE, Eurostar)
-  merchantOfRecord: 'trainline',
+  // Travelpayouts — marker principal (glosx@outlook.com, ID 734304)
+  trackingId:       '734304',
+  partnerizeTag:    '734304',
+  impactSid:        'travelpayouts_734304',
+  commissionMin:    0.018,  // 1.8% trenes Trip.com
+  commissionMax:    0.06,   // 6% Omio
+  merchantOfRecord: 'omio', // afiliado principal via Travelpayouts
 } as const;
 
 // ─── RAIL ENDPOINTS ───────────────────────────────────────────────────────────

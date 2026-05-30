@@ -49,7 +49,8 @@ export function useTrainSchedules({
   const [isLive,    setIsLive]    = useState(false);
   const [error,     setError]     = useState<string | null>(null);
   const refreshToken = useRef(0);
-  const bgIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const bgIntervalRef    = useRef<ReturnType<typeof setInterval> | null>(null);
+  const gtfsIntervalRef  = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ── Build clocks from static + optional live delta ──────────────────────
   const buildClocks = useCallback(
@@ -100,7 +101,9 @@ export function useTrainSchedules({
 
     try {
       // PHASE 1 — instant offline data from SQLite
-      const services = await queryUpcomingTrains(stationId, maxResults * 3);
+      const rawServices = await queryUpcomingTrains(stationId, maxResults * 3);
+      // Descartar trenes que ya partieron (margen de 2 min para "en curso")
+      const services = rawServices.filter(s => s.departureTime.getTime() > Date.now() - 2 * 60_000);
       if (token !== refreshToken.current) return;
 
       const initialClocks = await buildClocks(services, new Map());
@@ -140,8 +143,14 @@ export function useTrainSchedules({
 
   useEffect(() => {
     load();
+    // Re-query GTFS every 60 s so departed trains fall off the board
+    gtfsIntervalRef.current = setInterval(() => {
+      if (bgIntervalRef.current) { clearInterval(bgIntervalRef.current); bgIntervalRef.current = null; }
+      load();
+    }, 60_000);
     return () => {
-      if (bgIntervalRef.current) clearInterval(bgIntervalRef.current);
+      if (bgIntervalRef.current)   clearInterval(bgIntervalRef.current);
+      if (gtfsIntervalRef.current) clearInterval(gtfsIntervalRef.current);
     };
   }, [load]);
 

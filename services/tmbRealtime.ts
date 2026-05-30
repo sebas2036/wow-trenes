@@ -3,6 +3,9 @@
  * API oficial: https://api.tmb.cat/v1/
  * Credenciales: developer.tmb.cat (app_id + app_key)
  *
+ * ESTADO: Implementado, pendiente de conectar a la pantalla ES_BCN.
+ * Credenciales ya en .env: TMB_APP_ID, TMB_APP_KEY
+ *
  * Endpoints usados:
  *   GET /transit/parades/{codi}/properes-arribades  — próximas llegadas a una parada
  *   GET /transit/linies/metro                       — listado de líneas

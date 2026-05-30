@@ -12,7 +12,9 @@
       "resizeMode": "cover",
       "backgroundColor": "#09090B"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.wowtrenes.app",
@@ -21,7 +23,19 @@
         "NSLocationWhenInUseUsageDescription": "WoW TRENES usa tu ubicación para mostrarte estaciones cercanas y calcular el tiempo de llegada al tren.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "WoW TRENES usa tu ubicación en segundo plano para alertarte cuando te acercas a la estación y mostrarte tu QR automáticamente.",
         "NSLocationAlwaysUsageDescription": "WoW TRENES usa tu ubicación en segundo plano para el sistema de geocercas de estaciones.",
-        "UIBackgroundModes": ["location", "fetch", "remote-notification"]
+        "UIBackgroundModes": [
+          "location",
+          "fetch",
+          "remote-notification"
+        ],
+        "NSAppTransportSecurity": {
+          "NSExceptionDomains": {
+            "www.viaggiatreno.it": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSIncludesSubdomains": true
+            }
+          }
+        }
       }
     },
     "android": {
@@ -39,11 +53,16 @@
         "FOREGROUND_SERVICE_LOCATION",
         "RECEIVE_BOOT_COMPLETED",
         "VIBRATE",
-        "POST_NOTIFICATIONS"
+        "POST_NOTIFICATIONS",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION"
       ],
       "config": {
         "googleMaps": {
-          "apiKey": "AIzaSyD-ni6YpWpx1c6igqsIiPn_ywbwG__3kqY"
+          "apiKey": ""
         }
       }
     },
@@ -84,8 +103,9 @@
         "origin": false
       },
       "eas": {
-        "projectId": "wow-trenes-project-id"
+        "projectId": "3d3e709c-a745-40b6-a3f1-a359587b7e1c"
       }
-    }
+    },
+    "owner": "sebasjasinsky"
   }
 }

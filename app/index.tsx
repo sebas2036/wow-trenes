@@ -39,28 +39,27 @@ interface CountryEntry {
   trainLabel:    string;
   color:         string;
   metroOptions?: MetroOption[];
+  hidden?:       boolean;
 }
 
 const COUNTRIES: CountryEntry[] = [
+  // ── ACTIVOS — GTFS real funcionando ──────────────────────────────────
   { code: 'ES', flag: '🇪🇸', name: 'España',       trainLabel: 'AVE · Renfe',       color: '#C0392B',
     metroOptions: [{ code: 'ES_MAD', label: 'Madrid' }, { code: 'ES_BCN', label: 'Barcelona' }] },
-  { code: 'IT', flag: '🇮🇹', name: 'Italia',        trainLabel: 'Frecciarossa',      color: '#27AE60' },
-  { code: 'FR', flag: '🇫🇷', name: 'Francia',       trainLabel: 'TGV · SNCF',        color: '#2980B9',
-    metroOptions: [{ code: 'FR_PAR', label: 'París Métro' }] },
-  { code: 'US', flag: '🇺🇸', name: 'USA',           trainLabel: 'Amtrak',            color: '#1A6BBE',
-    metroOptions: [{ code: 'US_NYC', label: 'New York' }] },
-  { code: 'DE', flag: '🇩🇪', name: 'Alemania',      trainLabel: 'ICE · DB',          color: '#E74C3C',
-    metroOptions: [{ code: 'DE_BER', label: 'Berlin U-Bahn' }, { code: 'DE_MUN', label: 'Munich U-Bahn' }] },
-  { code: 'GB', flag: '🇬🇧', name: 'Reino Unido',   trainLabel: 'Avanti · LNER',     color: '#C0192B',
-    metroOptions: [{ code: 'GB_LON', label: 'London Underground' }] },
   { code: 'CH', flag: '🇨🇭', name: 'Suiza',         trainLabel: 'SBB · Glacier',     color: '#DC143C' },
-  { code: 'JP', flag: '🇯🇵', name: 'Japón',         trainLabel: 'Shinkansen',        color: '#E74C3C' },
+  { code: 'FR', flag: '🇫🇷', name: 'Francia',       trainLabel: 'TGV · SNCF',        color: '#2980B9' },
+  { code: 'IT', flag: '🇮🇹', name: 'Italia',        trainLabel: 'Frecciarossa',      color: '#27AE60' },
   { code: 'NL', flag: '🇳🇱', name: 'Países Bajos',  trainLabel: 'Intercity · NS',    color: '#E67E22' },
-  { code: 'AT', flag: '🇦🇹', name: 'Austria',       trainLabel: 'Railjet · ÖBB',     color: '#C0392B' },
-  { code: 'NO', flag: '🇳🇴', name: 'Noruega',       trainLabel: 'Bergensbanen',      color: '#003F87' },
-  { code: 'PT', flag: '🇵🇹', name: 'Portugal',      trainLabel: 'Alfa Pendular',     color: '#27AE60' },
+  { code: 'DE', flag: '🇩🇪', name: 'Alemania',      trainLabel: 'ICE · RE · DB',     color: '#E74C3C' },
+  { code: 'AT', flag: '🇦🇹', name: 'Austria',       trainLabel: 'Railjet · ÖBB',    color: '#C0392B' },
   { code: 'BE', flag: '🇧🇪', name: 'Bélgica',       trainLabel: 'IC · Thalys',       color: '#F39C12' },
-  { code: 'DK', flag: '🇩🇰', name: 'Dinamarca',     trainLabel: 'DSB · IC3',         color: '#C8102E' },
+  { code: 'PT', flag: '🇵🇹', name: 'Portugal',      trainLabel: 'Alfa Pendular · CP', color: '#27AE60' },
+  // ── OCULTOS — sin datos reales ───────────────────────────────────────
+  { code: 'GB', flag: '🇬🇧', name: 'Reino Unido',   trainLabel: 'Avanti · LNER',     color: '#C0192B',  hidden: true },
+  { code: 'NO', flag: '🇳🇴', name: 'Noruega',       trainLabel: 'Bergensbanen',      color: '#003F87',  hidden: true },
+  { code: 'DK', flag: '🇩🇰', name: 'Dinamarca',     trainLabel: 'DSB · IC3',         color: '#C8102E',  hidden: true },
+  { code: 'US', flag: '🇺🇸', name: 'USA',           trainLabel: 'Amtrak',            color: '#1A6BBE',  hidden: true },
+  { code: 'JP', flag: '🇯🇵', name: 'Japón',         trainLabel: 'Shinkansen',        color: '#E74C3C',  hidden: true },
 ];
 
 /** Extrae el código ISO de país a partir del CountryCode (e.g. 'US_NYC' → 'us') */
@@ -70,23 +69,26 @@ function isoFromCode(code: string): string {
 
 // ── Datos metro ───────────────────────────────────────────────────────────────
 interface MetroCity {
-  code:  CountryCode;
-  city:  string;
-  flag:  string;
-  lines: string;
-  color: string;
+  code:    CountryCode;
+  city:    string;
+  flag:    string;
+  lines:   string;
+  color:   string;
+  hidden?: boolean;
 }
 
 const METRO_CITIES: MetroCity[] = [
-  { code: 'US_NYC', city: 'New York',    flag: '🇺🇸', lines: 'MTA · 27 líneas',              color: '#1A6BBE' },
-  { code: 'ES_MAD', city: 'Madrid',      flag: '🇪🇸', lines: 'Metro Madrid · 13 líneas',     color: '#C0392B' },
-  { code: 'GB_LON', city: 'London',      flag: '🇬🇧', lines: 'TfL · Elizabeth line',         color: '#C0192B' },
-  { code: 'ES_BCN', city: 'Barcelona',   flag: '🇪🇸', lines: 'TMB · L1-L11 · 166 estaciones',    color: '#F39C12' },
-  { code: 'FR_PAR', city: 'París',       flag: '🇫🇷', lines: 'RATP · M1-M14 · RER A-E',         color: '#003CA6' },
-  { code: 'DE_BER', city: 'Berlín',      flag: '🇩🇪', lines: 'BVG · U1-U9 · S-Bahn',             color: '#224F9F' },
-  { code: 'DE_MUN', city: 'Múnich',      flag: '🇩🇪', lines: 'MVG · U1-U6 · S1/S8 Aeropuerto',  color: '#428BC1' },
-  { code: 'JP',     city: 'Tokio',       flag: '🇯🇵', lines: 'Tokyo Metro · Shinkansen',          color: '#E60012' },
-  { code: 'US_CHI', city: 'Chicago',     flag: '🇺🇸', lines: 'CTA L Train · 8 líneas',       color: '#0057A8' },
+  // ── ACTIVOS ──────────────────────────────────────────────────────────
+  { code: 'ES_MAD', city: 'Madrid',      flag: '🇪🇸', lines: 'Metro Madrid · 13 líneas',          color: '#C0392B' },
+  { code: 'ES_BCN', city: 'Barcelona',   flag: '🇪🇸', lines: 'TMB · L1-L11 · 166 estaciones',     color: '#F39C12' },
+  { code: 'FR_PAR', city: 'París',       flag: '🇫🇷', lines: 'RATP · M1-M14 · RER A-E',           color: '#003CA6' },
+  // ── OCULTOS ──────────────────────────────────────────────────────────
+  { code: 'US_NYC', city: 'New York',    flag: '🇺🇸', lines: 'MTA · 27 líneas',              color: '#1A6BBE', hidden: true },
+  { code: 'GB_LON', city: 'London',      flag: '🇬🇧', lines: 'TfL · Elizabeth line',         color: '#C0192B', hidden: true },
+  { code: 'DE_BER', city: 'Berlín',      flag: '🇩🇪', lines: 'BVG · U1-U9 · S-Bahn',        color: '#224F9F', hidden: true },
+  { code: 'DE_MUN', city: 'Múnich',      flag: '🇩🇪', lines: 'MVG · U1-U6 · S1/S8',         color: '#428BC1', hidden: true },
+  { code: 'JP',     city: 'Tokio',       flag: '🇯🇵', lines: 'Tokyo Metro · Shinkansen',     color: '#E60012', hidden: true },
+  { code: 'US_CHI', city: 'Chicago',     flag: '🇺🇸', lines: 'CTA L Train · 8 líneas',       color: '#0057A8', hidden: true },
   { code: 'US_LAX', city: 'Los Angeles', flag: '🇺🇸', lines: 'LA Metro Rail · 6 líneas',     color: '#7C3AED' },
 ];
 
@@ -295,13 +297,13 @@ export default function HomeScreen() {
   }, [router]);
 
   // Países ordenados: favoritos primero
-  const sortedCountries = [...COUNTRIES].sort((a, b) =>
-    (favs.includes(a.code) ? 0 : 1) - (favs.includes(b.code) ? 0 : 1)
-  );
+  const sortedCountries = [...COUNTRIES]
+    .filter(c => !c.hidden)
+    .sort((a, b) => (favs.includes(a.code) ? 0 : 1) - (favs.includes(b.code) ? 0 : 1));
 
-  const sortedMetros = [...METRO_CITIES].sort((a, b) =>
-    (favs.includes(a.code) ? 0 : 1) - (favs.includes(b.code) ? 0 : 1)
-  );
+  const sortedMetros = [...METRO_CITIES]
+    .filter(m => !m.hidden)
+    .sort((a, b) => (favs.includes(a.code) ? 0 : 1) - (favs.includes(b.code) ? 0 : 1));
 
   const TABS: { key: FilterTab; label: string; icon: keyof typeof Ionicons.glyphMap; iconOut: keyof typeof Ionicons.glyphMap }[] = [
     { key: 'trenes',        label: 'Trenes',    icon: 'train',  iconOut: 'train-outline'  },

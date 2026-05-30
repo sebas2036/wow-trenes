@@ -117,3 +117,76 @@ export function buildTrainlineSearchUrl(
     `?departure=${encodeURIComponent(date)}&passengers=${passengers}`
   );
 }
+
+// ── Travelpayouts marker ──────────────────────────────────────────────────
+const TP_MARKER = '734304'; // Travelpayouts Partner ID — glosx@outlook.com
+
+/**
+ * buildOmioUrl — Deeplink a Omio con tracking Travelpayouts.
+ * Omio programa ID 91, comisión 6%, cookie 30 días, mobile web & app.
+ *
+ * Formato: https://tp.media/r?marker={marker}&p=91&u={encoded_omio_url}
+ * Omio busca por nombre de ciudad — usamos los nombres de parada GTFS.
+ */
+export function buildOmioUrl(
+  originName:  string,
+  destName:    string,
+  departure:   Date,
+  passengers:  number = 1,
+): string {
+  const dateStr = departure.toISOString().slice(0, 10); // YYYY-MM-DD
+  const omioBase = 'https://www.omio.com/';
+  const omioParams = new URLSearchParams({
+    origin:      originName,
+    destination: destName,
+    departure:   dateStr,
+    pax:         String(passengers),
+  });
+  const omioUrl = `${omioBase}?${omioParams.toString()}`;
+
+  // Wrappear con Travelpayouts redirect para tracking
+  return (
+    `https://tp.media/r?marker=${TP_MARKER}&p=91` +
+    `&u=${encodeURIComponent(omioUrl)}`
+  );
+}
+
+/**
+ * buildTripComUrl — Deeplink a Trip.com con tracking Travelpayouts.
+ * Programa ID 121, comisión 1.8% trenes / 5.5% hoteles, mobile web & app.
+ */
+export function buildTripComUrl(
+  originName:  string,
+  destName:    string,
+  departure:   Date,
+  passengers:  number = 1,
+): string {
+  const dateStr = departure.toISOString().slice(0, 10);
+  const tripUrl = `https://www.trip.com/trains/search?` +
+    `fromname=${encodeURIComponent(originName)}` +
+    `&toname=${encodeURIComponent(destName)}` +
+    `&date=${dateStr}&adult=${passengers}`;
+
+  return (
+    `https://tp.media/r?marker=${TP_MARKER}&p=121` +
+    `&u=${encodeURIComponent(tripUrl)}`
+  );
+}
+
+/**
+ * buildBestBookingUrl — Elige automáticamente el mejor afiliado según el país.
+ * Europa → Omio (6%). Asia/global → Trip.com (1.8% trenes).
+ */
+export function buildBestBookingUrl(
+  originName:  string,
+  destName:    string,
+  departure:   Date,
+  countryCode: string,
+  passengers:  number = 1,
+): string {
+  const europeCountries = ['ES','FR','DE','CH','IT','BE','NL','AT','PT','GB','NO','DK'];
+  if (europeCountries.includes(countryCode.toUpperCase())) {
+    return buildOmioUrl(originName, destName, departure, passengers);
+  }
+  return buildTripComUrl(originName, destName, departure, passengers);
+}

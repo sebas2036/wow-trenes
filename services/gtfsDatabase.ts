@@ -44,6 +44,60 @@ import * as SQLite from 'expo-sqlite';
 import * as FileSystem from 'expo-file-system';
 import { Asset } from 'expo-asset';
 import type { Station, TrainService, Coordinates, CountryCode } from '../types';
+import {
+  fetchSwissStationboard,
+  fetchSwissConnections,
+  searchSwissStations,
+  nearestSwissStation,
+  type SwissDeparture,
+  type SwissConnection,
+} from './swissRealTime';
+import {
+  overlayGermanyDelays,
+  getGermanyAlerts,
+  invalidateGermanyRT,
+} from './germanyRealTime';
+import {
+  fetchItalyBoard,
+  searchItalyStations,
+  setActiveItalyStation,
+  getActiveItalyStationName,
+  invalidateItalyRT,
+  type ItalyDeparture,
+} from './italyRealTime';
+import {
+  fetchBelgiumBoard,
+  searchBelgiumStations,
+  setActiveBelgiumStation,
+  getActiveBelgiumStationName,
+  getBelgiumDisturbances,
+  invalidateBelgiumRT,
+  type BelgiumDeparture,
+} from './belgiumRealTime';
+import {
+  fetchFranceBoard,
+  searchFranceStations,
+  setActiveFranceStation,
+  getActiveFranceStationName,
+  invalidateFranceRT,
+  type FranceDeparture,
+} from './franceRealTime';
+import {
+  fetchAustriaBoard,
+  searchAustriaStations,
+  setActiveAustriaStation,
+  getActiveAustriaStationName,
+  invalidateAustriaRT,
+  type AustriaDeparture,
+} from './austriaRealTime';
+import {
+  fetchPortugalBoard,
+  searchPortugalStations,
+  setActivePortugalStation,
+  getActivePortugalStationName,
+  invalidatePortugalRT,
+  type PortugalDeparture,
+} from './portugalRealTime';
 
 // ── Asset map ────────────────────────────────────────────────────────────────
 // 'bundled' → require() embeds the DB in the JS bundle (use solo para el país
@@ -62,32 +116,31 @@ type CountryAsset =
   | { type: 'local';   dbName: string };
 
 const COUNTRY_ASSETS: Partial<Record<CountryCode, CountryAsset>> = {
-  // ── BUNDLED (solo España — default y ya importado con datos reales) ───────
-  ES: { type: 'bundled', dbName: 'gtfs_spain.db', module: require('../assets/gtfs_spain.db') },
-
-  // ── LOCAL (abrir desde filesystem; vacío si no existe en el dispositivo) ──
-  CH:     { type: 'local', dbName: 'gtfs_switzerland.db' },
-  FR:     { type: 'local', dbName: 'gtfs_france.db'      },
-  DE:     { type: 'local', dbName: 'gtfs_germany.db'     },
-  IT:     { type: 'local', dbName: 'gtfs_italy.db'       },
-  NL:     { type: 'local', dbName: 'gtfs_netherlands.db' },
-  AT:     { type: 'local', dbName: 'gtfs_austria.db'     },
-  BE:     { type: 'local', dbName: 'gtfs_belgium.db'     },
-  DK:     { type: 'local', dbName: 'gtfs_dk.db'          },
-  PT:     { type: 'local', dbName: 'gtfs_portugal.db'    },
-  NO:     { type: 'local', dbName: 'gtfs_norway.db'      },
-  US:     { type: 'local', dbName: 'gtfs_usa.db'         },
-  US_NYC: { type: 'local', dbName: 'gtfs_usa_nyc.db'     },
-  GB:     { type: 'local', dbName: 'gtfs_gb.db'          },
-  GB_LON: { type: 'local', dbName: 'gtfs_gb_tfl.db'      },
-  JP:     { type: 'local', dbName: 'gtfs_japan.db'       },
-  ES_MAD: { type: 'local', dbName: 'gtfs_es_mad.db'      },
-  ES_BCN: { type: 'local', dbName: 'gtfs_es_bcn.db'      },
-  FR_PAR: { type: 'local', dbName: 'gtfs_fr_par.db'      },
-  DE_BER: { type: 'local', dbName: 'gtfs_de_ber.db'      },
-  DE_MUN: { type: 'local', dbName: 'gtfs_de_mun.db'      },
-  US_CHI: { type: 'local', dbName: 'gtfs_us_chi.db'      },
-  US_LAX: { type: 'local', dbName: 'gtfs_us_lax.db'      },
+  // ── BUNDLED — datos reales o placeholders pequeños (< 1 MB cada uno) ─────
+  ES:     { type: 'bundled', dbName: 'gtfs_spain.db',       module: require('../assets/gtfs_spain.db')       },
+  IT:     { type: 'bundled', dbName: 'gtfs_italy.db',       module: require('../assets/gtfs_italy.db')       },
+  FR:     { type: 'bundled', dbName: 'gtfs_france.db',      module: require('../assets/gtfs_france.db')      },
+  DE:     { type: 'bundled', dbName: 'gtfs_germany.db',     module: require('../assets/gtfs_germany.db')     },
+  CH:     { type: 'bundled', dbName: 'gtfs_switzerland.db', module: require('../assets/gtfs_switzerland.db') },
+  NL:     { type: 'bundled', dbName: 'gtfs_netherlands.db', module: require('../assets/gtfs_netherlands.db') },
+  AT:     { type: 'bundled', dbName: 'gtfs_austria.db',     module: require('../assets/gtfs_austria.db')     },
+  BE:     { type: 'bundled', dbName: 'gtfs_belgium.db',     module: require('../assets/gtfs_belgium.db')     },
+  PT:     { type: 'bundled', dbName: 'gtfs_portugal.db',    module: require('../assets/gtfs_portugal.db')    },
+  NO:     { type: 'bundled', dbName: 'gtfs_norway.db',      module: require('../assets/gtfs_norway.db')      },
+  DK:     { type: 'bundled', dbName: 'gtfs_dk.db',          module: require('../assets/gtfs_dk.db')          },
+  US:     { type: 'bundled', dbName: 'gtfs_usa.db',         module: require('../assets/gtfs_usa.db')         },
+  US_NYC: { type: 'bundled', dbName: 'gtfs_usa_nyc.db',     module: require('../assets/gtfs_usa_nyc.db')     },
+  JP:     { type: 'bundled', dbName: 'gtfs_japan.db',       module: require('../assets/gtfs_japan.db')       },
+  ES_MAD: { type: 'bundled', dbName: 'gtfs_es_mad.db',      module: require('../assets/gtfs_es_mad.db')      },
+  ES_BCN: { type: 'bundled', dbName: 'gtfs_es_bcn.db',      module: require('../assets/gtfs_es_bcn.db')      },
+  FR_PAR: { type: 'bundled', dbName: 'gtfs_fr_par.db',      module: require('../assets/gtfs_fr_par.db')      },
+  DE_BER: { type: 'bundled', dbName: 'gtfs_de_ber.db',      module: require('../assets/gtfs_de_ber.db')      },
+  DE_MUN: { type: 'bundled', dbName: 'gtfs_de_mun.db',      module: require('../assets/gtfs_de_mun.db')      },
+  US_CHI: { type: 'bundled', dbName: 'gtfs_us_chi.db',      module: require('../assets/gtfs_us_chi.db')      },
+  US_LAX: { type: 'bundled', dbName: 'gtfs_us_lax.db',      module: require('../assets/gtfs_us_lax.db')      },
+  // ── LOCAL — solo en EAS Build nativo (GB requiere credenciales NRDP) ──────
+  GB:     { type: 'local',   dbName: 'gtfs_gb.db'                                                            },
+  GB_LON: { type: 'local',   dbName: 'gtfs_gb_tfl.db'                                                        },
 };
 
 const SQLITE_DIR = FileSystem.documentDirectory + 'SQLite/';
@@ -158,6 +211,7 @@ async function ensureDB(country: CountryCode): Promise<SQLite.SQLiteDatabase> {
       }
     }
     const conn = await SQLite.openDatabaseAsync(asset.dbName);
+    await ensureMissingTables(conn);
     console.log(`[GTFS] Abierto (bundled): ${asset.dbName}`);
     dbPool[country] = conn;
     return conn;
@@ -176,6 +230,7 @@ async function ensureDB(country: CountryCode): Promise<SQLite.SQLiteDatabase> {
       console.log(`[GTFS] ${asset.dbName} vacío — creando schema`);
       await createEmptySchema(conn);
     } else {
+      await ensureMissingTables(conn);
       console.log(`[GTFS] Abierto (local): ${asset.dbName}`);
     }
     dbPool[country] = conn;
@@ -187,6 +242,26 @@ async function ensureDB(country: CountryCode): Promise<SQLite.SQLiteDatabase> {
     dbPool[country] = fallback;
     return fallback;
   }
+}
+
+/** Adds tables that may be missing from pre-built placeholder DBs (e.g. agency, calendar) */
+async function ensureMissingTables(conn: SQLite.SQLiteDatabase): Promise<void> {
+  await conn.execAsync(`
+    CREATE TABLE IF NOT EXISTS agency (
+      agency_id TEXT PRIMARY KEY, agency_name TEXT,
+      agency_url TEXT, agency_timezone TEXT
+    );
+    CREATE TABLE IF NOT EXISTS calendar (
+      service_id TEXT PRIMARY KEY,
+      monday INTEGER, tuesday INTEGER, wednesday INTEGER, thursday INTEGER,
+      friday INTEGER, saturday INTEGER, sunday INTEGER,
+      start_date TEXT, end_date TEXT
+    );
+    CREATE TABLE IF NOT EXISTS calendar_dates (
+      service_id TEXT, date TEXT, exception_type INTEGER,
+      PRIMARY KEY (service_id, date)
+    );
+  `);
 }
 
 async function createEmptySchema(conn: SQLite.SQLiteDatabase): Promise<void> {
@@ -214,6 +289,16 @@ async function createEmptySchema(conn: SQLite.SQLiteDatabase): Promise<void> {
     CREATE TABLE IF NOT EXISTS calendar_dates (
       service_id TEXT, date TEXT, exception_type INTEGER,
       PRIMARY KEY (service_id, date)
+    );
+    CREATE TABLE IF NOT EXISTS agency (
+      agency_id TEXT PRIMARY KEY, agency_name TEXT,
+      agency_url TEXT, agency_timezone TEXT
+    );
+    CREATE TABLE IF NOT EXISTS calendar (
+      service_id TEXT PRIMARY KEY,
+      monday INTEGER, tuesday INTEGER, wednesday INTEGER, thursday INTEGER,
+      friday INTEGER, saturday INTEGER, sunday INTEGER,
+      start_date TEXT, end_date TEXT
     );
   `);
 }
@@ -275,10 +360,10 @@ export async function findNearestStation(coords: Coordinates): Promise<Station |
  */
 // UTC offsets per country — GTFS times are in local time of the country
 const COUNTRY_UTC_OFFSET: Partial<Record<CountryCode, number>> = {
-  CH: 1, FR: 1, DE: 1, IT: 1, NL: 1, AT: 1, BE: 1, PT: 0,
-  NO: 1, DK: 1, ES: 1, GB: 0, GB_LON: 0,
+  CH: 2, FR: 2, DE: 2, IT: 2, NL: 2, AT: 2, BE: 2, PT: 1,
+  NO: 2, DK: 2, ES: 2, GB: 1, GB_LON: 1,
   US: -5, US_NYC: -5, US_CHI: -6, US_LAX: -8,
-  ES_MAD: 1, ES_BCN: 1, FR_PAR: 1, DE_BER: 1, DE_MUN: 1,
+  ES_MAD: 2, ES_BCN: 2, FR_PAR: 2, DE_BER: 2, DE_MUN: 2,
   JP: 9,
 };
 
@@ -289,27 +374,33 @@ export async function queryUpcomingTrains(
   const conn    = await db();
   // Adjust device time to the country's local time for correct GTFS comparison
   const utcOffset   = COUNTRY_UTC_OFFSET[activeCountry] ?? 0;
-  const deviceOffset = -new Date().getTimezoneOffset() / 60; // device UTC offset in hours
+  const deviceOffset = -new Date().getTimezoneOffset() / 60;
   const diffMs      = (utcOffset - deviceOffset) * 3_600_000;
   const now         = new Date(Date.now() + diffMs);
-  const depFrom = timeToGTFS(now);
-  const depTo   = timeToGTFS(new Date(now.getTime() + 4 * 3600_000));
+  const depFrom     = timeToGTFS(now);
+  // GTFS date format: YYYYMMDD
+  const todayGTFS = now.getFullYear().toString()
+    + (now.getMonth() + 1).toString().padStart(2, '0')
+    + now.getDate().toString().padStart(2, '0');
+  const dow = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][now.getDay()];
 
   const rows = await conn.getAllAsync<{
-    trip_id:        string;
-    departure_time: string;
-    arrival_time:   string;
-    platform_code:  string | null;
-    route_id:       string;
-    operator_code:  string | null;
-    trip_headsign:  string | null;
-    dest_stop_id:   string;
-    dest_name:      string;
-    dest_lat:       number;
-    dest_lon:       number;
-    origin_name:    string;
-    origin_lat:     number;
-    origin_lon:     number;
+    trip_id:           string;
+    departure_time:    string;
+    arrival_time:      string;
+    platform_code:     string | null;
+    route_id:          string;
+    route_short_name:  string | null;
+    operator_code:     string | null;
+    trip_headsign:     string | null;
+    dest_stop_id:      string;
+    dest_arrival_time: string | null;
+    dest_name:         string;
+    dest_lat:          number;
+    dest_lon:          number;
+    origin_name:       string;
+    origin_lat:        number;
+    origin_lon:        number;
   }>(`
     SELECT
       st.trip_id,
@@ -317,9 +408,11 @@ export async function queryUpcomingTrains(
       st.arrival_time,
       NULL            AS platform_code,
       t.route_id,
+      COALESCE(r.route_short_name, r.route_long_name) AS route_short_name,
       NULL            AS operator_code,
       t.trip_headsign,
-      dest_st.stop_id  AS dest_stop_id,
+      dest_st.stop_id       AS dest_stop_id,
+      dest_st.arrival_time  AS dest_arrival_time,
       dest_s.stop_name AS dest_name,
       dest_s.stop_lat  AS dest_lat,
       dest_s.stop_lon  AS dest_lon,
@@ -328,17 +421,29 @@ export async function queryUpcomingTrains(
       orig_s.stop_lon  AS origin_lon
     FROM stop_times st
     JOIN trips t   ON t.trip_id  = st.trip_id
+    JOIN routes r  ON r.route_id = t.route_id
     JOIN stop_times dest_st ON dest_st.trip_id = st.trip_id
       AND dest_st.stop_sequence = (
         SELECT MAX(s2.stop_sequence) FROM stop_times s2 WHERE s2.trip_id = st.trip_id
       )
     JOIN stops dest_s ON dest_s.stop_id = dest_st.stop_id
     JOIN stops orig_s ON orig_s.stop_id = st.stop_id
+    LEFT JOIN (
+      SELECT service_id FROM calendar
+      WHERE start_date <= ? AND end_date >= ?
+        AND (
+          (? = 'monday'    AND monday    = 1) OR
+          (? = 'tuesday'   AND tuesday   = 1) OR
+          (? = 'wednesday' AND wednesday = 1) OR
+          (? = 'thursday'  AND thursday  = 1) OR
+          (? = 'friday'    AND friday    = 1) OR
+          (? = 'saturday'  AND saturday  = 1) OR
+          (? = 'sunday'    AND sunday    = 1)
+        )
+    ) AS cal ON cal.service_id = t.service_id
+    LEFT JOIN calendar_dates cd
+      ON cd.service_id = t.service_id AND cd.date = ?
     WHERE st.stop_id IN (
-      -- All stops sharing the same physical station (same parent_station).
-      -- SBB:  parent = 'Parent8503000'  → matches '8503000', '8503000:0:10', etc.
-      -- SNCF: parent = 'StopArea:OCE87391003' → matches all service-type variants.
-      -- Falls back to exact stop_id match when parent_station is null/empty.
       SELECT s2.stop_id FROM stops s2
       WHERE s2.parent_station = (SELECT parent_station FROM stops WHERE stop_id = ?)
         AND s2.parent_station IS NOT NULL
@@ -347,10 +452,28 @@ export async function queryUpcomingTrains(
       SELECT ?
     )
       AND st.departure_time >= ?
-      AND st.departure_time <= ?
+      -- Solo salidas: excluir si la estación es la última parada del trip
+      AND st.stop_sequence < (
+        SELECT MAX(s3.stop_sequence) FROM stop_times s3 WHERE s3.trip_id = st.trip_id
+      )
+      AND (
+        -- Servicio activo hoy según calendar o calendar_dates (exception_type=1)
+        cal.service_id IS NOT NULL
+        OR cd.exception_type = 1
+        -- Si no hay tabla calendar (placeholders), mostrar de todas formas
+        OR NOT EXISTS (SELECT 1 FROM calendar LIMIT 1)
+      )
+      AND (cd.exception_type IS NULL OR cd.exception_type != 2)
+    GROUP BY st.trip_id
     ORDER BY st.departure_time ASC
     LIMIT ?
-  `, [stationId, stationId, depFrom, depTo, limit]);
+  `, [
+    todayGTFS, todayGTFS,
+    dow, dow, dow, dow, dow, dow, dow,
+    todayGTFS,
+    stationId, stationId, depFrom,
+    limit,
+  ]);
 
   return rows.map((row) => gtfsRowToTrainService(row, now));
 }
@@ -388,6 +511,9 @@ export interface BoardEntry {
   endpoint: string;   // destino (salidas) u origen (arribos)
   station:  string;   // nombre de la parada
   status:   'ontime' | 'delayed' | 'cancelled';
+  delay?:   string;   // "+3'" — solo si hay demora real-time
+  platform?: string;  // "7" — andén, si lo informa la API
+  tripId?:  string;   // trip_id GTFS — usado para overlay RT (DE)
 }
 
 // ── TfL board: live arrivals via api.tfl.gov.uk (no GTFS stop_times) ────────
@@ -416,8 +542,8 @@ async function getTfLBoard(
       .slice(0, limit)
       .map((a) => {
         const eta     = new Date(now + a.timeToStation * 1000);
-        const hh      = eta.getUTCHours().toString().padStart(2, '0');
-        const mm      = eta.getUTCMinutes().toString().padStart(2, '0');
+        const hh      = eta.toLocaleString('en-GB', { hour: '2-digit',   hour12: false, timeZone: 'Europe/London' });
+        const mm      = eta.toLocaleString('en-GB', { minute: '2-digit', hour12: false, timeZone: 'Europe/London' });
         const lineName = (a.lineName ?? a.lineId ?? 'Tube').replace(/ line$/i, '');
         return {
           time:     `${hh}:${mm}`,
@@ -432,8 +558,92 @@ async function getTfLBoard(
   }
 }
 
+// ── Suiza real-time via transport.opendata.ch ─────────────────────────────────
+
+/** Estación suiza activa (se actualiza cuando el usuario la selecciona o por GPS). */
+let activeSwissStation: { id: string; name: string } | null = null;
+
+export function setActiveSwissStation(id: string, name: string) {
+  activeSwissStation = { id, name };
+}
+
+export function getActiveSwissStationName(): string {
+  return activeSwissStation?.name ?? 'Zürich HB';
+}
+
+/**
+ * Tablero real-time Suiza: llama a /stationboard de transport.opendata.ch.
+ * Si no se estableció estación activa, usa Zürich HB como default.
+ * Fallback al GTFS local si no hay conexión.
+ */
+async function getSwissBoard(
+  mode: 'salidas' | 'arribos',
+  limit: number,
+): Promise<BoardEntry[]> {
+  const station = activeSwissStation?.name ?? 'Zürich HB';
+  try {
+    const departures = await fetchSwissStationboard(station, limit);
+    return departures.map((d: SwissDeparture): BoardEntry => ({
+      time:     formatBoardTime(
+        `${d.departureTime.getHours().toString().padStart(2,'0')}:${d.departureTime.getMinutes().toString().padStart(2,'0')}:00`
+      ),
+      train:    d.category || d.trainNumber.split(' ')[0] || '—',
+      endpoint: d.destination || '—',
+      station:  d.stationName,
+      status:   d.delayMin > 0 ? 'delayed' as const : 'ontime' as const,
+      delay:    d.delayMin > 0 ? `+${d.delayMin}'` : undefined,
+      platform: d.platform || undefined,
+    }));
+  } catch (e) {
+    console.warn('[Swiss RT] fallback a GTFS local:', e);
+    // Fallback GTFS local
+    return getCountryBoardGTFS('CH', mode, limit);
+  }
+}
+
+/** Versión GTFS pura de getCountryBoard (usado como fallback para CH). */
+async function getCountryBoardGTFS(
+  country: CountryCode,
+  mode: 'salidas' | 'arribos',
+  limit: number,
+): Promise<BoardEntry[]> {
+  const conn = await ensureDB(country);
+  const utcOffset    = COUNTRY_UTC_OFFSET[country] ?? 0;
+  const deviceOffset = -new Date().getTimezoneOffset() / 60;
+  const diffMs       = (utcOffset - deviceOffset) * 3_600_000;
+  const now          = new Date(Date.now() + diffMs);
+  const fromTime     = timeToGTFS(now);
+  const timeCol      = mode === 'salidas' ? 'st.departure_time' : 'st.arrival_time';
+  try {
+    const rows = await conn.getAllAsync<{
+      t: string; train: string | null; head: string | null; stop: string; trip_id: string;
+    }>(`
+      SELECT MIN(${timeCol}) AS t,
+        COALESCE(r.route_short_name, r.route_long_name, '') AS train,
+        COALESCE(t.trip_headsign, '') AS head,
+        s.stop_name AS stop,
+        st.trip_id
+      FROM stop_times st
+      JOIN trips  t ON st.trip_id = t.trip_id
+      JOIN routes r ON t.route_id = r.route_id
+      JOIN stops  s ON st.stop_id = s.stop_id
+      WHERE ${timeCol} >= ? AND s.location_type IN (0, 1)
+      GROUP BY st.trip_id ORDER BY t ASC LIMIT ?
+    `, [fromTime, limit]);
+    return rows.map((r) => ({
+      time:     formatBoardTime(r.t),
+      train:    r.train ?? '—',
+      endpoint: r.head  || '—',
+      station:  r.stop,
+      status:   'ontime' as const,
+      tripId:   r.trip_id,
+    }));
+  } catch { return []; }
+}
+
 /**
  * getCountryBoard — devuelve las próximas salidas o arribos de un país.
+ * CH    usa transport.opendata.ch en tiempo real (sin API key).
  * GB_LON usa TfL live API directamente (no tiene GTFS stop_times).
  * El resto consulta la DB SQLite local.
  */
@@ -442,52 +652,128 @@ export async function getCountryBoard(
   mode: 'salidas' | 'arribos',
   limit = 30,
 ): Promise<BoardEntry[]> {
+  // Suiza: API real-time transport.opendata.ch
+  if (country === 'CH') {
+    return getSwissBoard(mode, limit);
+  }
+
   // TfL: bypasear GTFS y llamar API live
   if (country === 'GB_LON' || country === 'GB') {
     return getTfLBoard(mode, limit);
   }
 
-  const conn = await ensureDB(country);
-  const utcOffset    = COUNTRY_UTC_OFFSET[country] ?? 0;
-  const deviceOffset = -new Date().getTimezoneOffset() / 60;
-  const diffMs       = (utcOffset - deviceOffset) * 3_600_000;
-  const now          = new Date(Date.now() + diffMs);
-  const fromTime     = timeToGTFS(now);
-  const toTime       = timeToGTFS(new Date(now.getTime() + 6 * 3_600_000));
-  const timeCol      = mode === 'salidas' ? 'st.departure_time' : 'st.arrival_time';
-
-  try {
-    const rows = await conn.getAllAsync<{
-      t:     string;
-      train: string | null;
-      head:  string | null;
-      stop:  string;
-    }>(`
-      SELECT
-        ${timeCol}                                              AS t,
-        COALESCE(r.route_short_name, r.route_long_name, '')   AS train,
-        COALESCE(t.trip_headsign, '')                         AS head,
-        s.stop_name                                           AS stop
-      FROM stop_times st
-      JOIN trips  t ON st.trip_id = t.trip_id
-      JOIN routes r ON t.route_id = r.route_id
-      JOIN stops  s ON st.stop_id = s.stop_id
-      WHERE ${timeCol} >= ? AND ${timeCol} <= ?
-        AND s.location_type IN (0, 1)
-      ORDER BY t ASC
-      LIMIT ?
-    `, [fromTime, toTime, limit]);
-
-    return rows.map((r) => ({
-      time:     formatBoardTime(r.t),
-      train:    r.train ?? '—',
-      endpoint: r.head  || '—',
-      station:  r.stop,
-      status:   'ontime' as const,
-    }));
-  } catch {
-    return [];
+  // Alemania: GTFS estático + overlay GTFS-RT desde gtfs.de
+  if (country === 'DE') {
+    const entries = await getCountryBoardGTFS('DE', mode, limit);
+    return overlayGermanyDelays(entries);
   }
+
+  // Italia: ViaggiaTreno real-time (API pública Trenitalia), fallback GTFS
+  if (country === 'IT') {
+    try {
+      const departures = await fetchItalyBoard(mode, limit);
+      if (departures.length > 0) {
+        return departures.map((d: ItalyDeparture): BoardEntry => ({
+          time:     d.scheduledTime,
+          train:    d.category || d.trainNumber || '—',
+          endpoint: d.destination || '—',
+          station:  d.stationName,
+          status:   d.delayMin > 1 ? 'delayed' : 'ontime',
+          delay:    d.delayMin > 1 ? `+${d.delayMin}'` : undefined,
+          platform: d.platform || undefined,
+        }));
+      }
+    } catch (e) {
+      console.warn('[IT RT] fallback a GTFS:', e);
+    }
+    return getCountryBoardGTFS('IT', mode, limit);
+  }
+
+  // Francia: SNCF API real-time (Navitia), fallback GTFS
+  if (country === 'FR') {
+    try {
+      const departures = await fetchFranceBoard(mode, limit);
+      if (departures.length > 0) {
+        return departures.map((d: FranceDeparture): BoardEntry => ({
+          time:     d.scheduledTime,
+          train:    d.category || d.trainNumber || '—',
+          endpoint: d.destination || '—',
+          station:  d.stationName,
+          status:   d.cancelled ? 'cancelled' : d.delayMin > 1 ? 'delayed' : 'ontime',
+          delay:    d.delayMin > 1 ? `+${d.delayMin}'` : undefined,
+          platform: d.platform || undefined,
+        }));
+      }
+    } catch (e) {
+      console.warn('[FR RT] fallback a GTFS:', e);
+    }
+    return getCountryBoardGTFS('FR', mode, limit);
+  }
+
+  // Portugal: CP API interna (no oficial), fallback GTFS
+  if (country === 'PT') {
+    try {
+      const departures = await fetchPortugalBoard(mode, limit);
+      if (departures.length > 0) {
+        return departures.map((d: PortugalDeparture): BoardEntry => ({
+          time:     d.scheduledTime,
+          train:    d.category || d.trainNumber || '—',
+          endpoint: d.destination || '—',
+          station:  d.stationName,
+          status:   d.cancelled ? 'cancelled' : d.delayMin > 1 ? 'delayed' : 'ontime',
+          delay:    d.delayMin > 1 ? `+${d.delayMin}'` : undefined,
+          platform: d.platform || undefined,
+        }));
+      }
+    } catch (e) {
+      console.warn('[PT RT] fallback a GTFS:', e);
+    }
+    return getCountryBoardGTFS('PT', mode, limit);
+  }
+
+  // Austria: ÖBB Hafas real-time (no oficial), fallback GTFS
+  if (country === 'AT') {
+    try {
+      const departures = await fetchAustriaBoard(mode, limit);
+      if (departures.length > 0) {
+        return departures.map((d: AustriaDeparture): BoardEntry => ({
+          time:     d.scheduledTime,
+          train:    d.category || d.trainNumber || '—',
+          endpoint: d.destination || '—',
+          station:  d.stationName,
+          status:   d.cancelled ? 'cancelled' : d.delayMin > 1 ? 'delayed' : 'ontime',
+          delay:    d.delayMin > 1 ? `+${d.delayMin}'` : undefined,
+          platform: d.platform || undefined,
+        }));
+      }
+    } catch (e) {
+      console.warn('[AT RT] fallback a GTFS:', e);
+    }
+    return getCountryBoardGTFS('AT', mode, limit);
+  }
+
+  // Bélgica: iRail API real-time (NMBS/SNCB), fallback GTFS
+  if (country === 'BE') {
+    try {
+      const departures = await fetchBelgiumBoard(mode, limit);
+      if (departures.length > 0) {
+        return departures.map((d: BelgiumDeparture): BoardEntry => ({
+          time:     d.scheduledTime,
+          train:    d.category || d.trainNumber || '—',
+          endpoint: d.destination || '—',
+          station:  d.stationName,
+          status:   d.cancelled ? 'cancelled' : d.delayMin > 1 ? 'delayed' : 'ontime',
+          delay:    d.delayMin > 1 ? `+${d.delayMin}'` : undefined,
+          platform: d.platform || undefined,
+        }));
+      }
+    } catch (e) {
+      console.warn('[BE RT] fallback a GTFS:', e);
+    }
+    return getCountryBoardGTFS('BE', mode, limit);
+  }
+
+  return getCountryBoardGTFS(country, mode, limit);
 }
 
 function formatBoardTime(gtfsTime: string): string {
@@ -559,8 +845,9 @@ function rowToStation(row: {
 
 function gtfsRowToTrainService(row: any, baseDate: Date): TrainService {
   const departureTime = gtfsTimeToDate(row.departure_time ?? '00:00:00', baseDate);
+  // dest_arrival_time = llegada al destino final del viaje (último stop del trip)
   const arrivalTime   = gtfsTimeToDate(
-    row.arrival_time ?? row.departure_time ?? '00:00:00',
+    row.dest_arrival_time ?? row.arrival_time ?? row.departure_time ?? '00:00:00',
     baseDate,
   );
 
@@ -586,7 +873,7 @@ function gtfsRowToTrainService(row: any, baseDate: Date): TrainService {
     serviceId:    row.trip_id,
     operator,
     trainType:    deriveTrainType(headsign),
-    trainNumber:  row.trip_id.split('_').pop() ?? row.trip_id,
+    trainNumber:  row.route_short_name ?? row.trip_id.split('_')[0] ?? row.trip_id,
     origin: {
       id:          row.trip_id + '_orig',
       name:        row.origin_name ?? '',
@@ -612,10 +899,237 @@ function gtfsRowToTrainService(row: any, baseDate: Date): TrainService {
   };
 }
 
+/**
+ * getFirstStation — returns the first stop from the active country's DB.
+ * Used as a GPS fallback when the user is testing from outside the country.
+ */
+export async function getFirstStation(): Promise<Station | null> {
+  const conn = await db();
+  const row = await conn.getFirstAsync<{
+    stop_id:      string;
+    stop_name:    string;
+    stop_lat:     number;
+    stop_lon:     number;
+    country_code: string;
+  }>(
+    'SELECT stop_id, stop_name, stop_lat, stop_lon, country_code FROM stops WHERE location_type IN (0, 1) LIMIT 1',
+  );
+  if (!row) return null;
+  return rowToStation(row);
+}
+
 function deriveTrainType(headsign: string): TrainService['trainType'] {
   const h = headsign.toUpperCase();
   if (h.includes('TGV') || h.includes('AVE') || h.includes('FRECCIAROSSA')) return 'high-speed';
   if (h.includes('ICE') || h.includes('IC') || h.includes('EC'))            return 'intercity';
   if (h.includes('NIGHT') || h.includes('EN ') || h.includes('NJ'))         return 'night';
   return 'regional';
+}
+
+// ── searchStations — autocomplete solo con estaciones que tienen trenes reales ─
+// Normaliza acentos para búsqueda: Valencia → matchea València, Málaga, etc.
+function normalizeAccents(s: string): string {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
+
+export async function searchStations(query: string, limit = 20): Promise<Station[]> {
+  if (!query.trim()) return [];
+  const conn = await db();
+  // Normalizamos el query en JS y también la columna en SQLite con REPLACEs encadenados
+  const nq = `%${normalizeAccents(query)}%`;
+  const rows = await conn.getAllAsync<{
+    stop_id: string; stop_name: string;
+    stop_lat: number; stop_lon: number; country_code: string;
+  }>(
+    // Compara stop_name normalizado (sin acentos, minúsculas) con el query normalizado
+    `SELECT DISTINCT s.stop_id, s.stop_name, s.stop_lat, s.stop_lon, s.country_code
+     FROM stops s
+     INNER JOIN stop_times st ON st.stop_id = s.stop_id
+     INNER JOIN trips      tr ON tr.trip_id  = st.trip_id
+     INNER JOIN routes     ro ON ro.route_id = tr.route_id
+     WHERE LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(
+             REPLACE(REPLACE(REPLACE(REPLACE(s.stop_name,
+             'á','a'),'à','a'),'â','a'),'ä','a'),
+             'é','e'),'è','e'),'ê','e'),'ë','e'),
+             'í','i'),'ì','i'),'ó','o'),'ò','o')) LIKE ?
+       AND s.location_type IN (0, 1)
+       AND ro.route_type IN (2, 100, 101, 102, 103, 104, 105, 107, 108)
+       AND s.stop_name NOT LIKE '%Cercanías%'
+       AND s.stop_name NOT LIKE '%Cercanias%'
+     GROUP BY s.stop_id
+     ORDER BY s.stop_name ASC
+     LIMIT ?`,
+    [nq, limit],
+  );
+  return rows.map(rowToStation);
+}
+
+// ── TripResult — resultado del buscador ──────────────────────────────────────
+export interface TripResult {
+  tripId:        string;
+  operator:      string;
+  trainNumber:   string;
+  departureTime: Date;
+  arrivalTime:   Date;
+  durationMin:   number;
+  origin:        Station;
+  destination:   Station;
+}
+
+// ── Re-exports Suiza real-time para uso en buscar-viaje.tsx ──────────────────
+export { fetchSwissConnections, searchSwissStations, nearestSwissStation };
+export { getGermanyAlerts, invalidateGermanyRT } from './germanyRealTime';
+export { searchItalyStations, setActiveItalyStation, getActiveItalyStationName, invalidateItalyRT } from './italyRealTime';
+export { searchBelgiumStations, setActiveBelgiumStation, getActiveBelgiumStationName, getBelgiumDisturbances, invalidateBelgiumRT } from './belgiumRealTime';
+export { searchFranceStations, setActiveFranceStation, getActiveFranceStationName, invalidateFranceRT } from './franceRealTime';
+export { searchAustriaStations, setActiveAustriaStation, getActiveAustriaStationName, invalidateAustriaRT } from './austriaRealTime';
+export { searchPortugalStations, setActivePortugalStation, getActivePortugalStationName, invalidatePortugalRT } from './portugalRealTime';
+
+// ── searchTrips — origen → destino en una fecha dada ─────────────────────────
+export async function searchTrips(
+  originId:    string,
+  destId:      string,
+  date:        Date,
+  maxResults = 10,
+): Promise<TripResult[]> {
+  const conn   = await db();
+  const tzOff  = COUNTRY_UTC_OFFSET[activeCountry] ?? 0;
+
+  // Convertir la fecha al horario local del país (no del dispositivo)
+  // Ej: teléfono en Argentina (UTC-3), Madrid en UTC+2 → +5h
+  const deviceOffset = -new Date().getTimezoneOffset() / 60;
+  const localDate    = new Date(date.getTime() + (tzOff - deviceOffset) * 3_600_000);
+
+  // Fecha en formato GTFS (YYYYMMDD) — en hora local del país
+  const gtfsDate = localDate.getFullYear().toString()
+    + (localDate.getMonth() + 1).toString().padStart(2, '0')
+    + localDate.getDate().toString().padStart(2, '0');
+  const dow = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][localDate.getDay()];
+
+  // Hora mínima = hora actual en timezone del país (si es hoy) o 00:00
+  const nowLocal  = new Date(Date.now() + (tzOff - deviceOffset) * 3_600_000);
+  const isToday   = nowLocal.toDateString() === localDate.toDateString();
+  const minHH     = isToday ? nowLocal.getHours().toString().padStart(2, '0') : '00';
+  const minMM     = isToday ? nowLocal.getMinutes().toString().padStart(2, '0') : '00';
+  const minTime   = `${minHH}:${minMM}:00`;
+
+  type TripRow = {
+    trip_id: string; dep_time: string; arr_time: string;
+    route_short: string; route_long: string; agency_id: string;
+    origin_name: string; origin_lat: number; origin_lon: number;
+    dest_name: string; dest_lat: number; dest_lon: number;
+  };
+
+  const BASE_SELECT = `
+    SELECT
+      st_o.trip_id,
+      MIN(st_o.departure_time) AS dep_time,
+      MIN(st_d.arrival_time)   AS arr_time,
+      COALESCE(r.route_short_name, r.route_long_name, '') AS route_short,
+      COALESCE(r.route_long_name, '') AS route_long,
+      COALESCE(a.agency_name, r.agency_id, '') AS agency_id,
+      s_o.stop_name AS origin_name, s_o.stop_lat AS origin_lat, s_o.stop_lon AS origin_lon,
+      s_d.stop_name AS dest_name,   s_d.stop_lat AS dest_lat,   s_d.stop_lon AS dest_lon
+    FROM stop_times st_o
+    JOIN stop_times st_d ON st_d.trip_id = st_o.trip_id AND st_d.stop_sequence > st_o.stop_sequence
+    JOIN trips      t    ON t.trip_id  = st_o.trip_id
+    JOIN routes     r    ON r.route_id = t.route_id
+                        AND r.route_type IN (2,100,101,102,103,104,105,107,108)
+    LEFT JOIN agency a   ON a.agency_id = r.agency_id
+    JOIN stops s_o       ON s_o.stop_id = st_o.stop_id
+    JOIN stops s_d       ON s_d.stop_id = st_d.stop_id
+  `;
+
+  // Intento 1: con filtro de calendario estricto
+  let rows = await conn.getAllAsync<TripRow>(BASE_SELECT + `
+    LEFT JOIN (
+      SELECT service_id FROM calendar
+      WHERE start_date <= ? AND end_date >= ?
+        AND (
+          (? = 'monday' AND monday=1) OR (? = 'tuesday' AND tuesday=1) OR
+          (? = 'wednesday' AND wednesday=1) OR (? = 'thursday' AND thursday=1) OR
+          (? = 'friday' AND friday=1) OR (? = 'saturday' AND saturday=1) OR
+          (? = 'sunday' AND sunday=1)
+        )
+    ) AS cal ON cal.service_id = t.service_id
+    LEFT JOIN calendar_dates cd ON cd.service_id = t.service_id AND cd.date = ?
+    WHERE st_o.stop_id = ? AND st_d.stop_id = ? AND st_o.departure_time >= ?
+      AND (cal.service_id IS NOT NULL OR cd.exception_type = 1
+           OR NOT EXISTS (SELECT 1 FROM calendar LIMIT 1))
+      AND (cd.exception_type IS NULL OR cd.exception_type != 2)
+    GROUP BY st_o.trip_id
+    ORDER BY CASE WHEN r.route_short_name IN ('AVE','AVE INT','AVLO','ALVIA','AVANT','EUROMED') THEN 0 ELSE 1 END,
+             dep_time ASC LIMIT ?
+  `, [gtfsDate, gtfsDate, dow, dow, dow, dow, dow, dow, dow, gtfsDate, originId, destId, minTime, maxResults]);
+
+  // Intento 2: si el GTFS tiene fechas vencidas, ignorar calendario
+  if (rows.length === 0) {
+    rows = await conn.getAllAsync<TripRow>(BASE_SELECT + `
+      WHERE st_o.stop_id = ? AND st_d.stop_id = ? AND st_o.departure_time >= ?
+      GROUP BY st_o.trip_id
+      ORDER BY CASE WHEN r.route_short_name IN ('AVE','AVE INT','AVLO','ALVIA','AVANT','EUROMED') THEN 0 ELSE 1 END,
+               dep_time ASC LIMIT ?
+    `, [originId, destId, minTime, maxResults]);
+  }
+
+  // Intento 3: buscar desde/hacia TODAS las estaciones de la misma ciudad
+  // (ej: "Madrid Chamartín" → busca también desde "Madrid Puerta de Atocha")
+  if (rows.length === 0) {
+    const cityOf = (stopName: string) => stopName.split(/[-–(]/)[0].trim();
+    const originStop = await conn.getFirstAsync<{ stop_name: string }>(
+      'SELECT stop_name FROM stops WHERE stop_id = ?', [originId]
+    );
+    const destStop = await conn.getFirstAsync<{ stop_name: string }>(
+      'SELECT stop_name FROM stops WHERE stop_id = ?', [destId]
+    );
+    if (originStop && destStop) {
+      const oCity = cityOf(originStop.stop_name);
+      const dCity = cityOf(destStop.stop_name);
+      rows = await conn.getAllAsync<TripRow>(BASE_SELECT + `
+        WHERE s_o.stop_name LIKE ? AND s_d.stop_name LIKE ?
+          AND st_o.departure_time >= ?
+        GROUP BY st_o.trip_id
+        ORDER BY CASE WHEN r.route_short_name IN ('AVE','AVE INT','AVLO','ALVIA','AVANT','EUROMED') THEN 0 ELSE 1 END,
+                 dep_time ASC LIMIT ?
+      `, [`${oCity}%`, `${dCity}%`, minTime, maxResults]);
+    }
+  }
+
+  // Deduplicar por trip_id (puede haber duplicados entre intentos)
+  const seen = new Set<string>();
+  const unique = rows.filter(r => { if (seen.has(r.trip_id)) return false; seen.add(r.trip_id); return true; });
+
+  const results = unique.map(row => {
+    const dep = gtfsTimeToDateWithOffset(row.dep_time, localDate, tzOff);
+    const arr = gtfsTimeToDateWithOffset(row.arr_time, localDate, tzOff);
+    const durationMin = Math.max(0, Math.round((arr.getTime() - dep.getTime()) / 60_000));
+    const mkSt = (id: string, name: string, lat: number, lon: number): Station =>
+      ({ id, name, nameLocal: name, country: activeCountry, coordinates: { latitude: lat, longitude: lon }, platforms: [] } as unknown as Station);
+    return {
+      tripId:        row.trip_id,
+      operator:      row.agency_id || 'Operador',
+      trainNumber:   row.route_short || row.route_long || row.trip_id.split('_')[0],
+      departureTime: dep,
+      arrivalTime:   arr,
+      durationMin,
+      origin:      mkSt(originId, row.origin_name, row.origin_lat, row.origin_lon),
+      destination: mkSt(destId,   row.dest_name,  row.dest_lat,   row.dest_lon),
+    };
+  });
+
+  // Ordenar por hora de salida; marcar el más rápido
+  results.sort((a, b) => a.departureTime.getTime() - b.departureTime.getTime());
+  const fastest = results.reduce((f, r) => r.durationMin < f.durationMin ? r : f, results[0]);
+  if (fastest) (fastest as TripResult & { fastest?: boolean }).fastest = true;
+
+  return results;
+}
+
+// helper exclusivo de searchTrips con offset
+function gtfsTimeToDateWithOffset(gtfsTime: string, base: Date, tzOffsetHours: number): Date {
+  const [hh, mm, ss] = gtfsTime.split(':').map(Number);
+  const d = new Date(base);
+  d.setHours(0, 0, 0, 0);
+  d.setTime(d.getTime() + (hh * 3600 + mm * 60 + (ss || 0)) * 1000 - tzOffsetHours * 3_600_000);
+  return d;
 }

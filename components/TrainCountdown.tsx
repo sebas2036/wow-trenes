@@ -5,14 +5,20 @@
  * 3 tarjetas máximo. Accent stripe izquierda coloreada por estado.
  * Sin gradientes recargados — fondo sólido elevado.
  */
-import React, { useEffect, useRef, useState, memo } from 'react';
+import React, { useEffect, useRef, useState, memo, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Pressable,
   ActivityIndicator,
+  ScrollView,
+  Modal,
+  Platform,
+  SafeAreaView,
 } from 'react-native';
+import { WebView } from 'react-native-webview';
+import { Ionicons }  from '@expo/vector-icons';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -51,17 +57,26 @@ function fmtCountdown(ms: number): string {
 
 // ─────────────────────────────────────────────────────────────────────────────
 interface TrainCountdownProps {
-  clocks:    PredictiveClock[];
-  isLoading: boolean;
-  isLive:    boolean;
-  onSelect:  (clock: PredictiveClock) => void;
+  clocks:       PredictiveClock[];
+  isLoading:    boolean;
+  isLive:       boolean;
+  onSelect:     (clock: PredictiveClock) => void;
+  originName?:  string;
 }
+
+// ── Trainline ─────────────────────────────────────────────────────────────────
+// affiliate_ref = tu ID de Partnerize. Reemplazá XXXXXXXX por el ID real.
+const AFFILIATE_REF  = 'XXXXXXXX';
+const TRAINLINE_URL  = `https://www.thetrainline.com?affiliate_ref=${AFFILIATE_REF}`;
+
+
 
 export default memo(function TrainCountdown({
   clocks,
   isLoading,
   isLive,
   onSelect,
+  originName = 'Origen',
 }: TrainCountdownProps) {
   return (
     <View style={styles.container}>
@@ -76,7 +91,6 @@ export default memo(function TrainCountdown({
             </View>
           )}
         </View>
-        <Text style={styles.headerSub}>Toca para comprar</Text>
       </View>
 
       {/* Cards */}
@@ -85,14 +99,19 @@ export default memo(function TrainCountdown({
       ) : clocks.length === 0 ? (
         <EmptyState />
       ) : (
-        clocks.slice(0, 3).map((clock, i) => (
-          <TrainCard
-            key={clock.train.serviceId}
-            clock={clock}
-            index={i}
-            onPress={() => onSelect(clock)}
-          />
-        ))
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 8 }}
+        >
+          {clocks.slice(0, 8).map((clock, i) => (
+            <TrainCard
+              key={clock.train.serviceId}
+              clock={clock}
+              index={i}
+              onPress={() => onSelect(clock)}
+            />
+          ))}
+        </ScrollView>
       )}
     </View>
   );
@@ -110,6 +129,7 @@ function TrainCard({
 }) {
   const cfg = STATUS[clock.status];
   const { train } = clock;
+  const [expanded, setExpanded] = useState(index === 0); // primera tarjeta expandida por defecto
 
   // Contador vivo (1 seg)
   const [now, setNow] = useState(Date.now());
@@ -156,7 +176,7 @@ function TrainCard({
           index === 0 && styles.cardFirst,
           pressed && styles.cardPressed,
         ]}
-        onPress={onPress}
+        onPress={() => index === 0 ? setExpanded(e => !e) : onPress()}
         accessibilityRole="button"
         accessibilityLabel={`${train.operator} ${train.trainNumber} a ${train.destination.name} — ${fmt(train.departureTime)}`}
       >
@@ -203,18 +223,13 @@ function TrainCard({
 
           {/* Fila inferior: andén + buffer + walk */}
           <View style={styles.bottomRow}>
-            {/* Andén */}
+            {/* Andén — solo si hay dato real */}
             {train.platform ? (
               <View style={styles.platformChip}>
                 <Text style={styles.platformLabel}>ANDÉN</Text>
                 <Text style={styles.platformNum}>{train.platform}</Text>
               </View>
-            ) : (
-              <View style={styles.platformChip}>
-                <Text style={[styles.platformLabel, { color: Colors.text.muted }]}>ANDÉN</Text>
-                <Text style={[styles.platformNum, { color: Colors.text.muted }]}>—</Text>
-              </View>
-            )}
+            ) : null}
 
             {/* Spacer */}
             <View style={{ flex: 1 }} />
@@ -231,10 +246,41 @@ function TrainCard({
                 {fmtCountdown(msLeft)}
               </Text>
             </View>
+
+            {/* Comprar billete — siempre visible */}
+            <Pressable
+              style={[styles.buyChip, { backgroundColor: cfg.stripe }]}
+              onPress={onPress}
+              accessibilityRole="button"
+              accessibilityLabel="Comprar billete"
+            >
+              <Text style={styles.buyChipText}>Comprar</Text>
+            </Pressable>
           </View>
 
         </View>
+
       </Pressable>
+
+      {/* Panel expandido — fuera del row stripe+card para quedar debajo */}
+      {expanded && (
+        <View style={styles.expandPanel}>
+          <View style={styles.expandRow}>
+            <View style={styles.expandStat}>
+              <Text style={styles.expandStatLabel}>SALE</Text>
+              <Text style={styles.expandStatValue}>{fmt(train.departureTime)}</Text>
+            </View>
+            <View style={styles.expandArrow}>
+              <Text style={styles.expandArrowText}>──────›</Text>
+            </View>
+            <View style={styles.expandStat}>
+              <Text style={styles.expandStatLabel}>LLEGA</Text>
+              <Text style={styles.expandStatValue}>{fmt(train.arrivalTime)}</Text>
+            </View>
+          </View>
+        </View>
+      )}
+
     </Animated.View>
   );
 }
@@ -491,5 +537,118 @@ const styles = StyleSheet.create({
     color:     Colors.text.muted,
     textAlign: 'center',
     lineHeight:18,
+  },
+
+  // Expand panel
+  expandPanel: {
+    backgroundColor: Colors.bg.elevated,
+    marginTop:       -Spacing['1'],
+    paddingHorizontal: Spacing['3'],
+    paddingTop:      Spacing['2'],
+    paddingBottom:   Spacing['3'],
+    borderBottomLeftRadius:  8,
+    borderBottomRightRadius: 8,
+    borderTopWidth:  0.5,
+    borderTopColor:  Colors.border.subtle,
+    gap:             Spacing['2'],
+  },
+  expandRow: {
+    flexDirection:  'row',
+    alignItems:     'center',
+    justifyContent: 'space-between',
+  },
+  expandStat: { alignItems: 'center', gap: 2 },
+  expandStatLabel: {
+    fontSize:      9,
+    fontWeight:    Typography.weight.bold,
+    color:         Colors.text.muted,
+    letterSpacing: 1.2,
+  },
+  expandStatValue: {
+    fontSize:   17,
+    fontWeight: Typography.weight.bold,
+    color:      Colors.text.primary,
+    fontVariant:['tabular-nums'],
+  },
+  expandArrow: { flex: 1, alignItems: 'center' },
+  expandArrowText: {
+    fontSize: 11,
+    color:    Colors.text.muted,
+  },
+  buyBtn: {
+    borderRadius:  Radius.full,
+    paddingVertical: 11,
+    alignItems:   'center',
+  },
+  buyBtnText: {
+    fontSize:   14,
+    fontWeight: Typography.weight.bold,
+    color:      '#fff',
+  },
+  buyChip: {
+    paddingVertical:   5,
+    paddingHorizontal: 10,
+    borderRadius:      Radius.full,
+  },
+  buyChipText: {
+    fontSize:   10,
+    fontWeight: Typography.weight.bold,
+    color:      '#fff',
+  },
+
+  // "Otro horario" header button
+  searchOtherBtn: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    gap:               4,
+    paddingVertical:   4,
+    paddingHorizontal: 10,
+    borderRadius:      Radius.full,
+    borderWidth:       1,
+    borderColor:       Colors.brand.primary + '55',
+    backgroundColor:   Colors.brand.primary + '12',
+  },
+  searchOtherText: {
+    fontSize:   10,
+    fontWeight: Typography.weight.semibold,
+    color:      Colors.brand.glow,
+  },
+
+  // WebView interno
+  wvRoot: {
+    flex:            1,
+    backgroundColor: Colors.bg.base,
+  },
+  wvBar: {
+    flexDirection:    'row',
+    alignItems:       'center',
+    justifyContent:   'space-between',
+    paddingHorizontal:Spacing['3'],
+    paddingVertical:  Spacing['2'],
+    borderBottomWidth:1,
+    borderBottomColor:Colors.border.subtle,
+    backgroundColor:  Colors.bg.elevated,
+  },
+  wvTitle: {
+    fontSize:   Typography.size.sm,
+    fontWeight: Typography.weight.bold,
+    color:      Colors.text.primary,
+  },
+  wvBackBtn: {
+    width: 36, height: 36,
+    alignItems: 'center', justifyContent: 'center',
+    borderRadius: Radius.full,
+  },
+  wvLoading: {
+    position:       'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    alignItems:     'center',
+    justifyContent: 'center',
+    backgroundColor:Colors.bg.base,
+    gap:            Spacing['3'],
+  },
+  wvLoadingText: {
+    fontSize: Typography.size.sm,
+    color:    Colors.text.muted,
   },
 });

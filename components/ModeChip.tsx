@@ -55,7 +55,7 @@ export default memo(function ModeChip({ selected, onChange, etas }: ModeChipProp
           >
             <Ionicons
               name={active ? cfg.icon.replace('-outline', '') as any : cfg.icon as any}
-              size={20}
+              size={17}
               color={active ? colors.brand.primary : colors.text.muted}
             />
             <Text style={[
@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
   wrap: {
     flexDirection: 'row',
     marginHorizontal: 12,
-    marginVertical: 10,
+    marginVertical: 6,
     borderRadius: Radius.md,
     padding: 3,
   },
@@ -88,9 +88,9 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
+    paddingVertical: 6,
     borderRadius: Radius.sm,
-    gap: 4,
+    gap: 2,
   },
   btnActive: {
     borderRadius: Radius.sm,

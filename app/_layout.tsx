@@ -46,6 +46,7 @@ function AppStack() {
         <Stack.Screen name="favoritos" />
         <Stack.Screen name="ajustes" />
         <Stack.Screen name="legal" />
+        <Stack.Screen name="buscar-viaje" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
         <Stack.Screen name="split-screen" options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="ticket"       options={{ animation: 'fade', presentation: 'modal' }} />
       </Stack>

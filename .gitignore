@@ -15,6 +15,20 @@ assets/*.db
 !assets/gtfs_fr_par.db
 !assets/gtfs_de_ber.db
 !assets/gtfs_de_mun.db
+!assets/gtfs_italy.db
+!assets/gtfs_france.db
+!assets/gtfs_germany.db
+!assets/gtfs_switzerland.db
+!assets/gtfs_netherlands.db
+!assets/gtfs_austria.db
+!assets/gtfs_norway.db
+!assets/gtfs_portugal.db
+!assets/gtfs_belgium.db
+!assets/gtfs_usa.db
+!assets/gtfs_usa_nyc.db
+!assets/gtfs_es_mad.db
+!assets/gtfs_us_chi.db
+!assets/gtfs_us_lax.db
 
 # OS
 .DS_Store

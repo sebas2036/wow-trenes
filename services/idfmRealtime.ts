@@ -3,14 +3,14 @@
  * API oficial: https://prim.ile-de-france-mobilites.fr/
  * Registro gratuito → token en minutos (sin límite duro)
  *
+ * ESTADO: Implementado, pendiente de key IDFM y conectar a pantalla FR_PAR.
+ * Para activar: registrarse en prim.ile-de-france-mobilites.fr → agregar
+ * EXPO_PUBLIC_IDFM_API_KEY al .env
+ *
  * Endpoints usados:
  *   GET /marketplace/stop-monitoring   → próximas llegadas por parada (SIRI-SM)
  *
  * Fallback: si la API falla (offline, sin key), usa GTFS local (gtfs_fr_par.db)
- *
- * Configuración:
- *   EXPO_PUBLIC_IDFM_API_KEY en .env
- *   Registro: https://prim.ile-de-france-mobilites.fr/  (gratuito)
  */
 
 const IDFM_BASE = 'https://prim.ile-de-france-mobilites.fr/marketplace';
