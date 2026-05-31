@@ -11,7 +11,7 @@
  *   • registerDestinationGeofence en onPurchaseSuccess (Ring-3 destino)
  *   • Ticket almacenado localmente para geofencing Rings 1+2
  */
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -320,10 +320,13 @@ export default function SplitScreen() {
   const { locationState, requestLocation } = useLocation();
 
   // Resolve user coordinates (from params or live GPS)
-  const userCoords: Coordinates | null =
-    params.lat && params.lon
-      ? { latitude: parseFloat(params.lat), longitude: parseFloat(params.lon) }
-      : locationState.status === 'granted' ? locationState.coords : null;
+  // useMemo evita crear un objeto nuevo en cada render → previene infinite loops en useEffect
+  const userCoords = useMemo<Coordinates | null>(() => {
+    if (params.lat && params.lon) {
+      return { latitude: parseFloat(params.lat), longitude: parseFloat(params.lon) };
+    }
+    return locationState.status === 'granted' ? locationState.coords : null;
+  }, [params.lat, params.lon, locationState.status, locationState.coords]);
 
   // ── Resolve origin station ────────────────────────────────────────────
   useEffect(() => {
