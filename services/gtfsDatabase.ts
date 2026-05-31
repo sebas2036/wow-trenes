@@ -98,6 +98,7 @@ import {
   invalidatePortugalRT,
   type PortugalDeparture,
 } from './portugalRealTime';
+import { isOnline } from './networkService';
 
 // ── Asset map ────────────────────────────────────────────────────────────────
 // 'bundled' → require() embeds the DB in the JS bundle (use solo para el país
@@ -711,6 +712,13 @@ export async function getCountryBoard(
   mode: 'salidas' | 'arribos',
   limit = 30,
 ): Promise<BoardEntry[]> {
+  // Modo offline — saltar APIs real-time, usar solo GTFS local
+  const online = await isOnline();
+  if (!online) {
+    console.log(`[GTFS] Offline — usando GTFS local para ${country}`);
+    return getCountryBoardGTFS(country, mode, limit);
+  }
+
   // Suiza: API real-time transport.opendata.ch
   if (country === 'CH') {
     return getSwissBoard(mode, limit);

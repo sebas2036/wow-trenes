@@ -27,6 +27,7 @@ import {
 import BottomTabBar from '../components/BottomTabBar';
 import TranslatorSheet from '../components/TranslatorSheet';
 import FlagCircle from '../components/FlagCircle';
+import { useNetwork } from '../hooks/useNetwork';
 import type { CountryCode } from '../types';
 
 // ── Países disponibles ────────────────────────────────────────────────────────
@@ -248,6 +249,7 @@ export default function SalidasScreen() {
   const [pickerOpen,    setPickerOpen]    = useState(false);
   const [stationName,   setStationName]   = useState('');
   const loadRef = useRef(0);
+  const { isOffline } = useNetwork();
 
   const hasStationPicker = RT_STATION_COUNTRIES[selected.code] === true;
 
@@ -304,12 +306,20 @@ export default function SalidasScreen() {
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: colors.bg.base }]} edges={['top']}>
 
+      {/* ── Offline Banner ── */}
+      {isOffline && (
+        <View style={styles.offlineBanner}>
+          <Ionicons name="cloud-offline-outline" size={14} color="#fff" />
+          <Text style={styles.offlineText}>Sin conexión · Mostrando horarios programados</Text>
+        </View>
+      )}
+
       {/* ── Header ── */}
       <View style={styles.header}>
         <View>
           <Text style={[styles.title,    { color: colors.text.primary   }]}>Tablero</Text>
           <Text style={[styles.subtitle, { color: colors.text.secondary }]}>
-            Horarios en tiempo real
+            {isOffline ? 'Horarios programados (offline)' : 'Horarios en tiempo real'}
           </Text>
         </View>
       </View>
@@ -514,6 +524,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40, gap: 12,
   },
   loadingText: { fontSize: 13, marginTop: 8 },
+  offlineBanner: {
+    flexDirection:    'row',
+    alignItems:       'center',
+    gap:              6,
+    backgroundColor:  '#FF9F0A',
+    paddingVertical:  6,
+    paddingHorizontal:16,
+  },
+  offlineText: { fontSize: 12, color: '#fff', fontWeight: '600' },
   emptyTitle:  { fontSize: 17, fontWeight: '700', textAlign: 'center' },
   emptySub:    { fontSize: 13, textAlign: 'center', lineHeight: 20 },
   openBtn: {

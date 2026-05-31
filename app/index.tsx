@@ -25,6 +25,7 @@ import BottomTabBar from '../components/BottomTabBar';
 import { toggleFavorito, getFavoritos } from './favoritos';
 import NotificationSheet from '../components/NotificationSheet';
 import { useNotifications } from '../context/NotificationContext';
+import { useNetwork } from '../hooks/useNetwork';
 import type { CountryCode, Coordinates } from '../types';
 
 // ── Tipo de filtro ──────────────────────────────────────────────────────────
@@ -245,6 +246,7 @@ export default function HomeScreen() {
   const { colors, isDark } = useTheme();
   const [filter,     setFilter]     = useState<FilterTab>('trenes');
   const [gpsLoading, setGpsLoading] = useState(false);
+  const { isOffline } = useNetwork();
   const [translator,    setTranslator]    = useState(false);
   const [notifVisible,  setNotifVisible]  = useState(false);
   const { unreadCount, addNotification }  = useNotifications();
@@ -329,6 +331,14 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: colors.bg.base }]} edges={['top']}>
+
+      {/* ── Offline Banner ── */}
+      {isOffline && (
+        <View style={styles.offlineBanner}>
+          <Ionicons name="cloud-offline-outline" size={14} color="#fff" />
+          <Text style={styles.offlineBannerText}>Sin conexión · Horarios programados disponibles</Text>
+        </View>
+      )}
 
       <ScrollView
         style={styles.scroll}
@@ -691,6 +701,15 @@ const styles = StyleSheet.create({
   },
   gpsPinIcon:    { fontSize: 20 },
   gpsBannerInfo: { flex: 1, overflow: 'hidden' },
+  offlineBanner: {
+    flexDirection:    'row',
+    alignItems:       'center',
+    gap:              6,
+    backgroundColor:  '#FF9F0A',
+    paddingVertical:  7,
+    paddingHorizontal:16,
+  },
+  offlineBannerText: { fontSize: 12, color: '#fff', fontWeight: '600', flex: 1 },
   gpsBannerTitle:{ fontSize: 12, fontWeight: '700', marginBottom: 2 },
   gpsBannerSub:  { fontSize: 11, lineHeight: 15 },
   gpsBtn: {
