@@ -49,6 +49,7 @@ import { optimizeRoute, calculateETA } from '../services/routeOptimizer';
 import { startPlatformMonitoring, stopPlatformMonitoring } from '../services/trainArrivalMonitor';
 import { registerDestinationGeofence, refreshGeofences }  from '../tasks/geofenceTask';
 import { storeTicket }                from '../services/ticketStorage';
+import { getPlaceName }              from '../services/geocodingService';
 
 import DestinationSearch from '../components/DestinationSearch';
 
@@ -311,6 +312,11 @@ export default function SplitScreen() {
     walk: null, bus: null, rideshare: null,
   });
 
+  // Nombre del lugar donde está el usuario (reverse geocoding)
+  const [placeName, setPlaceName] = useState<string | null>(null);
+  // Distancia en metros a la estación más cercana
+  const [distToStation, setDistToStation] = useState<number | null>(null);
+
   // Checkout — affiliate WebView (primary)
   const [affiliateVisible, setAffiliateVisible] = useState(false);
 
@@ -418,6 +424,21 @@ export default function SplitScreen() {
               Math.sin(dLon/2) ** 2;
     return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
   };
+
+  // ── Reverse geocoding — nombre del lugar donde está el usuario ───────
+  useEffect(() => {
+    if (!userCoords) return;
+    getPlaceName(userCoords.latitude, userCoords.longitude)
+      .then(setPlaceName)
+      .catch(() => {});
+  }, [userCoords]);
+
+  // ── Distancia a la estación en metros ─────────────────────────────────
+  useEffect(() => {
+    if (!userCoords || !selectedStation) { setDistToStation(null); return; }
+    const dist = haversineKm(userCoords, selectedStation.coordinates) * 1000;
+    setDistToStation(dist > 500_000 ? null : Math.round(dist)); // null si >500km
+  }, [userCoords, selectedStation]);
 
   // ── ETAs para los 3 modos en paralelo ────────────────────────────────
   useEffect(() => {
@@ -638,6 +659,28 @@ export default function SplitScreen() {
             <Text style={styles.refreshText}>↻</Text>
           </Pressable>
         </View>
+
+        {/* ── Banner: dónde estás → distancia a estación ── */}
+        {(placeName || distToStation !== null) && (
+          <View style={[styles.locationBanner, { backgroundColor: colors.bg.surface, borderBottomColor: colors.border.subtle }]}>
+            <Ionicons name="navigate-circle-outline" size={14} color={colors.brand.primary} />
+            <View style={styles.locationBannerText}>
+              {placeName && (
+                <Text style={[styles.locationPlace, { color: colors.text.primary }]} numberOfLines={1}>
+                  {placeName}
+                </Text>
+              )}
+              {distToStation !== null && selectedStation && (
+                <Text style={[styles.locationDist, { color: colors.text.muted }]} numberOfLines={1}>
+                  {distToStation < 1000
+                    ? `${distToStation}m de ${selectedStation.name}`
+                    : `${(distToStation / 1000).toFixed(1)}km de ${selectedStation.name}`}
+                  {etas.walk !== null ? `  ·  🚶 ${etas.walk} min` : ''}
+                </Text>
+              )}
+            </View>
+          </View>
+        )}
 
         {/* ── Buscador de dirección (modo metro) ── */}
         {isMetro && showDestSearch && (
@@ -1166,4 +1209,15 @@ const styles = StyleSheet.create({
     borderRadius:   Radius.full,
     backgroundColor: 'rgba(0,0,0,0.6)',
   },
+  locationBanner: {
+    flexDirection:    'row',
+    alignItems:       'center',
+    gap:              8,
+    paddingHorizontal:16,
+    paddingVertical:  8,
+    borderBottomWidth:1,
+  },
+  locationBannerText: { flex: 1 },
+  locationPlace: { fontSize: 13, fontWeight: '600' },
+  locationDist:  { fontSize: 11, marginTop: 1 },
 });
