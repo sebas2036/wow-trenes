@@ -907,7 +907,7 @@ function gtfsRowToTrainService(row: any, baseDate: Date): TrainService {
   const defaultByCountry: Partial<Record<CountryCode, TrainService['operator']>> = {
     CH: 'sbb', FR: 'sncf', ES: 'renfe', DE: 'db',
     IT: 'trenitalia', NL: 'ns', AT: 'oebb', GB: 'lner',
-    GB_LON: 'tfl', FR_PAR: 'ratp', ES_BCN: 'tmb', ES_MAD: 'emt',
+    GB_LON: 'tfl', FR_PAR: 'ratp', ES_BCN: 'tmb', ES_MAD: 'metro_madrid',
     DE_BER: 'db',  DE_MUN: 'db',
     US_NYC: 'mta_nyc', US_CHI: 'cta', US_LAX: 'la_metro',
     PT: 'sncf', BE: 'thalys', DK: 'dsb', JP: 'jr',
