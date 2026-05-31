@@ -23,6 +23,19 @@ import * as Notifications from 'expo-notifications';
 import type { TrainService } from '../types';
 import { emitToApp } from './notificationBridge';
 
+// btoa no existe en React Native — implementación compatible
+function toBase64(str: string): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+  let out = ''; let i = 0;
+  while (i < str.length) {
+    const c1 = str.charCodeAt(i++), c2 = str.charCodeAt(i++), c3 = str.charCodeAt(i++);
+    out += chars[c1 >> 2] + chars[((c1 & 3) << 4) | (c2 >> 4)] +
+           chars[isNaN(c2) ? 64 : ((c2 & 15) << 2) | (c3 >> 6)] +
+           chars[isNaN(c3) ? 64 : c3 & 63];
+  }
+  return out;
+}
+
 // ── Configuración ─────────────────────────────────────────────────────────
 const POLL_INTERVAL_MS  = 20_000; // 20 segundos
 const ALERT_THRESHOLD_MIN = 4;    // Alerta cuando faltan ≤ 4 min
@@ -103,12 +116,12 @@ async function viaggiaTreno_minutesToPlatform(service: TrainService): Promise<nu
 
 // ── SNCF (Francia) ────────────────────────────────────────────────────────
 async function sncf_minutesToPlatform(service: TrainService): Promise<number | null> {
-  const apiKey = process.env.EXPO_PUBLIC_SNCF_API_KEY;
+  const apiKey = process.env.EXPO_PUBLIC_SNCF_KEY;
   if (!apiKey) return fallback_minutesToPlatform(service);
 
   const res = await fetchSafe(
     `https://api.sncf.com/v1/coverage/sncf/vehicle_journeys/${service.serviceId}/stop_schedules`,
-    { Authorization: `Basic ${btoa(apiKey + ':')}` },
+    { Authorization: `Basic ${toBase64(apiKey + ':')}` },
   );
   if (!res) return null;
 

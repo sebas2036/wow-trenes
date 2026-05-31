@@ -15,6 +15,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Colors, Typography, Spacing, Radius } from '../theme';
 import { searchStations, searchTrips, type TripResult } from '../services/gtfsDatabase';
+import { buildBestBookingUrl } from '../services/affiliateEngine';
 import type { Station } from '../types';
 
 function fmt(d: Date) {
@@ -61,12 +62,8 @@ function trainMeta(name: string) {
   return TRAIN_META[name] ?? { color: '#555', label: name.slice(0, 6) };
 }
 
-const AFFILIATE_REF = 'XXXXXXXX';
-function buildPurchaseUrl(origin: string, dest: string, date: Date): string {
-  const d = date.toISOString().split('T')[0];
-  const h = date.getHours().toString().padStart(2, '0');
-  const mm = date.getMinutes().toString().padStart(2, '0');
-  return `https://www.thetrainline.com/search?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&outwardDate=${d}T${h}:${mm}:00&outwardDateType=departAfter&journeySearchType=single&affiliate_ref=${AFFILIATE_REF}`;
+function buildPurchaseUrl(origin: string, dest: string, date: Date, countryCode = 'ES'): string {
+  return buildBestBookingUrl(origin, dest, date, countryCode);
 }
 
 type ActiveField = 'origin' | 'dest' | null;
@@ -171,7 +168,7 @@ export default function BuscarViaje() {
 
   const handleBuy = useCallback((trip: TripResult) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Linking.openURL(buildPurchaseUrl(trip.origin.name, trip.destination.name, trip.departureTime));
+    Linking.openURL(buildPurchaseUrl(trip.origin.name, trip.destination.name, trip.departureTime, trip.origin.countryCode ?? 'ES'));
   }, []);
 
   const showSuggestions = activeField !== null && suggestions.length > 0;

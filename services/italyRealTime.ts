@@ -123,8 +123,8 @@ export async function fetchItalyBoard(
   // Default: Milano Centrale
   let station = activeStation;
   if (!station) {
-    const found = await findItalyStationByName('Milano Centrale');
-    station = found ?? { id: 'S01700', name: 'MILANO CENTRALE' };
+    const results = await searchItalyStations('Milano Centrale');
+    station = results[0] ?? { id: 'S01700', name: 'MILANO CENTRALE' };
   }
 
   const dateStr = formatDateTimeIT(new Date());

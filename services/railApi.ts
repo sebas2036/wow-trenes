@@ -20,12 +20,25 @@ import { RailEndpoints } from '../theme';
 import { getNextArrivals as tmbArrivals }  from './tmbRealtime';
 import { getNextArrivals as idfmArrivals } from './idfmRealtime';
 
+// btoa no existe en React Native — implementación compatible
+function toBase64(str: string): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+  let out = ''; let i = 0;
+  while (i < str.length) {
+    const c1 = str.charCodeAt(i++), c2 = str.charCodeAt(i++), c3 = str.charCodeAt(i++);
+    out += chars[c1 >> 2] + chars[((c1 & 3) << 4) | (c2 >> 4)] +
+           chars[isNaN(c2) ? 64 : ((c2 & 15) << 2) | (c3 >> 6)] +
+           chars[isNaN(c3) ? 64 : c3 & 63];
+  }
+  return out;
+}
+
 // ── API Keys (injected via environment / Expo Constants in production) ────
 // In production, proxy calls through your lightweight edge function to
 // keep API keys out of the binary. The edge function itself never stores
 // any passenger data (RGPD compliant).
 const API_KEYS: Partial<Record<string, string>> = {
-  sncf: process.env.EXPO_PUBLIC_SNCF_API_KEY ?? '',
+  sncf: process.env.EXPO_PUBLIC_SNCF_KEY ?? '',
   db:   process.env.EXPO_PUBLIC_DB_API_KEY   ?? '',
   ns:   process.env.EXPO_PUBLIC_NS_API_KEY   ?? '',
 };
@@ -166,7 +179,7 @@ async function fetchSNCF(service: TrainService): Promise<RealTimeUpdate | null> 
 
   const url = `${RailEndpoints.sncf}/coverage/sncf/vehicle_journeys/${service.serviceId}/departures`;
   const res = await fetchWithTimeout(url, {
-    headers: { Authorization: `Basic ${btoa(key + ':')}` },
+    headers: { Authorization: `Basic ${toBase64(key + ':')}` },
   });
   if (!res.ok) return null;
 
