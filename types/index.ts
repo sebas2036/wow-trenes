@@ -112,14 +112,22 @@ export type CountryCode =
   | 'ES' | 'IT' | 'FR' | 'DE' | 'NL' | 'CH' | 'AT' | 'GB' | 'PT' | 'BE'
   | 'NO' | 'DK' | 'US' | 'US_NYC'
   // Metro urbano — sub-ciudades con sistema de metro independiente
-  | 'ES_MAD'   // Madrid Metro (EMT)
+  | 'ES_MAD'   // Madrid Metro
   | 'ES_BCN'   // Barcelona Metro (TMB)
   | 'FR_PAR'   // Paris Métro + RER (RATP/IDFM)
   | 'DE_BER'   // Berlin U-Bahn + S-Bahn (BVG)
   | 'DE_MUN'   // Munich U-Bahn + S-Bahn (MVG)
   | 'US_CHI'   // Chicago CTA L
   | 'US_LAX'   // LA Metro Rail
-  | 'GB_LON'   // London Underground / TfL (Tube + Elizabeth + DLR + Overground)
+  | 'GB_LON'   // London Underground / TfL
+  | 'IT_ROM'   // Roma Metropolitane (A, B, C)
+  | 'IT_MIL'   // Milano ATM (M1-M5)
+  | 'AT_VIE'   // Wien U-Bahn (U1-U6)
+  | 'NL_AMS'   // Amsterdam GVB Metro
+  | 'PT_LIS'   // Lisboa Metro (Azul, Amarela, Verde, Vermelha)
+  | 'DK_CPH'   // Copenhagen Metro (M1-M4)
+  | 'NO_OSL'   // Oslo T-bane (L1-L6)
+  | 'BE_BRU'   // Bruxelles STIB (L1,L2,L5,L6)
   // Asia — ODPT (Japón: Tokyo Metro, JR East abiertos)
   | 'JP';
   // CN excluida: China Railway no publica datos abiertos

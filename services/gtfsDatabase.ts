@@ -139,6 +139,14 @@ const COUNTRY_ASSETS: Partial<Record<CountryCode, CountryAsset>> = {
   DE_MUN: { type: 'bundled', dbName: 'gtfs_de_mun.db',      module: require('../assets/gtfs_de_mun.db')      },
   US_CHI: { type: 'bundled', dbName: 'gtfs_us_chi.db',      module: require('../assets/gtfs_us_chi.db')      },
   US_LAX: { type: 'bundled', dbName: 'gtfs_us_lax.db',      module: require('../assets/gtfs_us_lax.db')      },
+  IT_ROM: { type: 'bundled', dbName: 'gtfs_it_rom.db',      module: require('../assets/gtfs_it_rom.db')      },
+  IT_MIL: { type: 'bundled', dbName: 'gtfs_it_mil.db',      module: require('../assets/gtfs_it_mil.db')      },
+  AT_VIE: { type: 'bundled', dbName: 'gtfs_at_vie.db',      module: require('../assets/gtfs_at_vie.db')      },
+  NL_AMS: { type: 'bundled', dbName: 'gtfs_nl_ams.db',      module: require('../assets/gtfs_nl_ams.db')      },
+  PT_LIS: { type: 'bundled', dbName: 'gtfs_pt_lis.db',      module: require('../assets/gtfs_pt_lis.db')      },
+  DK_CPH: { type: 'bundled', dbName: 'gtfs_dk_cph.db',      module: require('../assets/gtfs_dk_cph.db')      },
+  NO_OSL: { type: 'bundled', dbName: 'gtfs_no_osl.db',      module: require('../assets/gtfs_no_osl.db')      },
+  BE_BRU: { type: 'bundled', dbName: 'gtfs_be_bru.db',      module: require('../assets/gtfs_be_bru.db')      },
   // ── LOCAL — solo en EAS Build nativo (GB requiere credenciales NRDP) ──────
   GB:     { type: 'local',   dbName: 'gtfs_gb.db'                                                            },
   GB_LON: { type: 'local',   dbName: 'gtfs_gb_tfl.db'                                                        },
@@ -424,6 +432,8 @@ const COUNTRY_UTC_OFFSET: Partial<Record<CountryCode, number>> = {
   NO: 2, DK: 2, ES: 2, GB: 1, GB_LON: 1,
   US: -5, US_NYC: -5, US_CHI: -6, US_LAX: -8,
   ES_MAD: 2, ES_BCN: 2, FR_PAR: 2, DE_BER: 2, DE_MUN: 2,
+  IT_ROM: 2, IT_MIL: 2, AT_VIE: 2, NL_AMS: 2, BE_BRU: 2,
+  PT_LIS: 1, DK_CPH: 2, NO_OSL: 2,
   JP: 9,
 };
 
@@ -908,6 +918,9 @@ function gtfsRowToTrainService(row: any, baseDate: Date): TrainService {
     CH: 'sbb', FR: 'sncf', ES: 'renfe', DE: 'db',
     IT: 'trenitalia', NL: 'ns', AT: 'oebb', GB: 'lner',
     GB_LON: 'tfl', FR_PAR: 'ratp', ES_BCN: 'tmb', ES_MAD: 'metro_madrid',
+    IT_ROM: 'atac', IT_MIL: 'atm', AT_VIE: 'wiener_linien',
+    NL_AMS: 'gvb', PT_LIS: 'metro_lisboa', DK_CPH: 'metro_cph',
+    NO_OSL: 'ruter', BE_BRU: 'stib',
     DE_BER: 'db',  DE_MUN: 'db',
     US_NYC: 'mta_nyc', US_CHI: 'cta', US_LAX: 'la_metro',
     PT: 'sncf', BE: 'thalys', DK: 'dsb', JP: 'jr',
