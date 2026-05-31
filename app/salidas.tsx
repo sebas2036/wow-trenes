@@ -258,14 +258,52 @@ export default function SalidasScreen() {
     setStationName(getStationNameForCountry(selected.code));
   }, [selected.code]);
 
+  // Parsea "HH:MM" y devuelve minutos desde medianoche
+  const timeToMinutes = (t: string): number => {
+    const [h, m] = t.split(':').map(Number);
+    return (h ?? 0) * 60 + (m ?? 0);
+  };
+
+  // Filtra trenes ya partidos del board actual (sin re-fetch)
+  const prunePastTrains = useCallback(() => {
+    const now   = new Date();
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    setBoard(prev => {
+      // Deduplicar por tripId (o por time+endpoint si no hay tripId)
+      const seen = new Set<string>();
+      const deduped = prev.filter(e => {
+        const key = e.tripId ?? `${e.time}|${e.endpoint}|${e.train}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      // Eliminar trenes cuya hora ya pasó (con 1 min de gracia)
+      return deduped.filter(e => timeToMinutes(e.time) >= nowMin - 1);
+    });
+  }, []);
+
   const loadBoard = useCallback(async (
     dest: typeof DESTINATIONS[0], m: BoardMode, silent = false,
   ) => {
     const token = ++loadRef.current;
     if (!silent) { setLoading(true); setBoard([]); }
     try {
-      const entries = await getCountryBoard(dest.code, m, 40);
-      if (token === loadRef.current) setBoard(entries);
+      const raw = await getCountryBoard(dest.code, m, 50);
+      if (token !== loadRef.current) return;
+
+      // Deduplicar por tripId antes de guardar
+      const seen = new Set<string>();
+      const now   = new Date();
+      const nowMin = now.getHours() * 60 + now.getMinutes();
+      const entries = raw.filter(e => {
+        const key = e.tripId ?? `${e.time}|${e.endpoint}|${e.train}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        // Descartar trenes que ya partieron (con 1 min de gracia)
+        return timeToMinutes(e.time) >= nowMin - 1;
+      });
+
+      setBoard(entries);
     } catch (e) {
       console.warn('[salidas] getCountryBoard error:', e);
       if (token === loadRef.current) setBoard([]);
@@ -275,9 +313,12 @@ export default function SalidasScreen() {
 
   useEffect(() => {
     loadBoard(selected, mode);
-    const timer = setInterval(() => loadBoard(selected, mode, true), 60_000);
-    return () => clearInterval(timer);
-  }, [selected, mode, loadBoard]);
+    // Re-fetch completo cada 60s
+    const fetchTimer = setInterval(() => loadBoard(selected, mode, true), 60_000);
+    // Prune client-side cada 30s (elimina partidos sin re-fetch)
+    const pruneTimer = setInterval(prunePastTrains, 30_000);
+    return () => { clearInterval(fetchTimer); clearInterval(pruneTimer); };
+  }, [selected, mode, loadBoard, prunePastTrains]);
 
   const handleDestPress = useCallback((dest: typeof DESTINATIONS[0]) => {
     Haptics.selectionAsync();
