@@ -19,7 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Defs, LinearGradient as SvgGrad, Stop, Line } from 'react-native-svg';
 import { useTheme } from '../context/ThemeContext';
 import FlagCircle from '../components/FlagCircle';
-import { findNearestStation, setActiveCountry } from '../services/gtfsDatabase';
+import { findNearestStation, setActiveCountry, detectCountryFromCoords } from '../services/gtfsDatabase';
 import TranslatorSheet from '../components/TranslatorSheet';
 import BottomTabBar from '../components/BottomTabBar';
 import { toggleFavorito, getFavoritos } from './favoritos';
@@ -287,12 +287,28 @@ export default function HomeScreen() {
       if (status !== 'granted') { setGpsLoading(false); return; }
       const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       const coords: Coordinates = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
+
+      // Detectar si el usuario está en zona de cobertura europea/soportada
+      const detectedCountry = detectCountryFromCoords(coords);
+      if (!detectedCountry) {
+        // Fuera de cobertura (ej: testing desde Argentina)
+        // Ir igual al mapa pero sin estación — el usuario puede seleccionar país manualmente
+        router.push({
+          pathname: '/split-screen',
+          params: { lat: String(coords.latitude), lon: String(coords.longitude), mode: 'tourist', originStationId: '', noGpsMatch: 'true' },
+        });
+        return;
+      }
+
+      // País detectado → buscar estación más cercana en el DB correcto
       const station = await findNearestStation(coords);
       router.push({
         pathname: '/split-screen',
-        params: { lat: String(coords.latitude), lon: String(coords.longitude), mode: 'tourist', originStationId: station?.id ?? '' },
+        params: { lat: String(coords.latitude), lon: String(coords.longitude), mode: 'tourist', originStationId: station?.id ?? '', country: detectedCountry },
       });
-    } catch { /* non-fatal */ }
+    } catch (e) {
+      console.warn('[GPS] Error:', e);
+    }
     finally { setGpsLoading(false); }
   }, [router]);
 

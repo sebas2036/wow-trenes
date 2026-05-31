@@ -338,10 +338,52 @@ async function db(): Promise<SQLite.SQLiteDatabase> {
  * when multiple stop_ids share the same location (different service types).
  * Falls back to stop_id grouping when parent_station is empty.
  */
-export async function findNearestStation(coords: Coordinates): Promise<Station | null> {
-  const conn = await db();
+// ── Bounding boxes para detección de país por GPS ────────────────────────────
+const COUNTRY_BOUNDS: { code: CountryCode; latMin: number; latMax: number; lonMin: number; lonMax: number }[] = [
+  { code: 'ES',  latMin: 35.9, latMax: 43.8, lonMin: -9.3,  lonMax:  4.4  },
+  { code: 'FR',  latMin: 41.3, latMax: 51.1, lonMin: -5.2,  lonMax:  9.6  },
+  { code: 'DE',  latMin: 47.3, latMax: 55.1, lonMin:  5.9,  lonMax: 15.1  },
+  { code: 'IT',  latMin: 36.6, latMax: 47.1, lonMin:  6.6,  lonMax: 18.6  },
+  { code: 'CH',  latMin: 45.8, latMax: 47.9, lonMin:  5.9,  lonMax: 10.5  },
+  { code: 'AT',  latMin: 46.4, latMax: 49.0, lonMin:  9.5,  lonMax: 17.2  },
+  { code: 'BE',  latMin: 49.5, latMax: 51.5, lonMin:  2.5,  lonMax:  6.4  },
+  { code: 'PT',  latMin: 36.9, latMax: 42.2, lonMin: -9.5,  lonMax: -6.2  },
+  { code: 'NL',  latMin: 50.7, latMax: 53.6, lonMin:  3.3,  lonMax:  7.2  },
+  { code: 'NO',  latMin: 57.9, latMax: 71.2, lonMin:  4.6,  lonMax: 31.1  },
+  { code: 'DK',  latMin: 54.5, latMax: 57.8, lonMin:  8.0,  lonMax: 15.2  },
+  { code: 'GB',  latMin: 49.9, latMax: 58.7, lonMin: -8.2,  lonMax:  1.8  },
+  { code: 'JP',  latMin: 30.9, latMax: 45.6, lonMin: 129.5, lonMax: 145.8 },
+  { code: 'US',  latMin: 24.4, latMax: 49.4, lonMin:-124.8, lonMax: -66.9 },
+];
+
+/**
+ * Detecta el país basándose en coordenadas GPS.
+ * Retorna el CountryCode si las coords caen dentro del bounding box.
+ */
+export function detectCountryFromCoords(coords: Coordinates): CountryCode | null {
   const { latitude: lat, longitude: lon } = coords;
-  const DELTA = 1.0; // ~111 km per degree
+  for (const b of COUNTRY_BOUNDS) {
+    if (lat >= b.latMin && lat <= b.latMax && lon >= b.lonMin && lon <= b.lonMax) {
+      return b.code;
+    }
+  }
+  return null; // Fuera de zona de cobertura (ej: Argentina)
+}
+
+export async function findNearestStation(coords: Coordinates): Promise<Station | null> {
+  const { latitude: lat, longitude: lon } = coords;
+  const DELTA = 1.0; // ~111 km por grado
+
+  // Detectar país por GPS y cambiar el DB activo automáticamente
+  const detectedCountry = detectCountryFromCoords(coords);
+  if (detectedCountry) {
+    await setActiveCountry(detectedCountry);
+    console.log(`[GPS] País detectado: ${detectedCountry}`);
+  } else {
+    console.warn('[GPS] Coordenadas fuera de cobertura — sin cambio de país');
+  }
+
+  const conn = await db();
 
   const row = await conn.getFirstAsync<{
     stop_id:      string;
