@@ -345,7 +345,18 @@ export default function SplitScreen() {
       }
       // GPS not in country → use capital/main station as default
       const fallback = await getFirstStation();
-      if (fallback) setSelectedStation(fallback);
+      if (fallback) {
+        setSelectedStation(fallback);
+        // Centrar mapa en la estación si el usuario está lejos
+        setTimeout(() => {
+          mapRef.current?.animateToRegion({
+            latitude:      fallback.coordinates.latitude,
+            longitude:     fallback.coordinates.longitude,
+            latitudeDelta: 0.02,
+            longitudeDelta:0.02,
+          }, 600);
+        }, 500);
+      }
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -396,9 +407,28 @@ export default function SplitScreen() {
     );
   }, [livePosition.coordinates, livePosition.bearing, livePosition.isLive]);
 
+  // Distancia Haversine en km entre dos coords
+  const haversineKm = (a: Coordinates, b: Coordinates): number => {
+    const R = 6371;
+    const dLat = (b.latitude  - a.latitude)  * Math.PI / 180;
+    const dLon = (b.longitude - a.longitude) * Math.PI / 180;
+    const s = Math.sin(dLat/2) ** 2 +
+              Math.cos(a.latitude * Math.PI / 180) *
+              Math.cos(b.latitude * Math.PI / 180) *
+              Math.sin(dLon/2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
+  };
+
   // ── ETAs para los 3 modos en paralelo ────────────────────────────────
   useEffect(() => {
     if (!userCoords || !selectedStation) return;
+    // Si el usuario está a más de 500 km de la estación (ej: desde Argentina)
+    // no calculamos ETAs — no tiene sentido mostrar miles de minutos
+    const distKm = haversineKm(userCoords, selectedStation.coordinates);
+    if (distKm > 500) {
+      setEtas({ walk: null, bus: null, rideshare: null });
+      return;
+    }
     Promise.all([
       calculateETA(userCoords, selectedStation.coordinates, 'walk'),
       calculateETA(userCoords, selectedStation.coordinates, 'bus'),
@@ -415,6 +445,9 @@ export default function SplitScreen() {
   // ── Route optimization (user → origin station) ────────────────────────
   useEffect(() => {
     if (!userCoords || !selectedStation) return;
+    // No trazar ruta si el usuario está a más de 500km (modo remoto/testing)
+    const distKm = haversineKm(userCoords, selectedStation.coordinates);
+    if (distKm > 500) { setRoutePolyline([]); return; }
     (async () => {
       try {
         const route = await optimizeRoute(userCoords, selectedStation.coordinates, transportMode);
@@ -552,8 +585,21 @@ export default function SplitScreen() {
   }, [router, selectedService]);
 
   // ── Map initial region ────────────────────────────────────────────────
-  const initialRegion = userCoords
-    ? { latitude: userCoords.latitude, longitude: userCoords.longitude, latitudeDelta: 0.02, longitudeDelta: 0.02 }
+  // Si el usuario está lejos de la estación (>500km, ej: desde Argentina),
+  // centrar el mapa en la estación — no en las coords del usuario
+  const mapCenter = useMemo(() => {
+    if (selectedStation) {
+      if (!userCoords) return selectedStation.coordinates;
+      const distKm = haversineKm(userCoords, selectedStation.coordinates);
+      if (distKm > 500) return selectedStation.coordinates;
+      return userCoords;
+    }
+    return userCoords;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedStation, userCoords]);
+
+  const initialRegion = mapCenter
+    ? { latitude: mapCenter.latitude, longitude: mapCenter.longitude, latitudeDelta: 0.02, longitudeDelta: 0.02 }
     : { latitude: 48.8566, longitude: 2.3522, latitudeDelta: 0.05, longitudeDelta: 0.05 };
 
   // ── Destination label for tourist mode ───────────────────────────────
