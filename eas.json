@@ -48,10 +48,11 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "jasinskysebastian@gmail.com"
+        "appleId": "jasinskysebastian@gmail.com",
+        "ascAppId": "",
+        "appleTeamId": ""
       },
       "android": {
-        "serviceAccountKeyPath": "./google-play-service-account.json",
         "track": "internal"
       }
     }
