@@ -30,16 +30,18 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
 import { Colors, Typography, Spacing, Radius, Gradients, Shadows } from '../theme';
-import { buildAffiliateUrl } from '../services/affiliateEngine';
+import { buildOmioUrl } from '../services/affiliateEngine';
 import type { TrainService } from '../types';
 
 // ── Detección de confirmación ─────────────────────────────────────────────
 // Trainline redirige a estas URLs tras una compra exitosa
 const SUCCESS_URL_PATTERNS = [
+  'omio.com/booking/confirmation',
+  'omio.com/checkout/confirmation',
+  'omio.com/orders/',
+  'omio.com/booking-confirmation',
   'trainline.com/booking/confirmation',
-  'trainline.com/checkout/confirmation',
   'trainline.com/orders/',
-  'raileurope.com/booking/confirmation',
   '/booking-confirmation',
   '/purchase-confirmation',
   'order-confirmed',
@@ -100,18 +102,13 @@ export default function AffiliateWebView({
     setLoading(true);
     setProgress(0);
 
-    const dep = service.departureTime.toISOString().slice(0, 16);
-
-    // Trainline search URL — parámetros precargados para el usuario
-    const trainlineBase =
-      `https://www.trainline.com/search` +
-      `/${encodeURIComponent(service.origin.name)}` +
-      `/${encodeURIComponent(service.destination.name)}` +
-      `?departure=${encodeURIComponent(dep)}` +
-      `&passengers=1` +
-      `&selectedOutward=${service.serviceId}`;
-
-    buildAffiliateUrl(trainlineBase).then(setAffiliateUrl);
+    // URL TravelPayouts → Omio con marker 734304 (comisión 6%)
+    const url = buildOmioUrl(
+      service.origin.name,
+      service.destination.name,
+      service.departureTime,
+    );
+    setAffiliateUrl(url);
   }, [visible, service]);
 
   // ── Navigation handler — detect purchase success ─────────────────────
@@ -171,7 +168,7 @@ export default function AffiliateWebView({
             </Text>
             <View style={styles.secureBadge}>
               <Text style={styles.secureIcon}>🔒</Text>
-              <Text style={styles.secureText}>Pago seguro · Trainline</Text>
+              <Text style={styles.secureText}>Pago seguro · Omio</Text>
             </View>
           </View>
 
@@ -237,14 +234,14 @@ export default function AffiliateWebView({
         ) : (
           <View style={styles.loadingCenter}>
             <ActivityIndicator size="large" color={Colors.brand.primary} />
-            <Text style={styles.loadingText}>Conectando con Trainline…</Text>
+            <Text style={styles.loadingText}>Conectando con Omio…</Text>
           </View>
         )}
 
         {/* ── Bottom compliance bar ── */}
         <View style={styles.complianceBar}>
           <Text style={styles.complianceText}>
-            Pago procesado por Trainline · WoW TRENES no almacena datos bancarios
+            Pago procesado por Omio · WoW TRENES no almacena datos bancarios
           </Text>
         </View>
 
