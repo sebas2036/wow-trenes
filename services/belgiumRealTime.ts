@@ -69,7 +69,7 @@ function categoryFromShortname(shortname: string): string {
 async function irail<T>(path: string, params: Record<string, string> = {}): Promise<T> {
   const qs = new URLSearchParams({ format: 'json', lang: 'en', ...params }).toString();
   const url = `${BASE}/${path}?${qs}`;
-  const resp = await fetch(url, { headers: { 'User-Agent': USER_AGENT } });
+  const resp = await fetch(url, { headers: { 'User-Agent': USER_AGENT }, redirect: 'follow' });
   if (!resp.ok) throw new Error(`iRail HTTP ${resp.status}: ${path}`);
   return resp.json() as Promise<T>;
 }

@@ -264,7 +264,10 @@ export default function SalidasScreen() {
     try {
       const entries = await getCountryBoard(dest.code, m, 40);
       if (token === loadRef.current) setBoard(entries);
-    } catch { /* empty */ }
+    } catch (e) {
+      console.warn('[salidas] getCountryBoard error:', e);
+      if (token === loadRef.current) setBoard([]);
+    }
     finally  { if (token === loadRef.current) setLoading(false); }
   }, []);
 

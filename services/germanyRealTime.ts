@@ -225,9 +225,13 @@ export async function fetchGermanyRT(): Promise<RTCache> {
   if (rtCache && (now - rtCache.fetchedAt) < CACHE_TTL_MS) return rtCache;
 
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10_000); // 10s timeout
     const resp = await fetch(RT_FEED_URL, {
       headers: { 'User-Agent': 'WoW-Trenes-App/1.0' },
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const arrBuf = await resp.arrayBuffer();
     const buf = new Uint8Array(arrBuf);

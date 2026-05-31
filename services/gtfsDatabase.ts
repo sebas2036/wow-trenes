@@ -121,8 +121,8 @@ const COUNTRY_ASSETS: Partial<Record<CountryCode, CountryAsset>> = {
   IT:     { type: 'bundled', dbName: 'gtfs_italy.db',       module: require('../assets/gtfs_italy.db')       },
   FR:     { type: 'bundled', dbName: 'gtfs_france.db',      module: require('../assets/gtfs_france.db')      },
   DE:     { type: 'bundled', dbName: 'gtfs_germany.db',     module: require('../assets/gtfs_germany.db')     },
-  CH:     { type: 'bundled', dbName: 'gtfs_switzerland.db', module: require('../assets/gtfs_switzerland.db') },
-  NL:     { type: 'bundled', dbName: 'gtfs_netherlands.db', module: require('../assets/gtfs_netherlands.db') },
+  CH:     { type: 'local',   dbName: 'gtfs_switzerland.db'                                                   },
+  NL:     { type: 'local',   dbName: 'gtfs_netherlands.db'                                                   },
   AT:     { type: 'bundled', dbName: 'gtfs_austria.db',     module: require('../assets/gtfs_austria.db')     },
   BE:     { type: 'bundled', dbName: 'gtfs_belgium.db',     module: require('../assets/gtfs_belgium.db')     },
   PT:     { type: 'bundled', dbName: 'gtfs_portugal.db',    module: require('../assets/gtfs_portugal.db')    },
@@ -211,6 +211,23 @@ async function ensureDB(country: CountryCode): Promise<SQLite.SQLiteDatabase> {
       }
     }
     const conn = await SQLite.openDatabaseAsync(asset.dbName);
+    // Verificar que el DB copiado tiene datos reales
+    const hasStops = await conn.getFirstAsync<{ n: number }>(
+      `SELECT COUNT(*) AS n FROM sqlite_master WHERE type='table' AND name='stops'`,
+    );
+    if (!hasStops || hasStops.n === 0) {
+      // DB vacío — la copia falló silenciosamente, reintentar
+      console.warn(`[GTFS] ${asset.dbName} vacío tras copia, reintentando...`);
+      try {
+        const expoAsset = Asset.fromModule(asset.module);
+        await expoAsset.downloadAsync();
+        if (expoAsset.localUri) {
+          await FileSystem.copyAsync({ from: expoAsset.localUri, to: SQLITE_DIR + asset.dbName });
+        }
+      } catch (retryErr) {
+        console.warn(`[GTFS] Reintento fallido para ${asset.dbName}:`, retryErr);
+      }
+    }
     await ensureMissingTables(conn);
     console.log(`[GTFS] Abierto (bundled): ${asset.dbName}`);
     dbPool[country] = conn;
@@ -710,24 +727,8 @@ export async function getCountryBoard(
     return getCountryBoardGTFS('FR', mode, limit);
   }
 
-  // Portugal: CP API interna (no oficial), fallback GTFS
+  // Portugal: CP API oficialmente caída (404) — usar GTFS directamente
   if (country === 'PT') {
-    try {
-      const departures = await fetchPortugalBoard(mode, limit);
-      if (departures.length > 0) {
-        return departures.map((d: PortugalDeparture): BoardEntry => ({
-          time:     d.scheduledTime,
-          train:    d.category || d.trainNumber || '—',
-          endpoint: d.destination || '—',
-          station:  d.stationName,
-          status:   d.cancelled ? 'cancelled' : d.delayMin > 1 ? 'delayed' : 'ontime',
-          delay:    d.delayMin > 1 ? `+${d.delayMin}'` : undefined,
-          platform: d.platform || undefined,
-        }));
-      }
-    } catch (e) {
-      console.warn('[PT RT] fallback a GTFS:', e);
-    }
     return getCountryBoardGTFS('PT', mode, limit);
   }
 
