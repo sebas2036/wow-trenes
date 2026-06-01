@@ -494,7 +494,7 @@ export default function HomeScreen() {
           })}
         </View>
 
-        {downloadState {/* ── Sección Trenes ── */}{/* ── Sección Trenes ── */} (
+        {downloadState && (
           <DownloadProgressBar
             dbName={downloadState.dbName}
             progress={downloadState.progress}
