@@ -540,7 +540,8 @@ export async function queryUpcomingTrains(
     JOIN stops orig_s ON orig_s.stop_id = st.stop_id
     LEFT JOIN (
       SELECT service_id FROM calendar
-      WHERE start_date <= ? AND end_date >= ?
+      WHERE start_date <= ?
+        AND (end_date >= ? OR end_date = '' OR end_date IS NULL)
         AND (
           (? = 'monday'    AND monday    = 1) OR
           (? = 'tuesday'   AND tuesday   = 1) OR
@@ -1185,7 +1186,8 @@ export async function searchTrips(
   let rows = await conn.getAllAsync<TripRow>(BASE_SELECT + `
     LEFT JOIN (
       SELECT service_id FROM calendar
-      WHERE start_date <= ? AND end_date >= ?
+      WHERE start_date <= ?
+        AND (end_date >= ? OR end_date = '' OR end_date IS NULL)
         AND (
           (? = 'monday' AND monday=1) OR (? = 'tuesday' AND tuesday=1) OR
           (? = 'wednesday' AND wednesday=1) OR (? = 'thursday' AND thursday=1) OR
