@@ -197,3 +197,148 @@ export async function fetchFranceBoard(
 export function invalidateFranceRT(): void {
   boardCache = null;
 }
+
+// ── Búsqueda de conexiones A→B (Navitia /journeys) ───────────────────────────
+
+export interface FranceJourney {
+  tripId:        string;    // id único del journey
+  trainNumber:   string;    // "6221", "OUIGO 7842", etc.
+  category:      string;    // "TGV INOUI", "TER", "OUIGO", "Intercités"
+  origin:        string;    // nombre estación origen
+  destination:   string;    // nombre estación destino
+  departureTime: string;    // "HH:MM"
+  arrivalTime:   string;    // "HH:MM"
+  durationMin:   number;
+  direct:        boolean;
+  transfers:     number;    // número de transbordos
+  legs:          FranceJourneyLeg[];  // segmentos si hay transbordo
+}
+
+export interface FranceJourneyLeg {
+  trainNumber:   string;
+  category:      string;
+  origin:        string;
+  destination:   string;
+  departureTime: string;
+  arrivalTime:   string;
+}
+
+// Caché de journeys: clave = "originId|destId|dateStr"
+const journeyCache = new Map<string, { journeys: FranceJourney[]; fetchedAt: number }>();
+const JOURNEY_CACHE_TTL = 3 * 60_000; // 3 minutos
+
+/**
+ * Busca conexiones de tren entre dos estaciones en Francia usando Navitia.
+ *
+ * Los IDs de origen/destino deben ser stop_area IDs de Navitia:
+ *   "stop_area:SNCF:87391003" (Paris-Montparnasse)
+ *   "stop_area:SNCF:87722025" (Lyon-Part-Dieu)
+ * Obtenidos via searchFranceStations().
+ *
+ * Stale-While-Revalidate: si hay caché de <3min, devuelve inmediatamente
+ * y refresca en background.
+ */
+export async function searchFranceJourneys(
+  originId:  string,
+  destId:    string,
+  date:      Date,
+  limit = 10,
+): Promise<FranceJourney[]> {
+  const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
+  const cacheKey = `${originId}|${destId}|${dateStr}`;
+  const now = Date.now();
+
+  const cached = journeyCache.get(cacheKey);
+  if (cached && now - cached.fetchedAt < JOURNEY_CACHE_TTL) {
+    return cached.journeys;
+  }
+
+  // Formato Navitia: YYYYMMDDTHHmmss en hora local Francia
+  const navDatetime = buildNavitiaDatetime(date);
+
+  try {
+    const data = await sncf<any>('journeys', {
+      from:             originId,
+      to:               destId,
+      datetime:         navDatetime,
+      count:            String(limit),
+      data_freshness:   'realtime',
+      // Solo trenes — excluir bus, metro, etc.
+      'forbidden_uris[]': 'physical_mode:Bus',
+    });
+
+    const raw: any[] = data.journeys ?? [];
+
+    const journeys: FranceJourney[] = raw
+      .filter(j => j.sections?.some((s: any) => s.type === 'public_transport'))
+      .map((j: any, idx: number) => {
+        // Solo secciones de transporte público (saltar "waiting", "transfer", "crow_fly")
+        const trainSections: any[] = (j.sections ?? []).filter(
+          (s: any) => s.type === 'public_transport',
+        );
+
+        const first = trainSections[0] ?? {};
+        const last  = trainSections[trainSections.length - 1] ?? first;
+        const info  = first.display_informations ?? {};
+
+        const legs: FranceJourneyLeg[] = trainSections.map((s: any) => {
+          const si = s.display_informations ?? {};
+          return {
+            trainNumber:   si.headsign ?? si.trip_short_name ?? '',
+            category:      normalizeFrCategory(si.commercial_mode ?? si.physical_mode ?? ''),
+            origin:        s.from?.name ?? '',
+            destination:   s.to?.name ?? '',
+            departureTime: navitiaToHHMM(s.departure_date_time ?? ''),
+            arrivalTime:   navitiaToHHMM(s.arrival_date_time ?? ''),
+          };
+        });
+
+        return {
+          tripId:        j.id ?? `fr-journey-${idx}`,
+          trainNumber:   info.headsign ?? info.trip_short_name ?? '',
+          category:      normalizeFrCategory(info.commercial_mode ?? info.physical_mode ?? ''),
+          origin:        first.from?.name ?? '',
+          destination:   last.to?.name ?? '',
+          departureTime: navitiaToHHMM(j.departure_date_time ?? ''),
+          arrivalTime:   navitiaToHHMM(j.arrival_date_time ?? ''),
+          durationMin:   Math.round((j.duration ?? 0) / 60),
+          direct:        (j.nb_transfers ?? 0) === 0,
+          transfers:     j.nb_transfers ?? 0,
+          legs,
+        };
+      })
+      // Ordenar por hora de salida
+      .sort((a, b) => a.departureTime.localeCompare(b.departureTime));
+
+    journeyCache.set(cacheKey, { journeys, fetchedAt: now });
+    console.log(`[FR RT] ${journeys.length} conexiones ${originId} → ${destId}`);
+    return journeys;
+
+  } catch (e) {
+    console.warn('[FR RT] searchFranceJourneys error:', e);
+    // Stale-While-Revalidate: devolver caché viejo si existe
+    return cached?.journeys ?? [];
+  }
+}
+
+// ── Helpers internos ──────────────────────────────────────────────────────────
+
+/** Convierte Date a formato Navitia YYYYMMDDTHHmmss en hora de París */
+function buildNavitiaDatetime(date: Date): string {
+  // Navitia acepta UTC — usamos ISO sin milisegundos ni separadores
+  return date.toISOString().replace(/[-:.]/g, '').replace('Z', '').slice(0, 15);
+}
+
+/** Normaliza nombres de categoría SNCF a etiquetas cortas */
+function normalizeFrCategory(raw: string): string {
+  const u = raw.toUpperCase();
+  if (u.includes('TGV') || u.includes('INOUI'))    return 'TGV INOUI';
+  if (u.includes('OUIGO'))                          return 'OUIGO';
+  if (u.includes('INTERCIT'))                       return 'Intercités';
+  if (u.includes('TER'))                            return 'TER';
+  if (u.includes('EUROSTAR'))                       return 'Eurostar';
+  if (u.includes('THALYS'))                         return 'Thalys';
+  if (u.includes('LYRIA'))                          return 'TGV Lyria';
+  if (u.includes('NIGHT') || u.includes('NUIT'))    return 'Night Jet';
+  return raw || 'SNCF';
+}

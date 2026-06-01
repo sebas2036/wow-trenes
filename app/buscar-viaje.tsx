@@ -14,7 +14,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Colors, Typography, Spacing, Radius } from '../theme';
-import { searchStations, searchTrips, getPopularDestinations, setActiveCountry, detectCountryFromCoords, type TripResult } from '../services/gtfsDatabase';
+import { searchStations, searchTrips, getPopularDestinations, setActiveCountry, detectCountryFromCoords, searchFranceStations, searchFranceJourneys, type TripResult, type FranceJourney } from '../services/gtfsDatabase';
 import { buildBestBookingUrl } from '../services/affiliateEngine';
 import type { Station, CountryCode } from '../types';
 
@@ -28,6 +28,13 @@ function fmtDur(min: number) {
 }
 function makeStation(id: string, name: string): Station {
   return { id, name, nameLocal: name, coordinates: { latitude: 0, longitude: 0 }, platforms: [] } as unknown as Station;
+}
+
+function parseHHMM(hhmm: string): Date {
+  const [h, m] = hhmm.split(':').map(Number);
+  const d = new Date();
+  d.setHours(h ?? 0, m ?? 0, 0, 0);
+  return d;
 }
 
 // Color y etiqueta por tipo de tren
@@ -100,10 +107,15 @@ export default function BuscarViaje() {
   const destRef   = useRef<TextInput>(null);
   const DAY_LABELS = ['Hoy', 'Mañana', 'Pasado'];
 
+  // ¿Estamos buscando en Francia con IDs Navitia?
+  const isFrance = (id?: string) => id?.startsWith('stop_area:SNCF:') ?? false;
+  const [usingNavitia, setUsingNavitia] = useState(false);
+
   // Pre-llenar origen desde params (GPS) y setear país activo
   useEffect(() => {
     if (params.country) {
       setActiveCountry(params.country as CountryCode).catch(() => {});
+      if (params.country === 'FR') setUsingNavitia(true);
     }
     if (params.originId && params.originName) {
       const s = makeStation(params.originId, params.originName);
@@ -112,30 +124,39 @@ export default function BuscarViaje() {
     }
   }, []);
 
-  // Autocomplete — campo activo
+  // Autocomplete — usa Navitia para FR, GTFS para el resto
   const activeQuery = activeField === 'origin' ? originQuery : destQuery;
   useEffect(() => {
     if (!activeField || activeQuery.length < 2) { setSuggestions([]); return; }
     const t = setTimeout(async () => {
       setSearching(true);
       try {
-        const results = await searchStations(activeQuery, 12);
-        // Filtrar la otra estación ya elegida
+        let results: Station[];
+        if (usingNavitia) {
+          // Francia: buscar via Navitia → IDs stop_area:SNCF:...
+          const fr = await searchFranceStations(activeQuery);
+          results = fr.map(s => makeStation(s.id, s.name));
+        } else {
+          results = await searchStations(activeQuery, 12);
+          // Si los primeros resultados son IDs Navitia, activar modo Francia
+          if (results[0]?.id?.startsWith('stop_area:SNCF:')) setUsingNavitia(true);
+        }
         const other = activeField === 'origin' ? destStation : originStation;
         setSuggestions(results.filter(s => s.id !== other?.id));
       } finally { setSearching(false); }
     }, 280);
     return () => clearTimeout(t);
-  }, [activeQuery, activeField]);
+  }, [activeQuery, activeField, usingNavitia]);
 
   const selectStation = useCallback((station: Station) => {
     Haptics.selectionAsync();
+    // Detectar automáticamente si es una estación Navitia Francia
+    if (isFrance(station.id)) setUsingNavitia(true);
     if (activeField === 'origin') {
       setOriginStation(station);
       setOriginQuery(station.name);
       setSuggestions([]);
       setActiveField(null);
-      // Saltar al destino si está vacío
       if (!destStation) setTimeout(() => destRef.current?.focus(), 100);
     } else {
       setDestStation(station);
@@ -160,7 +181,19 @@ export default function BuscarViaje() {
     setError(null);
   }, [originStation, destStation, originQuery, destQuery]);
 
-  // Buscar viajes
+  // Convierte FranceJourney → TripResult para reutilizar el mismo render
+  const frJourneyToTripResult = (j: FranceJourney): TripResult => ({
+    tripId:        j.tripId,
+    operator:      j.category,
+    trainNumber:   j.trainNumber || j.category,
+    departureTime: parseHHMM(j.departureTime),
+    arrivalTime:   parseHHMM(j.arrivalTime),
+    durationMin:   j.durationMin,
+    origin:        makeStation('fr_orig', j.origin),
+    destination:   makeStation('fr_dest', j.destination),
+  });
+
+  // Buscar viajes — Navitia para FR, GTFS para el resto
   const doSearch = useCallback(async (dayOff = dayOffset) => {
     if (!originStation || !destStation) return;
     setLoading(true);
@@ -169,13 +202,22 @@ export default function BuscarViaje() {
     try {
       const date = new Date();
       date.setDate(date.getDate() + dayOff);
-      const results = await searchTrips(originStation.id, destStation.id, date, 12);
-      if (results.length === 0) setError('No se encontraron trenes para esta ruta.');
-      setTrips(results);
+
+      if (usingNavitia && isFrance(originStation.id) && isFrance(destStation.id)) {
+        // Francia: Navitia real-time con horarios y conexiones reales
+        const frJourneys = await searchFranceJourneys(originStation.id, destStation.id, date, 12);
+        if (frJourneys.length === 0) setError('No se encontraron trenes para esta ruta.');
+        setTrips(frJourneys.map(frJourneyToTripResult));
+      } else {
+        // Resto de países: GTFS local
+        const results = await searchTrips(originStation.id, destStation.id, date, 12);
+        if (results.length === 0) setError('No se encontraron trenes para esta ruta.');
+        setTrips(results);
+      }
     } catch {
       setError('Error al consultar los horarios.');
     } finally { setLoading(false); }
-  }, [originStation, destStation, dayOffset]);
+  }, [originStation, destStation, dayOffset, usingNavitia]);
 
   useEffect(() => {
     if (originStation && destStation) doSearch();

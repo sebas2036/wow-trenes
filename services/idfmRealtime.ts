@@ -1,10 +1,10 @@
 /**
  * IDFM Real-time Service — Paris Métro + RER
- * API oficial: https://prim.ile-de-france-mobilites.fr/
+ * API oficial: https://prim.iledefrance-mobilites.fr/
  * Registro gratuito → token en minutos (sin límite duro)
  *
  * ESTADO: Implementado, pendiente de key IDFM y conectar a pantalla FR_PAR.
- * Para activar: registrarse en prim.ile-de-france-mobilites.fr → agregar
+ * Para activar: registrarse en prim.iledefrance-mobilites.fr → agregar
  * EXPO_PUBLIC_IDFM_API_KEY al .env
  *
  * Endpoints usados:
@@ -13,7 +13,7 @@
  * Fallback: si la API falla (offline, sin key), usa GTFS local (gtfs_fr_par.db)
  */
 
-const IDFM_BASE = 'https://prim.ile-de-france-mobilites.fr/marketplace';
+const IDFM_BASE = 'https://prim.iledefrance-mobilites.fr/marketplace';
 const API_KEY   = process.env.EXPO_PUBLIC_IDFM_API_KEY ?? '';
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────

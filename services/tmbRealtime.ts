@@ -103,11 +103,7 @@ export async function getNextArrivals(
   const url = `${TMB_BASE}/transit/parades/${codiParada}/properes-arribades?${authParams()}`;
 
   try {
-    const res = await fetch(url, {
-      headers: { 'Accept': 'application/json' },
-      signal: AbortSignal.timeout(6_000),  // 6s timeout
-    });
-
+    const res = await retryFetch(url);
     if (!res.ok) throw new Error(`TMB API ${res.status}`);
 
     const json = await res.json();
@@ -211,4 +207,96 @@ export async function checkTmbApiHealth(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+// ── Retry con exponential backoff ─────────────────────────────────────────────
+// Reintenta hasta 3 veces: 2s → 4s → 8s (útil en túneles o WiFi débil en estaciones)
+async function retryFetch(url: string, retries = 3): Promise<Response> {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const res = await fetch(url, {
+        headers: { 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(6_000),
+      });
+      if (res.ok) return res;
+      throw new Error(`TMB ${res.status}`);
+    } catch (e) {
+      if (attempt === retries - 1) throw e;
+      await new Promise(r => setTimeout(r, 2 ** attempt * 2_000));
+    }
+  }
+  throw new Error('unreachable');
+}
+
+// ── Nombres legibles por parada (para el picker de estación) ──────────────────
+const STOP_NAMES: Record<string, string> = {
+  'BCN_L1_08':  'Espanya (L1)',
+  'BCN_L1_11':  'Universitat (L1)',
+  'BCN_L1_12':  'Catalunya (L1)',
+  'BCN_L1_13':  'Urquinaona (L1)',
+  'BCN_L1_14':  'Arc de Triomf (L1)',
+  'BCN_L1_17':  'Clot (L1)',
+  'BCN_L1_18':  'Sagrera (L1)',
+  'BCN_L1_20':  'Maragall (L1)',
+  'BCN_L1_27':  'Fondo (L1)',
+  'BCN_L2_01':  'Paral·lel (L2)',
+  'BCN_L2_04':  'Passeig de Gràcia (L2)',
+  'BCN_L2_07':  'Sagrada Família (L2)',
+  'BCN_L2_10':  'La Pau (L2)',
+  'BCN_L3_06':  'Sants Estació (L3)',
+  'BCN_L3_08':  'Drassanes (L3)',
+  'BCN_L3_09':  'Barceloneta (L3)',
+  'BCN_L3_10':  'Ciutadella | Vila Olímpica (L3)',
+  'BCN_L3_21':  'Diagonal (L3)',
+  'BCN_L3_22':  'Fontana (L3)',
+  'BCN_L3_23':  'Lesseps (L3)',
+  'BCN_L3_26':  'Vall d\'Hebron (L3)',
+  'BCN_L3_31':  'Trinitat Nova (L3)',
+  'BCN_L4_09':  'Verdaguer (L4)',
+  'BCN_L4_11':  'Jaume I (L4)',
+  'BCN_L5_08':  'Collblanc (L5)',
+  'BCN_L5_11':  'Hospital Clínic (L5)',
+  'BCN_L5_13':  'Gràcia (L5)',
+  'BCN_L5_27':  'Vall d\'Hebron (L5)',
+  'BCN_L9N_07': 'La Sagrera-Meridiana (L9N)',
+  'BCN_FGC_01': 'Plaça Catalunya (FGC)',
+  'BCN_FGC_08': 'Sarrià (FGC)',
+};
+
+// ── Parada activa (default: Catalunya L1) ─────────────────────────────────────
+let activeStop = { id: 'BCN_L1_12', name: 'Catalunya (L1)' };
+
+export function setActiveTmbStop(id: string, name: string): void {
+  activeStop = { id, name };
+}
+
+export function getActiveTmbStopName(): string {
+  return activeStop.name;
+}
+
+// ── Búsqueda de paradas para el picker ───────────────────────────────────────
+export function searchTmbStops(query: string): { id: string; name: string }[] {
+  if (!query.trim()) return Object.entries(STOP_NAMES).map(([id, name]) => ({ id, name }));
+  const q = query.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  return Object.entries(STOP_NAMES)
+    .filter(([, name]) => name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').includes(q))
+    .map(([id, name]) => ({ id, name }));
+}
+
+// ── Board para getCountryBoard ─────────────────────────────────────────────────
+// Convierte TmbArrival[] al formato BoardEntry que usa salidas.tsx.
+// No importa BoardEntry (circular dep) — la forma es compatible directamente.
+export async function fetchTmbBoard(limit = 30): Promise<{
+  time: string; train: string; endpoint: string;
+  station: string; status: 'ontime' | 'delayed' | 'cancelled'; tripId?: string;
+}[]> {
+  const arrivals = await getNextArrivals(activeStop.id, limit);
+  return arrivals.map(a => ({
+    time:     a.arrivalTime,
+    train:    a.lineNumber,
+    endpoint: a.destination,
+    station:  activeStop.name,
+    status:   'ontime' as const,
+    tripId:   a.tripId || undefined,
+  }));
 }

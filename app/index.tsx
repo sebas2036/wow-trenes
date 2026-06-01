@@ -307,11 +307,11 @@ export default function HomeScreen() {
         // Prioridad de prefetch según país detectado
         let dbsToPrefetch: string[];
         if (detectedCountry === 'ES' || detectedCountry === 'PT') {
-          dbsToPrefetch = ['gtfs_france.db', 'gtfs_germany.db', 'gtfs_italy.db', 'gtfs_austria.db', 'gtfs_belgium.db'];
+          dbsToPrefetch = ['gtfs_france.db', 'gtfs_austria.db', 'gtfs_belgium.db'];
         } else if (detectedCountry === 'DE' || detectedCountry === 'CH' || detectedCountry === 'AT') {
           dbsToPrefetch = ['gtfs_austria.db', 'gtfs_france.db', 'gtfs_belgium.db'];
         } else {
-          dbsToPrefetch = ['gtfs_france.db', 'gtfs_germany.db', 'gtfs_italy.db', 'gtfs_austria.db', 'gtfs_belgium.db'];
+          dbsToPrefetch = ['gtfs_france.db', 'gtfs_austria.db', 'gtfs_belgium.db'];
         }
 
         prefetchInBackground(dbsToPrefetch);
@@ -513,7 +513,6 @@ export default function HomeScreen() {
               scrollEnabled={false}
               windowSize={5}
               removeClippedSubviews={true}
-              getItemLayout={(_, index) => ({ length: 90, offset: 90 * index, index })}
               renderItem={({ item: c }) => (
                 <CountryCard
                   country={c}
@@ -538,7 +537,6 @@ export default function HomeScreen() {
               scrollEnabled={false}
               windowSize={5}
               removeClippedSubviews={true}
-              getItemLayout={(_, index) => ({ length: 90, offset: 90 * index, index })}
               renderItem={({ item: m }) => (
                 <MetroCard
                   metro={m}

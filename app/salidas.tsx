@@ -25,8 +25,12 @@ import {
   searchFranceStations, setActiveFranceStation, getActiveFranceStationName,
   searchAustriaStations, setActiveAustriaStation, getActiveAustriaStationName,
   searchPortugalStations, setActivePortugalStation, getActivePortugalStationName,
+  setActiveTmbStop, getActiveTmbStopName, searchTmbStops,
+  setActiveMadridStop, getActiveMadridStopName, searchMadridStops,
+  setActiveGermanyStation, getActiveGermanyStationName, searchGermanyStations, type GermanyStation,
   detectCountryFromCoords, findNearestStation,
 } from '../services/gtfsDatabase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { buildBestBookingUrl } from '../services/affiliateEngine';
 import { useLocation } from '../hooks/useLocation';
 import BottomTabBar from '../components/BottomTabBar';
@@ -59,7 +63,7 @@ const DESTINATIONS = [
 
 // Países con selector de estación real-time
 const RT_STATION_COUNTRIES: Partial<Record<CountryCode, true>> = {
-  CH: true, IT: true, BE: true, FR: true, AT: true, PT: true,
+  CH: true, IT: true, BE: true, FR: true, AT: true, PT: true, ES_BCN: true, ES_MAD: true, DE: true,
 };
 
 type BoardMode = 'salidas' | 'arribos';
@@ -68,36 +72,45 @@ type BoardMode = 'salidas' | 'arribos';
 async function searchForCountry(code: CountryCode, query: string): Promise<{ id: string; name: string }[]> {
   if (!query.trim()) return [];
   switch (code) {
-    case 'CH': return (await searchSwissStations(query)).map(s => ({ id: s.id,   name: s.name }));
-    case 'IT': return (await searchItalyStations(query)).map(s => ({ id: s.id,   name: s.name }));
-    case 'BE': return (await searchBelgiumStations(query)).map(s => ({ id: s.id, name: s.name }));
-    case 'FR': return (await searchFranceStations(query)).map(s => ({ id: s.id,  name: s.name }));
-    case 'AT': return (await searchAustriaStations(query)).map(s => ({ id: s.extId, name: s.name }));
-    case 'PT': return (await searchPortugalStations(query)).map(s => ({ id: s.code, name: s.name }));
-    default:   return [];
+    case 'CH':     return (await searchSwissStations(query)).map(s => ({ id: s.id,     name: s.name }));
+    case 'IT':     return (await searchItalyStations(query)).map(s => ({ id: s.id,     name: s.name }));
+    case 'BE':     return (await searchBelgiumStations(query)).map(s => ({ id: s.id,   name: s.name }));
+    case 'FR':     return (await searchFranceStations(query)).map(s => ({ id: s.id,    name: s.name }));
+    case 'AT':     return (await searchAustriaStations(query)).map(s => ({ id: s.extId, name: s.name }));
+    case 'PT':     return (await searchPortugalStations(query)).map(s => ({ id: s.code, name: s.name }));
+    case 'ES_BCN': return searchTmbStops(query);
+    case 'ES_MAD': return searchMadridStops(query);
+    case 'DE':     return (await searchGermanyStations(query)).map(s => ({ id: s.locationId, name: s.name }));
+    default:       return [];
   }
 }
 
 function setStationForCountry(code: CountryCode, id: string, name: string): void {
   switch (code) {
-    case 'CH': setActiveSwissStation(id, name); break;
-    case 'IT': setActiveItalyStation({ id, name }); break;
-    case 'BE': setActiveBelgiumStation({ id, name, standardname: name }); break;
-    case 'FR': setActiveFranceStation({ id, name }); break;
-    case 'AT': setActiveAustriaStation({ extId: id, name }); break;
-    case 'PT': setActivePortugalStation({ code: id, name }); break;
+    case 'CH':     setActiveSwissStation(id, name); break;
+    case 'IT':     setActiveItalyStation({ id, name }); break;
+    case 'BE':     setActiveBelgiumStation({ id, name, standardname: name }); break;
+    case 'FR':     setActiveFranceStation({ id, name }); break;
+    case 'AT':     setActiveAustriaStation({ extId: id, name }); break;
+    case 'PT':     setActivePortugalStation({ code: id, name }); break;
+    case 'ES_BCN': setActiveTmbStop(id, name); break;
+    case 'ES_MAD': setActiveMadridStop(id, name); break;
+    case 'DE':     setActiveGermanyStation({ locationId: id, name, evaNr: '' }); break;
   }
 }
 
 function getStationNameForCountry(code: CountryCode): string {
   switch (code) {
-    case 'CH': return getActiveSwissStationName();
-    case 'IT': return getActiveItalyStationName();
-    case 'BE': return getActiveBelgiumStationName();
-    case 'FR': return getActiveFranceStationName();
-    case 'AT': return getActiveAustriaStationName();
-    case 'PT': return getActivePortugalStationName();
-    default:   return '';
+    case 'CH':     return getActiveSwissStationName();
+    case 'IT':     return getActiveItalyStationName();
+    case 'BE':     return getActiveBelgiumStationName();
+    case 'FR':     return getActiveFranceStationName();
+    case 'AT':     return getActiveAustriaStationName();
+    case 'PT':     return getActivePortugalStationName();
+    case 'ES_BCN': return getActiveTmbStopName();
+    case 'ES_MAD': return getActiveMadridStopName();
+    case 'DE':     return getActiveGermanyStationName();
+    default:       return '';
   }
 }
 
@@ -370,29 +383,64 @@ export default function SalidasScreen() {
     });
   }, []);
 
+  const BOARD_CACHE_KEY = (code: string, m: string) => `@board_cache_${code}_${m}`;
+
+  const dedupeAndFilter = (raw: BoardEntry[]): BoardEntry[] => {
+    const seen   = new Set<string>();
+    const now    = new Date();
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    return raw.filter(e => {
+      const key = e.tripId ?? `${e.time}|${e.endpoint}|${e.train}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return timeToMinutes(e.time) >= nowMin - 1;
+    });
+  };
+
   const loadBoard = useCallback(async (
     dest: typeof DESTINATIONS[0], m: BoardMode, silent = false,
   ) => {
     const token = ++loadRef.current;
-    if (!silent) { setLoading(true); setBoard([]); }
+
+    // Stale-While-Revalidate: mostrar caché inmediatamente mientras se busca fresco
+    if (!silent) {
+      try {
+        const cached = await AsyncStorage.getItem(BOARD_CACHE_KEY(dest.code, m));
+        if (cached) {
+          const { entries, ts } = JSON.parse(cached) as { entries: BoardEntry[]; ts: number };
+          const stale = dedupeAndFilter(entries);
+          if (stale.length > 0) {
+            setBoard(stale);
+            setLoading(false);
+            // Si la caché tiene menos de 90s, no re-fetch (datos frescos)
+            if (Date.now() - ts < 90_000) return;
+          } else {
+            setLoading(true);
+            setBoard([]);
+          }
+        } else {
+          setLoading(true);
+          setBoard([]);
+        }
+      } catch {
+        setLoading(true);
+        setBoard([]);
+      }
+    }
+
     try {
       const raw = await getCountryBoard(dest.code, m, 50);
       if (token !== loadRef.current) return;
-
-      const seen   = new Set<string>();
-      const now    = new Date();
-      const nowMin = now.getHours() * 60 + now.getMinutes();
-      const entries = raw.filter(e => {
-        const key = e.tripId ?? `${e.time}|${e.endpoint}|${e.train}`;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return timeToMinutes(e.time) >= nowMin - 1;
-      });
-
+      const entries = dedupeAndFilter(raw);
       setBoard(entries);
+      // Guardar en caché solo si hay datos útiles
+      if (entries.length > 0) {
+        AsyncStorage.setItem(BOARD_CACHE_KEY(dest.code, m), JSON.stringify({ entries, ts: Date.now() })).catch(() => {});
+      }
     } catch (e) {
       console.warn('[salidas] getCountryBoard error:', e);
-      if (token === loadRef.current) setBoard([]);
+      // Si ya hay datos de caché mostrándose, no pisar con vacío
+      if (token === loadRef.current) setBoard(prev => prev.length > 0 ? prev : []);
     }
     finally { if (token === loadRef.current) setLoading(false); }
   }, []);

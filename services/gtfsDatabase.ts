@@ -100,6 +100,9 @@ import {
 } from './portugalRealTime';
 import { isOnline } from './networkService';
 import { isDbReady, downloadDb, getDownloadStatus } from './dbDownloadService';
+import { fetchTmbBoard, setActiveTmbStop, getActiveTmbStopName, searchTmbStops } from './tmbRealtime';
+import { fetchMadridBoard, setActiveMadridStop, getActiveMadridStopName, searchMadridStops } from './madridRealTime';
+import { fetchGermanyBoard, setActiveGermanyStation, getActiveGermanyStationName, searchGermanyStations, type GermanyStation } from './germanyBoard';
 
 // ── Asset map ────────────────────────────────────────────────────────────────
 // 'bundled' → require() embeds the DB in the JS bundle (use solo para el país
@@ -777,9 +780,16 @@ export async function getCountryBoard(
   }
 
   // Alemania: GTFS estático + overlay GTFS-RT desde gtfs.de
+  // Alemania: DB Navigator real-time → fallback GTFS + overlay delays
   if (country === 'DE') {
-    const entries = await getCountryBoardGTFS('DE', mode, limit);
-    return overlayGermanyDelays(entries);
+    try {
+      const entries = await fetchGermanyBoard(mode, limit);
+      if (entries.length > 0) return entries as BoardEntry[];
+    } catch (e) {
+      console.warn('[DE] Board fallback a GTFS+RT:', e);
+    }
+    const gtfsEntries = await getCountryBoardGTFS('DE', mode, limit);
+    return overlayGermanyDelays(gtfsEntries);
   }
 
   // Italia: ViaggiaTreno real-time (API pública Trenitalia), fallback GTFS
@@ -869,6 +879,33 @@ export async function getCountryBoard(
       console.warn('[BE RT] fallback a GTFS:', e);
     }
     return getCountryBoardGTFS('BE', mode, limit);
+  }
+
+  // Madrid Metro: CRTM real-time → fallback GTFS
+  if (country === 'ES_MAD') {
+    try {
+      const entries = await fetchMadridBoard(limit);
+      if (entries.length > 0) return entries as BoardEntry[];
+    } catch (e) {
+      console.warn('[ES_MAD] CRTM fallback a GTFS:', e);
+    }
+    return getCountryBoardGTFS('ES_MAD', mode, limit);
+  }
+
+  // Barcelona Metro: TMB real-time → fallback GTFS
+  if (country === 'ES_BCN') {
+    try {
+      const entries = await fetchTmbBoard(limit);
+      if (entries.length > 0) return entries as BoardEntry[];
+    } catch (e) {
+      console.warn('[ES_BCN] TMB fallback a GTFS:', e);
+    }
+    return getCountryBoardGTFS('ES_BCN', mode, limit);
+  }
+
+  // París Metro: IDFM real-time cuando haya API key → fallback GTFS (gtfs_fr_par.db)
+  if (country === 'FR_PAR') {
+    return getCountryBoardGTFS('FR_PAR', mode, limit);
   }
 
   return getCountryBoardGTFS(country, mode, limit);
@@ -1082,9 +1119,12 @@ export { fetchSwissConnections, searchSwissStations, nearestSwissStation };
 export { getGermanyAlerts, invalidateGermanyRT } from './germanyRealTime';
 export { searchItalyStations, setActiveItalyStation, getActiveItalyStationName, invalidateItalyRT } from './italyRealTime';
 export { searchBelgiumStations, setActiveBelgiumStation, getActiveBelgiumStationName, getBelgiumDisturbances, invalidateBelgiumRT } from './belgiumRealTime';
-export { searchFranceStations, setActiveFranceStation, getActiveFranceStationName, invalidateFranceRT } from './franceRealTime';
+export { searchFranceStations, setActiveFranceStation, getActiveFranceStationName, invalidateFranceRT, searchFranceJourneys, type FranceJourney } from './franceRealTime';
 export { searchAustriaStations, setActiveAustriaStation, getActiveAustriaStationName, invalidateAustriaRT } from './austriaRealTime';
 export { searchPortugalStations, setActivePortugalStation, getActivePortugalStationName, invalidatePortugalRT } from './portugalRealTime';
+export { setActiveTmbStop, getActiveTmbStopName, searchTmbStops } from './tmbRealtime';
+export { setActiveMadridStop, getActiveMadridStopName, searchMadridStops } from './madridRealTime';
+export { setActiveGermanyStation, getActiveGermanyStationName, searchGermanyStations, type GermanyStation } from './germanyBoard';
 
 // ── searchTrips — origen → destino en una fecha dada ─────────────────────────
 export async function searchTrips(
@@ -1196,9 +1236,15 @@ export async function searchTrips(
     }
   }
 
-  // Deduplicar por trip_id (puede haber duplicados entre intentos)
+  // Deduplicar por hora_salida + hora_llegada + tren — más robusto que solo trip_id
+  // (el intento 3 puede traer el mismo servicio con trip_ids distintos por variantes de plataforma)
   const seen = new Set<string>();
-  const unique = rows.filter(r => { if (seen.has(r.trip_id)) return false; seen.add(r.trip_id); return true; });
+  const unique = rows.filter(r => {
+    const key = `${r.dep_time}|${r.arr_time}|${r.route_short || r.route_long}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 
   const results = unique.map(row => {
     const dep = gtfsTimeToDateWithOffset(row.dep_time, localDate, tzOff);

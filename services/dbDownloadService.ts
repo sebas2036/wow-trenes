@@ -208,15 +208,15 @@ export async function downloadDb(
     return true;
 
   } catch (e: any) {
+    const resumable = activeResumables.get(dbName);
     activeResumables.delete(dbName);
     // Si se cortó la red → pausar y guardar snapshot
     if (e?.message?.includes('network') || e?.message?.includes('Network')) {
       try {
-        const resumable = activeResumables.get(dbName);
         if (resumable) {
           const pauseState = await resumable.pauseAsync();
           if (pauseState) await saveResumeSnapshot(dbName, pauseState);
-          console.log(`[dbDownload] Pausado por red, snapshot guardado: ${dbName}`);
+          console.log('[dbDownload] Pausado por red, snapshot guardado:', dbName);
         }
       } catch { /* non-fatal */ }
     } else {
