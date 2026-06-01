@@ -6,7 +6,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView,
-  ActivityIndicator, Platform,
+  ActivityIndicator, Platform, FlatList,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,8 +20,9 @@ import Svg, { Defs, LinearGradient as SvgGrad, Stop, Line } from 'react-native-s
 import { useTheme } from '../context/ThemeContext';
 import FlagCircle from '../components/FlagCircle';
 import { findNearestStation, setActiveCountry, detectCountryFromCoords } from '../services/gtfsDatabase';
-import { prefetchInBackground } from '../services/dbDownloadService';
+import { prefetchInBackground, onDownloadProgress } from '../services/dbDownloadService';
 import TranslatorSheet from '../components/TranslatorSheet';
+import DownloadProgressBar from '../components/DownloadProgressBar';
 import BottomTabBar from '../components/BottomTabBar';
 import { toggleFavorito, getFavoritos } from './favoritos';
 import NotificationSheet from '../components/NotificationSheet';
@@ -269,9 +270,20 @@ export default function HomeScreen() {
     }
     prevUnread.current = unreadCount;
   }, [unreadCount]);
+  const [downloadState, setDownloadState] = useState<{ dbName: string; progress: number } | null>(null);
   const [favs,       setFavs]       = useState<CountryCode[]>([]);
 
   useEffect(() => { getFavoritos().then(setFavs); }, []);
+
+  useEffect(() => {
+    const unsub = onDownloadProgress((dbName, progress) => {
+      setDownloadState({ dbName, progress });
+      if (progress >= 100) {
+        setTimeout(() => setDownloadState(null), 2500);
+      }
+    });
+    return unsub;
+  }, []);
 
   // ── Prefetch DBs grandes en background (3s tras mount) ─────────────────────
   useEffect(() => {
@@ -482,22 +494,36 @@ export default function HomeScreen() {
           })}
         </View>
 
+        {downloadState {/* ── Sección Trenes ── */}{/* ── Sección Trenes ── */} (
+          <DownloadProgressBar
+            dbName={downloadState.dbName}
+            progress={downloadState.progress}
+            visible={true}
+          />
+        )}
+
         {/* ── Sección Trenes ── */}
         {filter === 'trenes' && (
           <>
             <Text style={[styles.sectionLabel, { color: colors.text.muted }]}>PAÍSES DISPONIBLES</Text>
-            <View style={styles.list}>
-              {sortedCountries.map((c) => (
+            <FlatList
+              data={sortedCountries}
+              keyExtractor={(c) => c.code}
+              contentContainerStyle={styles.list}
+              scrollEnabled={false}
+              windowSize={5}
+              removeClippedSubviews={true}
+              getItemLayout={(_, index) => ({ length: 90, offset: 90 * index, index })}
+              renderItem={({ item: c }) => (
                 <CountryCard
-                  key={c.code}
                   country={c}
                   isFav={favs.includes(c.code)}
                   onPress={handleCountryPress}
                   onMetroPress={handleMetroPress}
                   onFavToggle={handleFavToggle}
                 />
-              ))}
-            </View>
+              )}
+            />
           </>
         )}
 
@@ -505,17 +531,23 @@ export default function HomeScreen() {
         {filter === 'metro' && (
           <>
             <Text style={[styles.sectionLabel, { color: colors.text.muted }]}>METROS URBANOS</Text>
-            <View style={styles.list}>
-              {sortedMetros.map((m) => (
+            <FlatList
+              data={sortedMetros}
+              keyExtractor={(m) => m.code}
+              contentContainerStyle={styles.list}
+              scrollEnabled={false}
+              windowSize={5}
+              removeClippedSubviews={true}
+              getItemLayout={(_, index) => ({ length: 90, offset: 90 * index, index })}
+              renderItem={({ item: m }) => (
                 <MetroCard
-                  key={m.code}
                   metro={m}
                   isFav={favs.includes(m.code)}
                   onPress={handleMetroPress}
                   onFavToggle={handleFavToggle}
                 />
-              ))}
-            </View>
+              )}
+            />
           </>
         )}
 

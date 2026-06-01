@@ -242,10 +242,23 @@ export function prefetchInBackground(dbNames: string[]): void {
       const ready = await isDbReady(dbName);
       if (!ready && !downloadingSet.has(dbName)) {
         console.log(`[dbDownload] Prefetch background: ${dbName}`);
-        await downloadDb(dbName);
+        await downloadDb(dbName, (pct) => emitProgress(dbName, pct));
         // Pequeña pausa entre descargas para no saturar
         await new Promise(r => setTimeout(r, 500));
       }
     }
   })().catch(e => console.warn('[dbDownload] Error en prefetch background:', e));
+}
+
+// ── Listeners de progreso global ──────────────────────────────────────────────
+type ProgressListener = (dbName: string, progress: number) => void;
+const progressListeners = new Set<ProgressListener>();
+
+export function onDownloadProgress(listener: ProgressListener): () => void {
+  progressListeners.add(listener);
+  return () => progressListeners.delete(listener); // retorna unsuscribe
+}
+
+function emitProgress(dbName: string, progress: number): void {
+  progressListeners.forEach(l => l(dbName, progress));
 }
