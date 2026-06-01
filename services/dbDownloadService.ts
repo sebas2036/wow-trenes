@@ -171,7 +171,8 @@ export async function downloadDb(
 
     // ¿Hay un snapshot guardado de una descarga interrumpida?
     const snapshot = await getResumeSnapshot(dbName);
-    if (snapshot) {
+    const snapshotUrlValid = snapshot?.url?.startsWith(BASE_URL);
+    if (snapshot && snapshotUrlValid) {
       console.log(`[dbDownload] Reanudando desde snapshot: ${dbName}`);
       downloadResumable = FileSystem.createDownloadResumable(
         snapshot.url,
@@ -181,6 +182,11 @@ export async function downloadDb(
         snapshot.resumeData,
       );
     } else {
+      if (snapshot && !snapshotUrlValid) {
+        // Snapshot de URL vieja (ej: media.githubusercontent.com) — descartar
+        console.log(`[dbDownload] Snapshot obsoleto descartado, URL cambió: ${dbName}`);
+        await clearResumeSnapshot(dbName);
+      }
       downloadResumable = FileSystem.createDownloadResumable(
         url, tmp, {}, progressCallback,
       );
