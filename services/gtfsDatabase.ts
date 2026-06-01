@@ -1039,20 +1039,29 @@ function gtfsRowToTrainService(row: any, baseDate: Date): TrainService {
 }
 
 /**
- * getFirstStation — returns the first stop from the active country's DB.
+ * getFirstStation — returns the busiest stop from the active country's DB.
+ * Uses stop_times count as proxy for importance → returns the main hub station.
  * Used as a GPS fallback when the user is testing from outside the country.
  */
 export async function getFirstStation(): Promise<Station | null> {
   const conn = await db();
+  // Buscar la estación con más stop_times = hub principal del país
   const row = await conn.getFirstAsync<{
     stop_id:      string;
     stop_name:    string;
     stop_lat:     number;
     stop_lon:     number;
     country_code: string;
-  }>(
-    'SELECT stop_id, stop_name, stop_lat, stop_lon, country_code FROM stops WHERE location_type IN (0, 1) LIMIT 1',
-  );
+  }>(`
+    SELECT s.stop_id, s.stop_name, s.stop_lat, s.stop_lon, s.country_code,
+           COUNT(st.trip_id) AS cnt
+    FROM stops s
+    INNER JOIN stop_times st ON st.stop_id = s.stop_id
+    WHERE s.location_type IN (0, 1)
+    GROUP BY s.stop_id
+    ORDER BY cnt DESC
+    LIMIT 1
+  `);
   if (!row) return null;
   return rowToStation(row);
 }
