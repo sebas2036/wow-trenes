@@ -185,10 +185,10 @@ export const TouchTarget = { min: 44, chip: 48, button: 56, fab: 64 } as const;
 //   EXPO_PUBLIC_IMPACT_SID=<SID asignado por Impact/Trainline>
 //   EXPO_PUBLIC_AFFILIATE_ID=<tu tracking ID negociado con Trainline>
 export const Affiliate = {
-  // Travelpayouts — marker principal (glosx@outlook.com, ID 734304)
-  trackingId:       '734304',
-  partnerizeTag:    '734304',
-  impactSid:        'travelpayouts_734304',
+  // Travelpayouts — IDs cargados desde .env (nunca hardcodeados en el repo)
+  trackingId:       process.env.EXPO_PUBLIC_TP_MARKER      ?? '',
+  partnerizeTag:    process.env.EXPO_PUBLIC_PARTNERIZE_TAG ?? '',
+  impactSid:        `travelpayouts_${process.env.EXPO_PUBLIC_TP_MARKER ?? ''}`,
   commissionMin:    0.018,  // 1.8% trenes Trip.com
   commissionMax:    0.06,   // 6% Omio
   merchantOfRecord: 'omio', // afiliado principal via Travelpayouts

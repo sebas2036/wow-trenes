@@ -14,15 +14,18 @@
  * │    via HTTP Range: bytes=X- (Range Requests)            │
  * └─────────────────────────────────────────────────────────┘
  *
- * URL base: https://media.githubusercontent.com/media/sebas2036/wow-trenes/main/assets/
+ * URL base: https://github.com/sebas2036/wow-trenes/releases/download/v1.0-databases/
  * Destino:  FileSystem.documentDirectory + 'SQLite/' + dbName
+ *
+ * NOTA: Los archivos se sirven desde GitHub Releases (no LFS) para garantizar
+ * URLs estables sin autenticación ni expiración.
  */
 import * as FileSystem from 'expo-file-system';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 const SQLITE_DIR   = FileSystem.documentDirectory + 'SQLite/';
-const BASE_URL     = 'https://media.githubusercontent.com/media/sebas2036/wow-trenes/main/assets/';
+const BASE_URL     = 'https://github.com/sebas2036/wow-trenes/releases/download/v1.0-databases/';
 const STORAGE_KEY  = '@gtfs_downloaded_dbs';
 const RESUME_KEY   = '@gtfs_download_snapshots'; // snapshots para reanudar
 

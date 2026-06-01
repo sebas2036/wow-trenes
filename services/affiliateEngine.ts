@@ -119,7 +119,7 @@ export function buildTrainlineSearchUrl(
 }
 
 // ── Travelpayouts marker ──────────────────────────────────────────────────
-const TP_MARKER = '734304'; // Travelpayouts Partner ID — glosx@outlook.com
+const TP_MARKER = process.env.EXPO_PUBLIC_TP_MARKER ?? '';
 
 /**
  * buildOmioUrl — Deeplink a Omio con tracking Travelpayouts.
