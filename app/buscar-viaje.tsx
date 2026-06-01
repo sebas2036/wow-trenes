@@ -14,7 +14,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Colors, Typography, Spacing, Radius } from '../theme';
-import { searchStations, searchTrips, type TripResult } from '../services/gtfsDatabase';
+import { searchStations, searchTrips, getPopularDestinations, type TripResult } from '../services/gtfsDatabase';
 import { buildBestBookingUrl } from '../services/affiliateEngine';
 import type { Station } from '../types';
 
@@ -66,6 +66,17 @@ function buildPurchaseUrl(origin: string, dest: string, date: Date, countryCode 
   return buildBestBookingUrl(origin, dest, date, countryCode);
 }
 
+// Precio estimado según tipo de tren y duración
+function estimatePrice(trainName: string, durationMin: number): string {
+  const name = trainName.toUpperCase();
+  let rate = 0.08; // €/min base
+  if (['AVE','AVE INT','AVLO','TGV','ICE','FR','FRECCIAROSSA'].some(t => name.includes(t))) rate = 0.18;
+  else if (['ALVIA','AVANT','EUROMED','IC','ICD'].some(t => name.includes(t))) rate = 0.12;
+  else if (['REGIONAL','REG','MD','RE','RB','SPR'].some(t => name.includes(t))) rate = 0.05;
+  const price = Math.max(8, Math.round(durationMin * rate));
+  return `~€${price}`;
+}
+
 type ActiveField = 'origin' | 'dest' | null;
 
 export default function BuscarViaje() {
@@ -83,6 +94,7 @@ export default function BuscarViaje() {
   const [trips,         setTrips]         = useState<TripResult[]>([]);
   const [loading,       setLoading]       = useState(false);
   const [error,         setError]         = useState<string | null>(null);
+  const [popularDests,  setPopularDests]  = useState<{ id: string; name: string; durationMin: number }[]>([]);
 
   const originRef = useRef<TextInput>(null);
   const destRef   = useRef<TextInput>(null);
@@ -165,6 +177,12 @@ export default function BuscarViaje() {
   useEffect(() => {
     if (originStation && destStation) doSearch();
   }, [destStation, dayOffset]);
+
+  // Cargar destinos populares cuando cambia el origen
+  useEffect(() => {
+    if (!originStation) { setPopularDests([]); return; }
+    getPopularDestinations(originStation.id, 6).then(setPopularDests).catch(() => {});
+  }, [originStation?.id]);
 
   const handleBuy = useCallback((trip: TripResult) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -276,6 +294,35 @@ export default function BuscarViaje() {
           </Pressable>
         )}
 
+        {/* Destinos populares — visible cuando hay origen pero no destino */}
+        {originStation && !destStation && !showSuggestions && popularDests.length > 0 && (
+          <View style={styles.popularWrap}>
+            <Text style={styles.popularTitle}>DESTINOS POPULARES DESDE {originStation.name.split(/[-–,]/)[0].trim().toUpperCase()}</Text>
+            <View style={styles.popularGrid}>
+              {popularDests.map((dest) => (
+                <Pressable
+                  key={dest.id}
+                  style={styles.popularChip}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    const s = { id: dest.id, name: dest.name, nameLocal: dest.name, coordinates: { latitude: 0, longitude: 0 }, platforms: [] } as unknown as Station;
+                    setDestStation(s);
+                    setDestQuery(dest.name);
+                    setSuggestions([]);
+                  }}
+                >
+                  <Ionicons name="train-outline" size={13} color={Colors.brand.primary} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.popularName} numberOfLines={1}>{dest.name}</Text>
+                    <Text style={styles.popularDur}>{fmtDur(dest.durationMin)}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={13} color={Colors.text.muted} />
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        )}
+
         {/* Resultados */}
         {loading ? (
           <View style={styles.center}>
@@ -343,12 +390,15 @@ export default function BuscarViaje() {
                       </View>
                     </View>
 
-                    {/* Botón comprar */}
+                    {/* Precio estimado + botón comprar */}
                     <View style={styles.buyRow}>
-                      <Text style={styles.buyHint}>Ver precios y comprar</Text>
+                      <View>
+                        <Text style={styles.priceEstimate}>{estimatePrice(trip.trainNumber, trip.durationMin)}</Text>
+                        <Text style={styles.buyHint}>precio estimado</Text>
+                      </View>
                       <View style={styles.buyBtn}>
-                        <Ionicons name="open-outline" size={13} color="#fff" />
-                        <Text style={styles.buyBtnText}>Trainline</Text>
+                        <Ionicons name="cart-outline" size={13} color="#fff" />
+                        <Text style={styles.buyBtnText}>Comprar en Omio</Text>
                       </View>
                     </View>
 
@@ -487,7 +537,20 @@ const styles = StyleSheet.create({
     borderTopWidth: 1, borderTopColor: Colors.border.subtle,
     paddingTop: Spacing['3'], marginTop: -Spacing['1'],
   },
+  priceEstimate: { fontSize: Typography.size.base, fontWeight: '800', color: Colors.brand.glow },
   buyHint: { fontSize: Typography.size.xs, color: Colors.text.muted },
+
+  popularWrap: { paddingHorizontal: Spacing['4'], marginBottom: Spacing['2'] },
+  popularTitle: { fontSize: 10, fontWeight: '700', color: Colors.text.muted, letterSpacing: 1.2, marginBottom: Spacing['2'] },
+  popularGrid: { gap: Spacing['2'] },
+  popularChip: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing['2'],
+    backgroundColor: Colors.bg.elevated, borderRadius: Radius.md,
+    borderWidth: 1, borderColor: Colors.border.subtle,
+    paddingVertical: 10, paddingHorizontal: Spacing['3'],
+  },
+  popularName: { fontSize: Typography.size.sm, fontWeight: '600', color: Colors.text.primary },
+  popularDur:  { fontSize: 11, color: Colors.text.muted, marginTop: 1 },
   buyBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
     backgroundColor: Colors.brand.primary, borderRadius: Radius.md,

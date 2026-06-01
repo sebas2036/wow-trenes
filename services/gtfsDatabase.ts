@@ -1189,6 +1189,69 @@ export async function searchTrips(
   return results;
 }
 
+/**
+ * getPopularDestinations — Destinos más frecuentes desde una estación.
+ * Busca los headsigns (destinos finales) más comunes en los próximos trips.
+ * Usado para mostrar sugerencias rápidas en buscar-viaje.
+ */
+export async function getPopularDestinations(
+  originId: string,
+  limit = 8,
+): Promise<{ id: string; name: string; durationMin: number }[]> {
+  try {
+    const conn = await db();
+    const tzOff = COUNTRY_UTC_OFFSET[activeCountry] ?? 0;
+    const deviceOffset = -new Date().getTimezoneOffset() / 60;
+    const now = new Date(Date.now() + (tzOff - deviceOffset) * 3_600_000);
+    const minTime = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:00`;
+
+    const rows = await conn.getAllAsync<{
+      dest_stop_id: string; dest_name: string;
+      avg_dur: number; cnt: number;
+    }>(`
+      SELECT
+        s_d.stop_id          AS dest_stop_id,
+        s_d.stop_name        AS dest_name,
+        AVG(
+          (CAST(substr(st_d.departure_time,1,2) AS INTEGER) * 60 +
+           CAST(substr(st_d.departure_time,4,2) AS INTEGER)) -
+          (CAST(substr(st_o.departure_time,1,2) AS INTEGER) * 60 +
+           CAST(substr(st_o.departure_time,4,2) AS INTEGER))
+        )                    AS avg_dur,
+        COUNT(*)             AS cnt
+      FROM stop_times st_o
+      JOIN trips      tr  ON st_o.trip_id   = tr.trip_id
+      JOIN stop_times st_d ON st_d.trip_id  = st_o.trip_id
+                          AND st_d.stop_sequence > st_o.stop_sequence
+      JOIN stops      s_o ON s_o.stop_id    = st_o.stop_id
+      JOIN stops      s_d ON s_d.stop_id    = st_d.stop_id
+      WHERE st_o.stop_id = ?
+        AND st_o.departure_time >= ?
+        AND s_d.stop_id != ?
+      GROUP BY s_d.stop_name
+      HAVING avg_dur > 10
+      ORDER BY cnt DESC, avg_dur ASC
+      LIMIT ?
+    `, [originId, minTime, originId, limit * 3]);
+
+    // Deduplicar por nombre de ciudad (ej: "Madrid Chamartín" y "Madrid Atocha" → solo "Madrid")
+    const seen = new Set<string>();
+    const result: { id: string; name: string; durationMin: number }[] = [];
+    for (const r of rows) {
+      const city = r.dest_name.split(/[-–,/]/)[0].trim();
+      if (!seen.has(city)) {
+        seen.add(city);
+        result.push({ id: r.dest_stop_id, name: r.dest_name, durationMin: Math.round(r.avg_dur) });
+      }
+      if (result.length >= limit) break;
+    }
+    return result;
+  } catch (e) {
+    console.warn('[GTFS] getPopularDestinations error:', e);
+    return [];
+  }
+}
+
 // helper exclusivo de searchTrips con offset
 function gtfsTimeToDateWithOffset(gtfsTime: string, base: Date, tzOffsetHours: number): Date {
   const [hh, mm, ss] = gtfsTime.split(':').map(Number);
