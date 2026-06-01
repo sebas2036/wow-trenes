@@ -1,11 +1,13 @@
 /**
- * WoW TRENES — Salidas & Arribos
- * Board real-time · Selector de país · Selector de estación por país
+ * WoW TRENES — Tablero (Asistente de viaje personal)
+ * GPS automático → detecta país y estación → carga horarios sin acción del usuario.
+ * Si GPS no cubre la zona, selector manual de país/estación.
  */
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView,
-  ActivityIndicator, Modal, TextInput, FlatList, KeyboardAvoidingView, Platform,
+  ActivityIndicator, Modal, TextInput, FlatList,
+  KeyboardAvoidingView, Platform, Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -23,7 +25,10 @@ import {
   searchFranceStations, setActiveFranceStation, getActiveFranceStationName,
   searchAustriaStations, setActiveAustriaStation, getActiveAustriaStationName,
   searchPortugalStations, setActivePortugalStation, getActivePortugalStationName,
+  detectCountryFromCoords, findNearestStation,
 } from '../services/gtfsDatabase';
+import { buildBestBookingUrl } from '../services/affiliateEngine';
+import { useLocation } from '../hooks/useLocation';
 import BottomTabBar from '../components/BottomTabBar';
 import TranslatorSheet from '../components/TranslatorSheet';
 import FlagCircle from '../components/FlagCircle';
@@ -56,7 +61,6 @@ const RT_STATION_COUNTRIES: Partial<Record<CountryCode, true>> = {
 type BoardMode = 'salidas' | 'arribos';
 
 // ── Helpers de estación por país ──────────────────────────────────────────────
-
 async function searchForCountry(code: CountryCode, query: string): Promise<{ id: string; name: string }[]> {
   if (!query.trim()) return [];
   switch (code) {
@@ -93,9 +97,32 @@ function getStationNameForCountry(code: CountryCode): string {
   }
 }
 
+// ── Obtener info de país por code ─────────────────────────────────────────────
+function getDestByCode(code: CountryCode): typeof DESTINATIONS[0] | undefined {
+  return DESTINATIONS.find(d => d.code === code);
+}
+
 // ── BoardRow ──────────────────────────────────────────────────────────────────
-function BoardRow({ entry, index }: { entry: BoardEntry; index: number }) {
+function BoardRow({
+  entry,
+  index,
+  originName,
+  countryCode,
+}: {
+  entry: BoardEntry;
+  index: number;
+  originName: string;
+  countryCode: string;
+}) {
   const { colors } = useTheme();
+
+  const handleBuy = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const dest = entry.endpoint !== '—' ? entry.endpoint : entry.train;
+    const url = buildBestBookingUrl(originName, dest, new Date(), countryCode);
+    Linking.openURL(url).catch(() => {});
+  }, [originName, entry, countryCode]);
+
   return (
     <View style={[
       styles.boardRow,
@@ -131,6 +158,14 @@ function BoardRow({ entry, index }: { entry: BoardEntry; index: number }) {
             : 'En horario'}
         </Text>
       </View>
+      {/* Botón Comprar */}
+      <Pressable
+        style={styles.buyBtn}
+        onPress={handleBuy}
+        hitSlop={6}
+      >
+        <Text style={styles.buyBtnText}>Comprar</Text>
+      </Pressable>
     </View>
   );
 }
@@ -241,22 +276,72 @@ function StationPicker({
 export default function SalidasScreen() {
   const router  = useRouter();
   const { colors } = useTheme();
-  const [translator,    setTranslator]    = useState(false);
-  const [mode,          setMode]          = useState<BoardMode>('salidas');
-  const [selected,      setSelected]      = useState<typeof DESTINATIONS[0]>(DESTINATIONS[0]);
-  const [board,         setBoard]         = useState<BoardEntry[]>([]);
-  const [loading,       setLoading]       = useState(false);
-  const [pickerOpen,    setPickerOpen]    = useState(false);
-  const [stationName,   setStationName]   = useState('');
+  const { locationState, requestLocation } = useLocation();
+  const [translator,      setTranslator]      = useState(false);
+  const [mode,            setMode]            = useState<BoardMode>('salidas');
+  const [selected,        setSelected]        = useState<typeof DESTINATIONS[0]>(DESTINATIONS[0]);
+  const [board,           setBoard]           = useState<BoardEntry[]>([]);
+  const [loading,         setLoading]         = useState(false);
+  const [pickerOpen,      setPickerOpen]      = useState(false);
+  const [stationName,     setStationName]     = useState('');
+  // GPS: null = no intentado; 'loading' = buscando; 'found' | 'notfound'
+  const [gpsStatus,       setGpsStatus]       = useState<'idle' | 'loading' | 'found' | 'notfound'>('idle');
+  const [gpsStationName,  setGpsStationName]  = useState<string>('');
+  const [gpsDetected,     setGpsDetected]     = useState(false);
   const loadRef = useRef(0);
+  const didAutoGps = useRef(false);
   const { isOffline } = useNetwork();
 
   const hasStationPicker = RT_STATION_COUNTRIES[selected.code] === true;
 
+  // ── Auto GPS al montar ────────────────────────────────────────────────────
+  useEffect(() => {
+    if (didAutoGps.current) return;
+    didAutoGps.current = true;
+
+    (async () => {
+      setGpsStatus('loading');
+      try {
+        const coords = await requestLocation();
+        if (!coords) {
+          setGpsStatus('notfound');
+          return;
+        }
+        const countryCode = detectCountryFromCoords(coords);
+        if (!countryCode) {
+          setGpsStatus('notfound');
+          return;
+        }
+        const dest = getDestByCode(countryCode);
+        if (!dest) {
+          setGpsStatus('notfound');
+          return;
+        }
+        // Buscar estación más cercana
+        const station = await findNearestStation(coords);
+        if (station) {
+          setGpsStationName(station.name);
+          // Si el país tiene selector de estación real-time, activar la estación
+          if (RT_STATION_COUNTRIES[countryCode]) {
+            setStationForCountry(countryCode, station.id, station.name);
+          }
+        }
+        setSelected(dest);
+        setStationName(station?.name ?? getStationNameForCountry(countryCode));
+        setGpsDetected(true);
+        setGpsStatus('found');
+      } catch {
+        setGpsStatus('notfound');
+      }
+    })();
+  }, [requestLocation]);
+
   // Actualiza el nombre de estación cuando cambia el país
   useEffect(() => {
-    setStationName(getStationNameForCountry(selected.code));
-  }, [selected.code]);
+    if (!gpsDetected) {
+      setStationName(getStationNameForCountry(selected.code));
+    }
+  }, [selected.code, gpsDetected]);
 
   // Parsea "HH:MM" y devuelve minutos desde medianoche
   const timeToMinutes = (t: string): number => {
@@ -266,10 +351,9 @@ export default function SalidasScreen() {
 
   // Filtra trenes ya partidos del board actual (sin re-fetch)
   const prunePastTrains = useCallback(() => {
-    const now   = new Date();
+    const now    = new Date();
     const nowMin = now.getHours() * 60 + now.getMinutes();
     setBoard(prev => {
-      // Deduplicar por tripId (o por time+endpoint si no hay tripId)
       const seen = new Set<string>();
       const deduped = prev.filter(e => {
         const key = e.tripId ?? `${e.time}|${e.endpoint}|${e.train}`;
@@ -277,7 +361,6 @@ export default function SalidasScreen() {
         seen.add(key);
         return true;
       });
-      // Eliminar trenes cuya hora ya pasó (con 1 min de gracia)
       return deduped.filter(e => timeToMinutes(e.time) >= nowMin - 1);
     });
   }, []);
@@ -291,15 +374,13 @@ export default function SalidasScreen() {
       const raw = await getCountryBoard(dest.code, m, 50);
       if (token !== loadRef.current) return;
 
-      // Deduplicar por tripId antes de guardar
-      const seen = new Set<string>();
-      const now   = new Date();
+      const seen   = new Set<string>();
+      const now    = new Date();
       const nowMin = now.getHours() * 60 + now.getMinutes();
       const entries = raw.filter(e => {
         const key = e.tripId ?? `${e.time}|${e.endpoint}|${e.train}`;
         if (seen.has(key)) return false;
         seen.add(key);
-        // Descartar trenes que ya partieron (con 1 min de gracia)
         return timeToMinutes(e.time) >= nowMin - 1;
       });
 
@@ -308,28 +389,29 @@ export default function SalidasScreen() {
       console.warn('[salidas] getCountryBoard error:', e);
       if (token === loadRef.current) setBoard([]);
     }
-    finally  { if (token === loadRef.current) setLoading(false); }
+    finally { if (token === loadRef.current) setLoading(false); }
   }, []);
 
   useEffect(() => {
+    // Solo cargar si ya pasó el GPS (o falló)
+    if (gpsStatus === 'loading') return;
     loadBoard(selected, mode);
-    // Re-fetch completo cada 60s
     const fetchTimer = setInterval(() => loadBoard(selected, mode, true), 60_000);
-    // Prune client-side cada 30s (elimina partidos sin re-fetch)
     const pruneTimer = setInterval(prunePastTrains, 30_000);
     return () => { clearInterval(fetchTimer); clearInterval(pruneTimer); };
-  }, [selected, mode, loadBoard, prunePastTrains]);
+  }, [selected, mode, loadBoard, prunePastTrains, gpsStatus]);
 
   const handleDestPress = useCallback((dest: typeof DESTINATIONS[0]) => {
     Haptics.selectionAsync();
+    setGpsDetected(false);
     setSelected(dest);
   }, []);
 
   const handleStationSelect = useCallback((id: string, name: string) => {
     setStationForCountry(selected.code, id, name);
     setStationName(name);
+    setGpsStationName(name);
     setPickerOpen(false);
-    // Recargar el board con la nueva estación
     setTimeout(() => loadBoard(selected, mode), 100);
   }, [selected, mode, loadBoard]);
 
@@ -339,10 +421,38 @@ export default function SalidasScreen() {
     router.push({ pathname: '/split-screen', params: { country: selected.code, mode: 'country' } });
   }, [selected, router]);
 
+  const handleRetryGps = useCallback(async () => {
+    setGpsStatus('loading');
+    setGpsDetected(false);
+    try {
+      const coords = await requestLocation();
+      if (!coords) { setGpsStatus('notfound'); return; }
+      const countryCode = detectCountryFromCoords(coords);
+      if (!countryCode) { setGpsStatus('notfound'); return; }
+      const dest = getDestByCode(countryCode);
+      if (!dest) { setGpsStatus('notfound'); return; }
+      const station = await findNearestStation(coords);
+      if (station && RT_STATION_COUNTRIES[countryCode]) {
+        setStationForCountry(countryCode, station.id, station.name);
+      }
+      setSelected(dest);
+      setStationName(station?.name ?? getStationNameForCountry(countryCode));
+      setGpsStationName(station?.name ?? '');
+      setGpsDetected(true);
+      setGpsStatus('found');
+    } catch {
+      setGpsStatus('notfound');
+    }
+  }, [requestLocation]);
+
   const TABS: { key: BoardMode; label: string; icon: string }[] = [
     { key: 'salidas', label: 'Salidas', icon: 'arrow-up-circle-outline' },
     { key: 'arribos', label: 'Arribos', icon: 'arrow-down-circle-outline' },
   ];
+
+  // Nombre de la estación visible en el header
+  const displayStation = gpsStationName || stationName || getStationNameForCountry(selected.code) || selected.name;
+  const displayCountrySub = selected.sub;
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: colors.bg.base }]} edges={['top']}>
@@ -355,15 +465,42 @@ export default function SalidasScreen() {
         </View>
       )}
 
-      {/* ── Header ── */}
-      <View style={styles.header}>
-        <View>
-          <Text style={[styles.title,    { color: colors.text.primary   }]}>Tablero</Text>
-          <Text style={[styles.subtitle, { color: colors.text.secondary }]}>
-            {isOffline ? 'Horarios programados (offline)' : 'Horarios en tiempo real'}
-          </Text>
+      {/* ── Header con ubicación GPS ── */}
+      <Pressable
+        style={styles.header}
+        onPress={() => setPickerOpen(hasStationPicker)}
+        hitSlop={4}
+      >
+        <View style={styles.headerLeft}>
+          {gpsStatus === 'loading' ? (
+            <ActivityIndicator size="small" color={colors.brand.primary} style={{ marginRight: 6 }} />
+          ) : (
+            <Ionicons
+              name={gpsDetected ? 'navigate' : 'navigate-outline'}
+              size={17}
+              color={gpsDetected ? colors.brand.primary : colors.text.muted}
+              style={{ marginRight: 6, marginTop: 2 }}
+            />
+          )}
+          <View>
+            <Text style={[styles.title, { color: colors.text.primary }]} numberOfLines={1}>
+              {displayStation}
+            </Text>
+            <Text style={[styles.subtitle, { color: colors.text.secondary }]}>
+              {selected.name} · {displayCountrySub}
+              {isOffline ? ' · offline' : ''}
+            </Text>
+          </View>
         </View>
-      </View>
+        {/* Botón refrescar GPS */}
+        <Pressable
+          style={[styles.refreshBtn, { backgroundColor: colors.bg.elevated, borderColor: colors.border.subtle }]}
+          onPress={handleRetryGps}
+          hitSlop={8}
+        >
+          <Ionicons name="refresh-outline" size={16} color={colors.brand.primary} />
+        </Pressable>
+      </Pressable>
 
       {/* ── Segmented control ── */}
       <View style={[styles.segWrap, { backgroundColor: colors.bg.elevated }]}>
@@ -402,7 +539,7 @@ export default function SalidasScreen() {
         })}
       </View>
 
-      {/* ── Selector de país ── */}
+      {/* ── Selector de país (chips horizontales) ── */}
       <ScrollView
         horizontal showsHorizontalScrollIndicator={false}
         style={styles.destScroll} contentContainerStyle={styles.destContent}
@@ -456,10 +593,39 @@ export default function SalidasScreen() {
       </View>
 
       {/* ── Contenido ── */}
-      {loading ? (
+      {gpsStatus === 'loading' ? (
+        <View style={styles.center}>
+          <Ionicons name="navigate-circle-outline" size={48} color={colors.brand.primary} />
+          <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>
+            Detectando tu ubicación…
+          </Text>
+          <Text style={[styles.emptySub, { color: colors.text.secondary }]}>
+            Buscando la estación más cercana
+          </Text>
+          <ActivityIndicator color={colors.brand.primary} style={{ marginTop: 8 }} />
+        </View>
+      ) : loading ? (
         <View style={styles.center}>
           <ActivityIndicator color={colors.brand.primary} />
           <Text style={[styles.loadingText, { color: colors.text.muted }]}>Cargando horarios…</Text>
+        </View>
+      ) : gpsStatus === 'notfound' && board.length === 0 ? (
+        /* Estado vacío: GPS no disponible / fuera de cobertura */
+        <View style={styles.center}>
+          <Ionicons name="train-outline" size={48} color={colors.text.muted} />
+          <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>
+            ¿Dónde estás?
+          </Text>
+          <Text style={[styles.emptySub, { color: colors.text.secondary }]}>
+            Selecciona un país en los chips{'\n'}o usa tu ubicación GPS
+          </Text>
+          <Pressable
+            style={[styles.gpsBtn, { backgroundColor: colors.brand.primary }]}
+            onPress={handleRetryGps}
+          >
+            <Ionicons name="navigate-outline" size={18} color="#fff" />
+            <Text style={styles.gpsBtnText}>Usar mi ubicación</Text>
+          </Pressable>
         </View>
       ) : board.length === 0 ? (
         <View style={styles.center}>
@@ -481,7 +647,15 @@ export default function SalidasScreen() {
       ) : (
         <ScrollView style={styles.boardScroll} showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 16 }}>
-          {board.map((entry, i) => <BoardRow key={i} entry={entry} index={i} />)}
+          {board.map((entry, i) => (
+            <BoardRow
+              key={i}
+              entry={entry}
+              index={i}
+              originName={displayStation}
+              countryCode={selected.code}
+            />
+          ))}
         </ScrollView>
       )}
 
@@ -503,9 +677,22 @@ export default function SalidasScreen() {
 const styles = StyleSheet.create({
   root:   { flex: 1 },
 
-  header: { paddingHorizontal: 22, paddingTop: 18, paddingBottom: 14 },
-  title:    { fontSize: 30, fontWeight: '800', letterSpacing: -0.3 },
-  subtitle: { fontSize: 13, marginTop: 3 },
+  // Header con ubicación
+  header: {
+    paddingHorizontal: 22, paddingTop: 18, paddingBottom: 14,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+  },
+  headerLeft: {
+    flexDirection: 'row', alignItems: 'flex-start', flex: 1, marginRight: 12,
+  },
+  title:    { fontSize: 22, fontWeight: '800', letterSpacing: -0.3 },
+  subtitle: { fontSize: 12, marginTop: 2 },
+
+  refreshBtn: {
+    width: 36, height: 36, borderRadius: 18,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 0.5,
+  },
 
   segWrap: {
     flexDirection: 'row', marginHorizontal: 16, marginBottom: 16,
@@ -545,26 +732,37 @@ const styles = StyleSheet.create({
   boardScroll: { flex: 1 },
   boardRow: {
     flexDirection: 'row', alignItems: 'center',
-    paddingVertical: 12, paddingHorizontal: 16,
-    borderBottomWidth: 0.5, gap: 12,
+    paddingVertical: 10, paddingHorizontal: 16,
+    borderBottomWidth: 0.5, gap: 10,
   },
-  boardTime:    { fontSize: 22, fontWeight: '700', width: 70, letterSpacing: -0.5 },
+  boardTime:    { fontSize: 20, fontWeight: '700', width: 62, letterSpacing: -0.5 },
   boardInfo:    { flex: 1, gap: 2 },
   boardTrain:   { fontSize: 14, fontWeight: '600' },
   boardStation: { fontSize: 11 },
 
   statusPill: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingVertical: 4, paddingHorizontal: 8, borderRadius: Radius.full,
+    paddingVertical: 4, paddingHorizontal: 7, borderRadius: Radius.full,
   },
   statusDot:  { width: 5, height: 5, borderRadius: 3 },
   statusText: { fontSize: 10, fontWeight: '600' },
+
+  // Botón comprar
+  buyBtn: {
+    backgroundColor: '#7C3AED',
+    paddingVertical: 5, paddingHorizontal: 9,
+    borderRadius: Radius.sm,
+  },
+  buyBtnText: {
+    fontSize: 10, fontWeight: '700', color: '#fff',
+  },
 
   center: {
     flex: 1, alignItems: 'center', justifyContent: 'center',
     paddingHorizontal: 40, gap: 12,
   },
   loadingText: { fontSize: 13, marginTop: 8 },
+
   offlineBanner: {
     flexDirection:    'row',
     alignItems:       'center',
@@ -576,11 +774,20 @@ const styles = StyleSheet.create({
   offlineText: { fontSize: 12, color: '#fff', fontWeight: '600' },
   emptyTitle:  { fontSize: 17, fontWeight: '700', textAlign: 'center' },
   emptySub:    { fontSize: 13, textAlign: 'center', lineHeight: 20 },
+
   openBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     marginTop: 8, paddingVertical: 12, paddingHorizontal: 20, borderRadius: Radius.full,
   },
   openBtnText: { fontSize: 14, fontWeight: '700', color: '#fff' },
+
+  // Botón GPS grande (estado vacío)
+  gpsBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    marginTop: 8, paddingVertical: 14, paddingHorizontal: 28,
+    borderRadius: Radius.full,
+  },
+  gpsBtnText: { fontSize: 15, fontWeight: '800', color: '#fff' },
 
   // StationPicker modal
   pickerOverlay: {

@@ -332,7 +332,7 @@ export default function SplitScreen() {
       return { latitude: parseFloat(params.lat), longitude: parseFloat(params.lon) };
     }
     return locationState.status === 'granted' ? locationState.coords : null;
-  }, [params.lat, params.lon, locationState.status, locationState.coords]);
+  }, [params.lat, params.lon, locationState.status, locationState.status === 'granted' ? locationState.coords : null]);
 
   // ── Resolve origin station ────────────────────────────────────────────
   useEffect(() => {

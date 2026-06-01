@@ -10,14 +10,15 @@ export interface Coordinates {
 }
 
 export interface Station {
-  id:          string;   // GTFS stop_id
-  name:        string;
-  nameLocal:   string;   // Native language name
-  country:     CountryCode;
-  coordinates: Coordinates;
-  platforms:   Platform[];
-  uicCode?:    string;   // UIC station code (European standard)
-  crsCode?:    string;   // UK/IE CRS code
+  id:           string;   // GTFS stop_id
+  name:         string;
+  nameLocal:    string;   // Native language name
+  country:      CountryCode;
+  countryCode?: string;   // ISO 2-letter country code (es, fr, de, etc.)
+  coordinates:  Coordinates;
+  platforms:    Platform[];
+  uicCode?:     string;   // UIC station code (European standard)
+  crsCode?:     string;   // UK/IE CRS code
 }
 
 export interface Platform {
@@ -58,9 +59,22 @@ export type TrainOperator =
   | 'cta'         // Chicago — CTA L train
   | 'la_metro'    // Los Angeles — LA Metro Rail (Swiftly RT)
   // ── Metro urbano ──────────────────────────────────────────────────────────
-  | 'tmb'         // Barcelona — TMB (L1-L11 + FGC + Rodalies)
-  | 'ratp'        // Paris — RATP (Métro + RER via IDFM)
-  | 'emt'         // Madrid — EMT + Metro Madrid
+  | 'tmb'           // Barcelona — TMB (L1-L11 + FGC + Rodalies)
+  | 'ratp'          // Paris — RATP (Métro + RER via IDFM)
+  | 'emt'           // Madrid — EMT
+  | 'metro_madrid'  // Madrid — Metro de Madrid
+  | 'atac'          // Roma — ATAC (Lineas A, B, C)
+  | 'atm'           // Milán — ATM (M1-M5)
+  | 'wiener_linien' // Viena — Wiener Linien (U1-U6)
+  | 'gvb'           // Amsterdam — GVB Metro
+  | 'metro_lisboa'  // Lisboa — Metropolitano de Lisboa
+  | 'metro_cph'     // Copenhague — Metro Copenhagen
+  | 'ruter'         // Oslo — Ruter T-bane
+  | 'stib'          // Bruselas — STIB/MIVB
+  | 'bvg'           // Berlín — BVG (U-Bahn + S-Bahn)
+  | 'mvg'           // Múnich — MVG (U-Bahn + S-Bahn)
+  | 'ns'            // Países Bajos — NS
+  | 'cp'            // Portugal — Comboios de Portugal
   | 'other';
 
 export type TrainType = 'high-speed' | 'intercity' | 'regional' | 'night';
