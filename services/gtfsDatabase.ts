@@ -99,6 +99,7 @@ import {
   type PortugalDeparture,
 } from './portugalRealTime';
 import { isOnline } from './networkService';
+import { isDbReady, downloadDb, getDownloadStatus } from './dbDownloadService';
 
 // ── Asset map ────────────────────────────────────────────────────────────────
 // 'bundled' → require() embeds the DB in the JS bundle (use solo para el país
@@ -154,6 +155,10 @@ const COUNTRY_ASSETS: Partial<Record<CountryCode, CountryAsset>> = {
 
 const SQLITE_DIR = FileSystem.documentDirectory + 'SQLite/';
 
+// Países cuyas DBs son demasiado grandes para el bundle (>30 MB).
+// Se descargan lazy desde GitHub LFS en lugar de copiarse desde el asset bundle.
+const LAZY_DOWNLOAD_COUNTRIES = new Set<CountryCode>(['FR', 'BE', 'AT']);
+
 // One open connection per country (lazy-opened)
 const dbPool: Partial<Record<CountryCode, SQLite.SQLiteDatabase>> = {};
 
@@ -201,6 +206,38 @@ async function ensureDB(country: CountryCode): Promise<SQLite.SQLiteDatabase> {
 
   // ── BUNDLED: copiar desde el bundle de la app al filesystem ──────────────
   if (asset.type === 'bundled') {
+
+    // ── LAZY DOWNLOAD: países grandes — no están en el bundle, se descargan ──
+    if (LAZY_DOWNLOAD_COUNTRIES.has(country)) {
+      const dbReady = await isDbReady(asset.dbName);
+      if (!dbReady) {
+        const status = getDownloadStatus(asset.dbName);
+        if (status === 'downloading') {
+          // Está descargando — devolver DB vacío silenciosamente
+          console.log(`[GTFS] ${asset.dbName} descargándose — usando DB vacío temporalmente`);
+          const empty = await SQLite.openDatabaseAsync(`gtfs_empty_${country}.db`);
+          await createEmptySchema(empty);
+          // No guardar en pool para que el próximo intento vuelva a verificar
+          return empty;
+        }
+        // Intentar descarga (blocking para esta llamada)
+        console.log(`[GTFS] ${asset.dbName} no descargado — iniciando descarga...`);
+        const ok = await downloadDb(asset.dbName);
+        if (!ok) {
+          console.warn(`[GTFS] Descarga fallida para ${asset.dbName} — usando DB vacío`);
+          const empty = await SQLite.openDatabaseAsync(`gtfs_empty_${country}.db`);
+          await createEmptySchema(empty);
+          return empty;
+        }
+      }
+      // DB listo (ya existía o acaba de descargarse)
+      const conn = await SQLite.openDatabaseAsync(asset.dbName);
+      await ensureMissingTables(conn);
+      console.log(`[GTFS] Abierto (lazy-download): ${asset.dbName}`);
+      dbPool[country] = conn;
+      return conn;
+    }
+
     const dbPath = SQLITE_DIR + asset.dbName;
     const info   = await FileSystem.getInfoAsync(dbPath);
     if (!info.exists) {

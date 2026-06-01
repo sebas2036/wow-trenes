@@ -20,6 +20,7 @@ import Svg, { Defs, LinearGradient as SvgGrad, Stop, Line } from 'react-native-s
 import { useTheme } from '../context/ThemeContext';
 import FlagCircle from '../components/FlagCircle';
 import { findNearestStation, setActiveCountry, detectCountryFromCoords } from '../services/gtfsDatabase';
+import { prefetchInBackground } from '../services/dbDownloadService';
 import TranslatorSheet from '../components/TranslatorSheet';
 import BottomTabBar from '../components/BottomTabBar';
 import { toggleFavorito, getFavoritos } from './favoritos';
@@ -271,6 +272,43 @@ export default function HomeScreen() {
   const [favs,       setFavs]       = useState<CountryCode[]>([]);
 
   useEffect(() => { getFavoritos().then(setFavs); }, []);
+
+  // ── Prefetch DBs grandes en background (3s tras mount) ─────────────────────
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      try {
+        // Detectar país del usuario via GPS (sin pedir permiso extra — usa cache si existe)
+        let detectedCountry: CountryCode | null = null;
+        try {
+          const { status } = await Location.getForegroundPermissionsAsync();
+          if (status === 'granted') {
+            const loc = await Location.getLastKnownPositionAsync();
+            if (loc) {
+              detectedCountry = detectCountryFromCoords({
+                latitude: loc.coords.latitude,
+                longitude: loc.coords.longitude,
+              });
+            }
+          }
+        } catch { /* GPS no disponible — usar prioridad por defecto */ }
+
+        // Prioridad de prefetch según país detectado
+        let dbsToPrefetch: string[];
+        if (detectedCountry === 'ES' || detectedCountry === 'PT') {
+          dbsToPrefetch = ['gtfs_france.db', 'gtfs_germany.db', 'gtfs_italy.db', 'gtfs_austria.db', 'gtfs_belgium.db'];
+        } else if (detectedCountry === 'DE' || detectedCountry === 'CH' || detectedCountry === 'AT') {
+          dbsToPrefetch = ['gtfs_austria.db', 'gtfs_france.db', 'gtfs_belgium.db'];
+        } else {
+          dbsToPrefetch = ['gtfs_france.db', 'gtfs_germany.db', 'gtfs_italy.db', 'gtfs_austria.db', 'gtfs_belgium.db'];
+        }
+
+        prefetchInBackground(dbsToPrefetch);
+      } catch (e) {
+        console.warn('[prefetch] Error en prefetch inicial:', e);
+      }
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleFavToggle = useCallback(async (code: CountryCode) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

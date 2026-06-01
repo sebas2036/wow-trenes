@@ -33,7 +33,11 @@ import BottomTabBar from '../components/BottomTabBar';
 import TranslatorSheet from '../components/TranslatorSheet';
 import FlagCircle from '../components/FlagCircle';
 import { useNetwork } from '../hooks/useNetwork';
+import { isDbReady, downloadDb } from '../services/dbDownloadService';
 import type { CountryCode } from '../types';
+
+// Países que usan descarga lazy (DBs grandes, no en bundle)
+const LAZY_COUNTRIES = new Set<CountryCode>(['FR', 'BE', 'AT']);
 
 // ── Países disponibles ────────────────────────────────────────────────────────
 const DESTINATIONS = [
@@ -288,6 +292,7 @@ export default function SalidasScreen() {
   const [gpsStatus,       setGpsStatus]       = useState<'idle' | 'loading' | 'found' | 'notfound'>('idle');
   const [gpsStationName,  setGpsStationName]  = useState<string>('');
   const [gpsDetected,     setGpsDetected]     = useState(false);
+  const [dbDownloading,   setDbDownloading]   = useState(false);
   const loadRef = useRef(0);
   const didAutoGps = useRef(false);
   const { isOffline } = useNetwork();
@@ -400,6 +405,32 @@ export default function SalidasScreen() {
     const pruneTimer = setInterval(prunePastTrains, 30_000);
     return () => { clearInterval(fetchTimer); clearInterval(pruneTimer); };
   }, [selected, mode, loadBoard, prunePastTrains, gpsStatus]);
+
+  // ── Descarga lazy DB para países grandes ────────────────────────────────────
+  useEffect(() => {
+    if (!LAZY_COUNTRIES.has(selected.code)) {
+      setDbDownloading(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const dbName = `gtfs_${selected.code === 'FR' ? 'france' : selected.code === 'BE' ? 'belgium' : 'austria'}.db`;
+      const ready = await isDbReady(dbName);
+      if (ready || cancelled) {
+        setDbDownloading(false);
+        return;
+      }
+      setDbDownloading(true);
+      const ok = await downloadDb(dbName);
+      if (cancelled) return;
+      setDbDownloading(false);
+      if (ok) {
+        // DB descargado — recargar el board para mostrar datos reales
+        loadBoard(selected, mode);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [selected.code, loadBoard, mode]);
 
   const handleDestPress = useCallback((dest: typeof DESTINATIONS[0]) => {
     Haptics.selectionAsync();
@@ -592,6 +623,16 @@ export default function SalidasScreen() {
         </Pressable>
       </View>
 
+      {/* ── Indicador de descarga DB ── */}
+      {dbDownloading && (
+        <View style={[styles.downloadBanner, { backgroundColor: colors.bg.elevated, borderColor: colors.border.subtle }]}>
+          <ActivityIndicator size="small" color={colors.brand.primary} style={{ marginRight: 6 }} />
+          <Text style={[styles.downloadBannerText, { color: colors.text.secondary }]}>
+            Descargando datos completos...
+          </Text>
+        </View>
+      )}
+
       {/* ── Contenido ── */}
       {gpsStatus === 'loading' ? (
         <View style={styles.center}>
@@ -676,6 +717,15 @@ export default function SalidasScreen() {
 // ── Estilos ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   root:   { flex: 1 },
+
+  // Indicador de descarga DB lazy
+  downloadBanner: {
+    flexDirection: 'row', alignItems: 'center',
+    marginHorizontal: 16, marginBottom: 8,
+    paddingHorizontal: 14, paddingVertical: 8,
+    borderRadius: Radius.md, borderWidth: 0.5,
+  },
+  downloadBannerText: { fontSize: 12, flex: 1 },
 
   // Header con ubicación
   header: {
