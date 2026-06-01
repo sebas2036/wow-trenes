@@ -49,7 +49,7 @@ import AffiliateWebView  from '../components/AffiliateWebView';
 import { useTrainSchedules }          from '../hooks/useTrainSchedules';
 import { useLocation }                from '../hooks/useLocation';
 import { useLiveTrainPosition }       from '../services/liveTrainPosition';
-import { findNearestStation, getStationById, getFirstStation, searchStations } from '../services/gtfsDatabase';
+import { findNearestStation, getStationById, getFirstStation, searchStations, detectCountryFromCoords, setActiveCountry } from '../services/gtfsDatabase';
 import { optimizeRoute, calculateETA } from '../services/routeOptimizer';
 import { startPlatformMonitoring, stopPlatformMonitoring } from '../services/trainArrivalMonitor';
 import { registerDestinationGeofence, refreshGeofences }  from '../tasks/geofenceTask';
@@ -349,12 +349,23 @@ export default function SplitScreen() {
           if (st) { setSelectedStation(st); return; }
         } catch { /* fall through to GPS fallback */ }
       }
-      // Country mode or fallback
+      // Country mode — si el usuario eligió un país explícitamente,
+      // intentar GPS solo si las coordenadas caen dentro de ese país.
+      // Si el GPS está en otro país (ej: fake Madrid → Alemania), ignorar GPS
+      // y usar la estación principal del país seleccionado.
       if (userCoords) {
-        const station = await findNearestStation(userCoords);
-        if (station) { setSelectedStation(station); return; }
+        const gpsCountry = detectCountryFromCoords(userCoords);
+        const selectedCountry = params.country?.split('_')[0] ?? null;
+        // Solo usar GPS si coincide con el país seleccionado
+        if (!selectedCountry || gpsCountry === selectedCountry || gpsCountry === params.country) {
+          const station = await findNearestStation(userCoords);
+          if (station) { setSelectedStation(station); return; }
+        }
       }
-      // GPS not in country → use capital/main station as default
+      // GPS no coincide con el país → estación principal del país seleccionado
+      if (params.country) {
+        await setActiveCountry(params.country as any).catch(() => {});
+      }
       const fallback = await getFirstStation();
       if (fallback) {
         setSelectedStation(fallback);
