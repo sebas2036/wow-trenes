@@ -765,6 +765,7 @@ export default function SplitScreen() {
               params: {
                 originId:   selectedStation?.id   ?? '',
                 originName: selectedStation?.name ?? '',
+                country:    params.country ?? 'ES',
               },
             })}
           >

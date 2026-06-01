@@ -14,9 +14,9 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Colors, Typography, Spacing, Radius } from '../theme';
-import { searchStations, searchTrips, getPopularDestinations, type TripResult } from '../services/gtfsDatabase';
+import { searchStations, searchTrips, getPopularDestinations, setActiveCountry, detectCountryFromCoords, type TripResult } from '../services/gtfsDatabase';
 import { buildBestBookingUrl } from '../services/affiliateEngine';
-import type { Station } from '../types';
+import type { Station, CountryCode } from '../types';
 
 function fmt(d: Date) {
   return d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
@@ -81,7 +81,7 @@ type ActiveField = 'origin' | 'dest' | null;
 
 export default function BuscarViaje() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ originId?: string; originName?: string }>();
+  const params = useLocalSearchParams<{ originId?: string; originName?: string; country?: string }>();
 
   const [originStation, setOriginStation] = useState<Station | null>(null);
   const [destStation,   setDestStation]   = useState<Station | null>(null);
@@ -100,8 +100,11 @@ export default function BuscarViaje() {
   const destRef   = useRef<TextInput>(null);
   const DAY_LABELS = ['Hoy', 'Mañana', 'Pasado'];
 
-  // Pre-llenar origen desde params (GPS)
+  // Pre-llenar origen desde params (GPS) y setear país activo
   useEffect(() => {
+    if (params.country) {
+      setActiveCountry(params.country as CountryCode).catch(() => {});
+    }
     if (params.originId && params.originName) {
       const s = makeStation(params.originId, params.originName);
       setOriginStation(s);
@@ -426,7 +429,9 @@ const styles = StyleSheet.create({
 
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: Spacing['4'], paddingVertical: Spacing['3'],
+    paddingHorizontal: Spacing['4'],
+    paddingTop: Spacing['4'],
+    paddingBottom: Spacing['3'],
     borderBottomWidth: 1, borderBottomColor: Colors.border.subtle,
   },
   backBtn: {
