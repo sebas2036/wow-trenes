@@ -118,65 +118,19 @@ export function buildTrainlineSearchUrl(
   );
 }
 
-// ── Travelpayouts marker ──────────────────────────────────────────────────
-// Señuelo — valor inválido si no hay .env configurado
-const TP_MARKER = process.env.EXPO_PUBLIC_TP_MARKER ?? '000000';
+// ── Proxy URL — el marker real vive en el servidor, nunca en el cliente ───────
+// En dev usa la URL local. En prod usa el servidor Railway de Voxa.
+const AFFILIATE_PROXY = process.env.EXPO_PUBLIC_AFFILIATE_PROXY
+  ?? 'https://voxa-production.up.railway.app/affiliate/redirect';
 
 /**
- * buildOmioUrl — Deeplink a Omio con tracking Travelpayouts.
- * Omio programa ID 91, comisión 6%, cookie 30 días, mobile web & app.
+ * buildBestBookingUrl — Genera URL via proxy servidor.
+ * El marker de Travelpayouts nunca sale del servidor — protección real.
  *
- * Formato: https://tp.media/r?marker={marker}&p=91&u={encoded_omio_url}
- * Omio busca por nombre de ciudad — usamos los nombres de parada GTFS.
- */
-export function buildOmioUrl(
-  originName:  string,
-  destName:    string,
-  departure:   Date,
-  passengers:  number = 1,
-): string {
-  const dateStr = departure.toISOString().slice(0, 10); // YYYY-MM-DD
-  const omioBase = 'https://www.omio.com/';
-  const omioParams = new URLSearchParams({
-    origin:      originName,
-    destination: destName,
-    departure:   dateStr,
-    pax:         String(passengers),
-  });
-  const omioUrl = `${omioBase}?${omioParams.toString()}`;
-
-  // Wrappear con Travelpayouts redirect para tracking
-  return (
-    `https://tp.media/r?marker=${TP_MARKER}&p=91` +
-    `&u=${encodeURIComponent(omioUrl)}`
-  );
-}
-
-/**
- * buildTripComUrl — Deeplink a Trip.com con tracking Travelpayouts.
- * Programa ID 121, comisión 1.8% trenes / 5.5% hoteles, mobile web & app.
- */
-export function buildTripComUrl(
-  originName:  string,
-  destName:    string,
-  departure:   Date,
-  passengers:  number = 1,
-): string {
-  const dateStr = departure.toISOString().slice(0, 10);
-  const tripUrl = `https://www.trip.com/trains/search?` +
-    `fromname=${encodeURIComponent(originName)}` +
-    `&toname=${encodeURIComponent(destName)}` +
-    `&date=${dateStr}&adult=${passengers}`;
-
-  return (
-    `https://tp.media/r?marker=${TP_MARKER}&p=121` +
-    `&u=${encodeURIComponent(tripUrl)}`
-  );
-}
-
-/**
- * buildBestBookingUrl — Elige automáticamente el mejor afiliado según el país.
- * Europa → Omio (6%). Asia/global → Trip.com (1.8% trenes).
+ * El proxy hace:
+ *   1. Recibe origen/destino/fecha/país
+ *   2. Agrega el marker desde variable de entorno Railway (privada)
+ *   3. Redirige 302 → Omio o Trip.com con tracking completo
  */
 export function buildBestBookingUrl(
   originName:  string,
@@ -185,9 +139,25 @@ export function buildBestBookingUrl(
   countryCode: string,
   passengers:  number = 1,
 ): string {
-  const europeCountries = ['ES','FR','DE','CH','IT','BE','NL','AT','PT','GB','NO','DK'];
-  if (europeCountries.includes(countryCode.toUpperCase())) {
-    return buildOmioUrl(originName, destName, departure, passengers);
-  }
-  return buildTripComUrl(originName, destName, departure, passengers);
+  const params = new URLSearchParams({
+    origin:     originName,
+    dest:       destName,
+    date:       departure.toISOString().slice(0, 10),
+    country:    countryCode,
+    passengers: String(passengers),
+  });
+  return `${AFFILIATE_PROXY}?${params.toString()}`;
+}
+
+// Aliases por compatibilidad con código existente
+export function buildOmioUrl(
+  originName: string, destName: string, departure: Date, passengers = 1,
+): string {
+  return buildBestBookingUrl(originName, destName, departure, 'ES', passengers);
+}
+
+export function buildTripComUrl(
+  originName: string, destName: string, departure: Date, passengers = 1,
+): string {
+  return buildBestBookingUrl(originName, destName, departure, 'JP', passengers);
 }
