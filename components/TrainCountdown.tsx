@@ -6,6 +6,7 @@
  * Sin gradientes recargados — fondo sólido elevado.
  */
 import React, { useEffect, useRef, useState, memo, useCallback } from 'react';
+import { t } from '../services/i18n';
 import {
   View,
   Text,
@@ -83,11 +84,11 @@ export default memo(function TrainCountdown({
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Text style={styles.headerTitle}>Próximos trenes</Text>
+          <Text style={styles.headerTitle}>{t('split_next_trains')}</Text>
           {isLive && (
             <View style={styles.liveChip}>
               <View style={styles.liveDot} />
-              <Text style={styles.liveText}>EN VIVO</Text>
+              <Text style={styles.liveText}>{t('board_live')}</Text>
             </View>
           )}
         </View>
@@ -254,7 +255,7 @@ function TrainCard({
               accessibilityRole="button"
               accessibilityLabel="Comprar billete"
             >
-              <Text style={styles.buyChipText}>Comprar</Text>
+              <Text style={styles.buyChipText}>{t('split_buy')}</Text>
             </Pressable>
           </View>
 
@@ -267,14 +268,14 @@ function TrainCard({
         <View style={styles.expandPanel}>
           <View style={styles.expandRow}>
             <View style={styles.expandStat}>
-              <Text style={styles.expandStatLabel}>SALE</Text>
+              <Text style={styles.expandStatLabel}>{t('split_departs')}</Text>
               <Text style={styles.expandStatValue}>{fmt(train.departureTime)}</Text>
             </View>
             <View style={styles.expandArrow}>
               <Text style={styles.expandArrowText}>──────›</Text>
             </View>
             <View style={styles.expandStat}>
-              <Text style={styles.expandStatLabel}>LLEGA</Text>
+              <Text style={styles.expandStatLabel}>{t('split_arrives')}</Text>
               <Text style={styles.expandStatValue}>{fmt(train.arrivalTime)}</Text>
             </View>
           </View>
@@ -302,8 +303,8 @@ function EmptyState() {
   return (
     <View style={styles.emptyWrap}>
       <Text style={styles.emptyIcon}>🚉</Text>
-      <Text style={styles.emptyTitle}>Sin servicios</Text>
-      <Text style={styles.emptySub}>No hay trenes en las próximas horas{'\n'}desde esta estación.</Text>
+      <Text style={styles.emptyTitle}>{t('split_no_service')}</Text>
+      <Text style={styles.emptySub}>{t('split_no_service_sub')}</Text>
     </View>
   );
 }

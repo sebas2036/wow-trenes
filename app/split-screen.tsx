@@ -27,6 +27,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import Constants from 'expo-constants';
+import { t } from '../services/i18n';
 
 // En Expo Go el mapa de Google no funciona (requiere build nativo)
 const IS_EXPO_GO = Constants.appOwnership === 'expo';
@@ -759,7 +760,7 @@ export default function SplitScreen() {
         <View style={styles.dividerActions}>
           <Pressable style={styles.dividerPill} onPress={() => {}}>
             <Ionicons name="navigate-outline" size={13} color="#A78BFA" />
-            <Text style={styles.dividerPillText}>CÓMO LLEGAR</Text>
+            <Text style={styles.dividerPillText}>{t('split_how_to_get')}</Text>
           </Pressable>
           <View style={styles.dividerSep} />
           <Pressable
@@ -774,7 +775,7 @@ export default function SplitScreen() {
             })}
           >
             <Ionicons name="calendar-outline" size={13} color="#fff" />
-            <Text style={[styles.dividerPillText, { color: '#fff' }]}>OTROS HORARIOS</Text>
+            <Text style={[styles.dividerPillText, { color: '#fff' }]}>{t('split_other_times')}</Text>
           </Pressable>
         </View>
         <View style={styles.dividerLine} />
@@ -793,7 +794,7 @@ export default function SplitScreen() {
           // Expo Go no soporta Google Maps nativo — mostrar placeholder
           <View style={[styles.map, styles.mapPlaceholder]}>
             <Ionicons name="map-outline" size={40} color="rgba(124,58,237,0.4)" />
-            <Text style={styles.mapPlaceholderText}>Mapa disponible en build nativo</Text>
+            <Text style={styles.mapPlaceholderText}>{t('split_map_native')}</Text>
             {selectedStation && (
               <Text style={styles.mapPlaceholderSub}>
                 📍 {selectedStation.name}

@@ -21,6 +21,7 @@ import { useTheme } from '../context/ThemeContext';
 import FlagCircle from '../components/FlagCircle';
 import { findNearestStation, setActiveCountry, detectCountryFromCoords } from '../services/gtfsDatabase';
 import { prefetchInBackground, onDownloadProgress } from '../services/dbDownloadService';
+import { t } from '../services/i18n';
 import TranslatorSheet from '../components/TranslatorSheet';
 import DownloadProgressBar from '../components/DownloadProgressBar';
 import BottomTabBar from '../components/BottomTabBar';
@@ -414,7 +415,7 @@ export default function HomeScreen() {
               <SpeedLines />
             </View>
             <Text style={[styles.logoSub, { color: colors.text.secondary }]}>
-              Tu tren. Tu mundo.
+              {t('home_tagline_main')}
             </Text>
           </View>
           {/* Campana — anillo glow violeta siempre, badge rojo con número cuando llegan notifs */}
@@ -505,7 +506,7 @@ export default function HomeScreen() {
         {/* ── Sección Trenes ── */}
         {filter === 'trenes' && (
           <>
-            <Text style={[styles.sectionLabel, { color: colors.text.muted }]}>PAÍSES DISPONIBLES</Text>
+            <Text style={[styles.sectionLabel, { color: colors.text.muted }]}>{t('home_countries_title')}</Text>
             <FlatList
               data={sortedCountries}
               keyExtractor={(c) => c.code}
@@ -529,7 +530,7 @@ export default function HomeScreen() {
         {/* ── Sección Metro ── */}
         {filter === 'metro' && (
           <>
-            <Text style={[styles.sectionLabel, { color: colors.text.muted }]}>METROS URBANOS</Text>
+            <Text style={[styles.sectionLabel, { color: colors.text.muted }]}>{t('home_metros_title')}</Text>
             <FlatList
               data={sortedMetros}
               keyExtractor={(m) => m.code}
@@ -553,10 +554,8 @@ export default function HomeScreen() {
         {filter === 'internacional' && (
           <View style={styles.empty}>
             <Ionicons name="globe-outline" size={56} color={colors.text.muted} style={{ marginBottom: 18 }} />
-            <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>Rutas internacionales</Text>
-            <Text style={[styles.emptySub,   { color: colors.text.secondary }]}>
-              Eurostar · Thalys · Nightjet · Rail Europe{'\n'}Próximamente.
-            </Text>
+            <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>{t('home_intl_title')}</Text>
+            <Text style={[styles.emptySub,   { color: colors.text.secondary }]}>{t('home_intl_sub')}</Text>
           </View>
         )}
 
@@ -586,10 +585,10 @@ export default function HomeScreen() {
         </View>
         <View style={styles.gpsBannerInfo}>
           <Text style={[styles.gpsBannerTitle, { color: colors.text.primary }]} numberOfLines={1}>
-            ¿No sabés por dónde empezar?
+            {t('home_gps_question')}
           </Text>
           <Text style={[styles.gpsBannerSub, { color: colors.text.secondary }]} numberOfLines={1}>
-            Detectamos tu ubicación y mostramos los mejores trenes cerca de vos.
+            {t('home_gps_sub')}
           </Text>
         </View>
         <Pressable
@@ -599,7 +598,7 @@ export default function HomeScreen() {
         >
           {gpsLoading
             ? <ActivityIndicator size="small" color="#fff" />
-            : <Text style={styles.gpsBtnText}>✦ Usar mi ubicación</Text>
+            : <Text style={styles.gpsBtnText}>✦ {t('home_gps_btn')}</Text>
           }
         </Pressable>
       </Pressable>

@@ -14,6 +14,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Colors, Typography, Spacing, Radius } from '../theme';
+import { t } from '../services/i18n';
 import { searchStations, searchTrips, getPopularDestinations, setActiveCountry, detectCountryFromCoords, searchFranceStations, searchFranceJourneys, type TripResult, type FranceJourney } from '../services/gtfsDatabase';
 import { buildBestBookingUrl } from '../services/affiliateEngine';
 import type { Station, CountryCode } from '../types';
@@ -105,7 +106,7 @@ export default function BuscarViaje() {
 
   const originRef = useRef<TextInput>(null);
   const destRef   = useRef<TextInput>(null);
-  const DAY_LABELS = ['Hoy', 'Mañana', 'Pasado'];
+  const DAY_LABELS = [t('search_today'), t('search_tomorrow'), t('search_after')];
 
   // ¿Estamos buscando en Francia con IDs Navitia?
   const isFrance = (id?: string) => id?.startsWith('stop_area:SNCF:') ?? false;
@@ -193,7 +194,7 @@ export default function BuscarViaje() {
     destination:   makeStation('fr_dest', j.destination),
   });
 
-  // Buscar viajes — Navitia para FR, GTFS para el resto
+  // {t('search_title')}s — Navitia para FR, GTFS para el resto
   const doSearch = useCallback(async (dayOff = dayOffset) => {
     if (!originStation || !destStation) return;
     setLoading(true);
@@ -206,16 +207,16 @@ export default function BuscarViaje() {
       if (usingNavitia && isFrance(originStation.id) && isFrance(destStation.id)) {
         // Francia: Navitia real-time con horarios y conexiones reales
         const frJourneys = await searchFranceJourneys(originStation.id, destStation.id, date, 12);
-        if (frJourneys.length === 0) setError('No se encontraron trenes para esta ruta.');
+        if (frJourneys.length === 0) setError(t('search_no_trains'));
         setTrips(frJourneys.map(frJourneyToTripResult));
       } else {
         // Resto de países: GTFS local
         const results = await searchTrips(originStation.id, destStation.id, date, 12);
-        if (results.length === 0) setError('No se encontraron trenes para esta ruta.');
+        if (results.length === 0) setError(t('search_no_trains'));
         setTrips(results);
       }
     } catch {
-      setError('Error al consultar los horarios.');
+      setError(t('search_error'));
     } finally { setLoading(false); }
   }, [originStation, destStation, dayOffset, usingNavitia]);
 
@@ -245,7 +246,7 @@ export default function BuscarViaje() {
           <Pressable style={styles.backBtn} onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={22} color={Colors.text.primary} />
           </Pressable>
-          <Text style={styles.headerTitle}>Buscar viaje</Text>
+          <Text style={styles.headerTitle}>{t('search_title')}</Text>
           <View style={{ width: 36 }} />
         </View>
 
@@ -255,11 +256,11 @@ export default function BuscarViaje() {
           <View style={styles.stationRow}>
             <View style={styles.dotOrigin} />
             <View style={styles.fieldWrap}>
-              <Text style={styles.fieldLabel}>ORIGEN</Text>
+              <Text style={styles.fieldLabel}>{t('search_origin')}</Text>
               <TextInput
                 ref={originRef}
                 style={styles.fieldInput}
-                placeholder="Ciudad o estación de salida"
+                placeholder={t('search_origin_hint')}
                 placeholderTextColor={Colors.text.muted}
                 value={originQuery}
                 onChangeText={t => { setOriginQuery(t); setOriginStation(null); setTrips([]); }}
@@ -285,11 +286,11 @@ export default function BuscarViaje() {
           <View style={styles.stationRow}>
             <View style={styles.dotDest} />
             <View style={styles.fieldWrap}>
-              <Text style={styles.fieldLabel}>DESTINO</Text>
+              <Text style={styles.fieldLabel}>{t('search_dest')}</Text>
               <TextInput
                 ref={destRef}
                 style={styles.fieldInput}
-                placeholder="Ciudad o estación de llegada"
+                placeholder={t('search_dest_hint')}
                 placeholderTextColor={Colors.text.muted}
                 value={destQuery}
                 onChangeText={t => { setDestQuery(t); setDestStation(null); setTrips([]); }}
@@ -335,7 +336,7 @@ export default function BuscarViaje() {
         {originStation && destStation && !loading && (
           <Pressable style={styles.searchBtn} onPress={() => doSearch()}>
             <Ionicons name="search" size={16} color="#fff" />
-            <Text style={styles.searchBtnText}>Buscar trenes</Text>
+            <Text style={styles.searchBtnText}>{t('search_btn')}</Text>
           </Pressable>
         )}
 
@@ -372,7 +373,7 @@ export default function BuscarViaje() {
         {loading ? (
           <View style={styles.center}>
             <ActivityIndicator size="large" color={Colors.brand.primary} />
-            <Text style={styles.loadingText}>Buscando trenes…</Text>
+            <Text style={styles.loadingText}>{t('search_loading')}</Text>
           </View>
         ) : error ? (
           <View style={styles.center}>
@@ -389,7 +390,7 @@ export default function BuscarViaje() {
             ListHeaderComponent={
               <View style={styles.listHeader}>
                 <Ionicons name="information-circle-outline" size={13} color={Colors.text.muted} />
-                <Text style={styles.listHeaderText}>Horarios Renfe · Toca para ver precios y comprar también con OUIGO, Iryo y más</Text>
+                <Text style={styles.listHeaderText}>{t('search_info')}</Text>
               </View>
             }
             renderItem={({ item: trip, index }) => {
@@ -404,11 +405,11 @@ export default function BuscarViaje() {
                       <View style={[styles.trainBadge, { backgroundColor: meta.color + '22', borderColor: meta.color + '55' }]}>
                         <Text style={[styles.trainBadgeText, { color: meta.color }]}>{meta.label}</Text>
                       </View>
-                      <Text style={styles.directoText}>Sin cambios</Text>
+                      <Text style={styles.directoText}>{t('search_no_changes')}</Text>
                       <View style={{ flex: 1 }} />
                       {isFastest && (
                         <View style={styles.fastBadge}>
-                          <Text style={styles.fastBadgeText}>MÁS RÁPIDO</Text>
+                          <Text style={styles.fastBadgeText}>{t('search_fastest')}</Text>
                         </View>
                       )}
                     </View>
@@ -439,11 +440,11 @@ export default function BuscarViaje() {
                     <View style={styles.buyRow}>
                       <View>
                         <Text style={styles.priceEstimate}>{estimatePrice(trip.trainNumber, trip.durationMin)}</Text>
-                        <Text style={styles.buyHint}>precio estimado</Text>
+                        <Text style={styles.buyHint}>{t('search_price_hint')}</Text>
                       </View>
                       <View style={styles.buyBtn}>
                         <Ionicons name="cart-outline" size={13} color="#fff" />
-                        <Text style={styles.buyBtnText}>Comprar en Omio</Text>
+                        <Text style={styles.buyBtnText}>{t('search_buy')}</Text>
                       </View>
                     </View>
 
@@ -456,7 +457,7 @@ export default function BuscarViaje() {
           <View style={styles.center}>
             <Ionicons name="search-outline" size={40} color={Colors.text.muted} />
             <Text style={styles.hintText}>
-              {!originStation ? 'Escribí la estación de origen' : 'Escribí la estación de destino'}
+              {!originStation ? t('search_write_origin') : t('search_write_dest')}
             </Text>
           </View>
         ) : null}

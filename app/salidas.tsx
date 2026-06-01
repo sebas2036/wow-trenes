@@ -31,6 +31,7 @@ import {
   detectCountryFromCoords, findNearestStation,
 } from '../services/gtfsDatabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { t } from '../services/i18n';
 import { buildBestBookingUrl } from '../services/affiliateEngine';
 import { useLocation } from '../hooks/useLocation';
 import BottomTabBar from '../components/BottomTabBar';
@@ -234,7 +235,7 @@ function StationPicker({
 
           {/* Título */}
           <Text style={[styles.pickerTitle, { color: colors.text.primary }]}>
-            Seleccionar estación
+            {t('board_change_station')}
           </Text>
 
           {/* Input búsqueda */}
@@ -542,8 +543,8 @@ export default function SalidasScreen() {
   }, [requestLocation]);
 
   const TABS: { key: BoardMode; label: string; icon: string }[] = [
-    { key: 'salidas', label: 'Salidas', icon: 'arrow-up-circle-outline' },
-    { key: 'arribos', label: 'Arribos', icon: 'arrow-down-circle-outline' },
+    { key: 'salidas', label: t('board_departures_tab'), icon: 'arrow-up-circle-outline' },
+    { key: 'arribos', label: t('board_arrivals_tab'),   icon: 'arrow-down-circle-outline' },
   ];
 
   // Nombre de la estación visible en el header
@@ -557,7 +558,7 @@ export default function SalidasScreen() {
       {isOffline && (
         <View style={styles.offlineBanner}>
           <Ionicons name="cloud-offline-outline" size={14} color="#fff" />
-          <Text style={styles.offlineText}>Sin conexión · Mostrando horarios programados</Text>
+          <Text style={styles.offlineText}>{t('board_offline')}</Text>
         </View>
       )}
 
@@ -681,7 +682,7 @@ export default function SalidasScreen() {
       {/* ── Board header ── */}
       <View style={styles.boardHeader}>
         <Text style={[styles.boardLabel, { color: colors.text.muted }]}>
-          {mode === 'salidas' ? 'PRÓXIMAS SALIDAS' : 'PRÓXIMAS LLEGADAS'} · {selected.name.toUpperCase()}
+          {mode === 'salidas' ? t('board_departures') : t('board_arrivals')} · {selected.name.toUpperCase()}
         </Text>
         <Pressable onPress={handleBoardTap} hitSlop={8}>
           <Text style={[styles.boardMore, { color: colors.brand.primary }]}>Ver todo ›</Text>
@@ -693,7 +694,7 @@ export default function SalidasScreen() {
         <View style={[styles.downloadBanner, { backgroundColor: colors.bg.elevated, borderColor: colors.border.subtle }]}>
           <ActivityIndicator size="small" color={colors.brand.primary} style={{ marginRight: 6 }} />
           <Text style={[styles.downloadBannerText, { color: colors.text.secondary }]}>
-            Descargando datos completos...
+            {t('board_downloading')}
           </Text>
         </View>
       )}
@@ -703,51 +704,51 @@ export default function SalidasScreen() {
         <View style={styles.center}>
           <Ionicons name="navigate-circle-outline" size={48} color={colors.brand.primary} />
           <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>
-            Detectando tu ubicación…
+            {t('board_detecting')}
           </Text>
           <Text style={[styles.emptySub, { color: colors.text.secondary }]}>
-            Buscando la estación más cercana
+            {t('board_detecting_sub')}
           </Text>
           <ActivityIndicator color={colors.brand.primary} style={{ marginTop: 8 }} />
         </View>
       ) : loading ? (
         <View style={styles.center}>
           <ActivityIndicator color={colors.brand.primary} />
-          <Text style={[styles.loadingText, { color: colors.text.muted }]}>Cargando horarios…</Text>
+          <Text style={[styles.loadingText, { color: colors.text.muted }]}>{t('loading')}</Text>
         </View>
       ) : gpsStatus === 'notfound' && board.length === 0 ? (
         /* Estado vacío: GPS no disponible / fuera de cobertura */
         <View style={styles.center}>
           <Ionicons name="train-outline" size={48} color={colors.text.muted} />
           <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>
-            ¿Dónde estás?
+            {t('board_where')}
           </Text>
           <Text style={[styles.emptySub, { color: colors.text.secondary }]}>
-            Selecciona un país en los chips{'\n'}o usa tu ubicación GPS
+            {t('board_where_sub')}
           </Text>
           <Pressable
             style={[styles.gpsBtn, { backgroundColor: colors.brand.primary }]}
             onPress={handleRetryGps}
           >
             <Ionicons name="navigate-outline" size={18} color="#fff" />
-            <Text style={styles.gpsBtnText}>Usar mi ubicación</Text>
+            <Text style={styles.gpsBtnText}>{t('board_use_gps')}</Text>
           </Pressable>
         </View>
       ) : board.length === 0 ? (
         <View style={styles.center}>
           <Ionicons name="train-outline" size={48} color={colors.text.muted} />
           <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>
-            Sin horarios disponibles
+            {t('board_no_service')}
           </Text>
           <Text style={[styles.emptySub, { color: colors.text.secondary }]}>
-            Los datos de {selected.name}{'\n'}se cargan al seleccionar el país.
+            {t('board_no_service_sub', { country: selected.name })}
           </Text>
           <Pressable
             style={[styles.openBtn, { backgroundColor: colors.brand.primary }]}
             onPress={handleBoardTap}
           >
             <Ionicons name="navigate-outline" size={15} color="#fff" />
-            <Text style={styles.openBtnText}>Abrir {selected.name}</Text>
+            <Text style={styles.openBtnText}>{t('board_open_country', { country: selected.name })}</Text>
           </Pressable>
         </View>
       ) : (
