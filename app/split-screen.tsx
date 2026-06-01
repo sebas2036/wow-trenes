@@ -26,6 +26,10 @@ import {
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
+import Constants from 'expo-constants';
+
+// En Expo Go el mapa de Google no funciona (requiere build nativo)
+const IS_EXPO_GO = Constants.appOwnership === 'expo';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import MapView, { Marker, Polyline, Circle, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Haptics from 'expo-haptics';
@@ -785,72 +789,74 @@ export default function SplitScreen() {
           etas={etas}
         />
 
-        <MapView
-          ref={mapRef}
-          style={styles.map}
-          provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
-          initialRegion={initialRegion}
-          customMapStyle={DARK_MAP_STYLE}
-          // mapType="terrain" da un look más oscuro sin API key en dev
-          // En prod con API key el customMapStyle toma el control
-          showsUserLocation
-          showsMyLocationButton={false}
-          showsCompass={false}
-          showsTraffic={false}
-          showsBuildings={false}
-          rotateEnabled={false}
-          userInterfaceStyle="dark"
-        >
-          {/* Route polyline (user → origin station) */}
-          {routePolyline.length > 1 && (
-            <Polyline
-              coordinates={routePolyline}
-              strokeColor={colors.brand.primary}
-              strokeWidth={4}
-              lineDashPattern={transportMode === 'walk' ? [8, 6] : undefined}
-            />
-          )}
-
-          {/* Origin station marker */}
-          {selectedStation && (
-            <Marker
-              coordinate={selectedStation.coordinates}
-              title={selectedStation.name}
-              description="Estación de origen"
-              pinColor="#C4B5FD"
-            />
-          )}
-
-          {/* Destination station marker (tourist mode) */}
-          {destStation && (
-            <Marker
-              coordinate={destStation.coordinates}
-              title={destLabel ?? destStation.name}
-              description="Tu destino"
-              pinColor="#30D158"
-            />
-          )}
-
-          {/* Geofence ring visualisation — inner 50m (when station known) */}
-          {selectedStation && (
-            <Circle
-              center={selectedStation.coordinates}
-              radius={50}
-              fillColor="rgba(124,58,237,0.08)"
-              strokeColor="rgba(124,58,237,0.4)"
-              strokeWidth={1}
-            />
-          )}
-
-          {/* ── Live train dot ── */}
-          {livePosition.coordinates && !livePosition.isLoading && (
-            <LiveTrainMarker
-              coordinate={livePosition.coordinates}
-              bearing={livePosition.bearing}
-              isLive={livePosition.isLive}
-            />
-          )}
-        </MapView>
+        {IS_EXPO_GO ? (
+          // Expo Go no soporta Google Maps nativo — mostrar placeholder
+          <View style={[styles.map, styles.mapPlaceholder]}>
+            <Ionicons name="map-outline" size={40} color="rgba(124,58,237,0.4)" />
+            <Text style={styles.mapPlaceholderText}>Mapa disponible en build nativo</Text>
+            {selectedStation && (
+              <Text style={styles.mapPlaceholderSub}>
+                📍 {selectedStation.name}
+              </Text>
+            )}
+          </View>
+        ) : (
+          <MapView
+            ref={mapRef}
+            style={styles.map}
+            provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
+            initialRegion={initialRegion}
+            customMapStyle={DARK_MAP_STYLE}
+            showsUserLocation
+            showsMyLocationButton={false}
+            showsCompass={false}
+            showsTraffic={false}
+            showsBuildings={false}
+            rotateEnabled={false}
+            userInterfaceStyle="dark"
+          >
+            {routePolyline.length > 1 && (
+              <Polyline
+                coordinates={routePolyline}
+                strokeColor={colors.brand.primary}
+                strokeWidth={4}
+                lineDashPattern={transportMode === 'walk' ? [8, 6] : undefined}
+              />
+            )}
+            {selectedStation && (
+              <Marker
+                coordinate={selectedStation.coordinates}
+                title={selectedStation.name}
+                description="Estación de origen"
+                pinColor="#C4B5FD"
+              />
+            )}
+            {destStation && (
+              <Marker
+                coordinate={destStation.coordinates}
+                title={destLabel ?? destStation.name}
+                description="Tu destino"
+                pinColor="#30D158"
+              />
+            )}
+            {selectedStation && (
+              <Circle
+                center={selectedStation.coordinates}
+                radius={50}
+                fillColor="rgba(124,58,237,0.08)"
+                strokeColor="rgba(124,58,237,0.4)"
+                strokeWidth={1}
+              />
+            )}
+            {livePosition.coordinates && !livePosition.isLoading && (
+              <LiveTrainMarker
+                coordinate={livePosition.coordinates}
+                bearing={livePosition.bearing}
+                isLive={livePosition.isLive}
+              />
+            )}
+          </MapView>
+        )}
 
         {/* Delay badge superpuesto sobre el mapa */}
         {selectedService && !livePosition.isLoading && (
@@ -1167,6 +1173,21 @@ const styles = StyleSheet.create({
   },
   map: {
     flex: 1,
+  },
+  mapPlaceholder: {
+    backgroundColor: '#0a0a0f',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  mapPlaceholderText: {
+    color: 'rgba(255,255,255,0.3)',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  mapPlaceholderSub: {
+    color: 'rgba(124,58,237,0.7)',
+    fontSize: 12,
   },
 
   // Purchase success banner
