@@ -121,7 +121,7 @@ export function buildTrainlineSearchUrl(
 // ── Proxy URL — el marker real vive en el servidor, nunca en el cliente ───────
 // En dev usa la URL local. En prod usa el servidor Railway de Voxa.
 const AFFILIATE_PROXY = process.env.EXPO_PUBLIC_AFFILIATE_PROXY
-  ?? 'https://voxa-production.up.railway.app/affiliate/redirect';
+  ?? 'https://voxa-production-dc15.up.railway.app/affiliate/redirect';
 
 /**
  * buildBestBookingUrl — Genera URL via proxy servidor.
