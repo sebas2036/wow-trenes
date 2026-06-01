@@ -367,10 +367,28 @@ export default function SalidasScreen() {
     return (h ?? 0) * 60 + (m ?? 0);
   };
 
+  // Hora actual en minutos para el país seleccionado (no del dispositivo)
+  // Evita filtrar trenes europeos cuando el usuario está en otra zona horaria
+  const COUNTRY_UTC_OFFSET: Record<string, number> = {
+    ES:2, FR:2, DE:2, IT:2, CH:2, AT:2, BE:2, NL:2, PT:1,
+    NO:2, DK:2, GB:1, GB_LON:1,
+    ES_MAD:2, ES_BCN:2, FR_PAR:2, DE_BER:2, DE_MUN:2,
+    IT_ROM:2, IT_MIL:2, AT_VIE:2, NL_AMS:2, BE_BRU:2,
+    PT_LIS:1, DK_CPH:2, NO_OSL:2,
+    US:-5, US_NYC:-5, US_CHI:-6, US_LAX:-8,
+  };
+
+  const countryNowMinutes = (code: string): number => {
+    const utcOffset    = COUNTRY_UTC_OFFSET[code] ?? 0;
+    const deviceOffset = -new Date().getTimezoneOffset() / 60;
+    const diffMs       = (utcOffset - deviceOffset) * 3_600_000;
+    const countryNow   = new Date(Date.now() + diffMs);
+    return countryNow.getHours() * 60 + countryNow.getMinutes();
+  };
+
   // Filtra trenes ya partidos del board actual (sin re-fetch)
   const prunePastTrains = useCallback(() => {
-    const now    = new Date();
-    const nowMin = now.getHours() * 60 + now.getMinutes();
+    const nowMin = countryNowMinutes(selected.code);
     setBoard(prev => {
       const seen = new Set<string>();
       const deduped = prev.filter(e => {
@@ -381,14 +399,13 @@ export default function SalidasScreen() {
       });
       return deduped.filter(e => timeToMinutes(e.time) >= nowMin - 1);
     });
-  }, []);
+  }, [selected.code]);
 
   const BOARD_CACHE_KEY = (code: string, m: string) => `@board_cache_${code}_${m}`;
 
-  const dedupeAndFilter = (raw: BoardEntry[]): BoardEntry[] => {
+  const dedupeAndFilter = (raw: BoardEntry[], countryCode: string): BoardEntry[] => {
     const seen   = new Set<string>();
-    const now    = new Date();
-    const nowMin = now.getHours() * 60 + now.getMinutes();
+    const nowMin = countryNowMinutes(countryCode);
     return raw.filter(e => {
       const key = e.tripId ?? `${e.time}|${e.endpoint}|${e.train}`;
       if (seen.has(key)) return false;
@@ -408,7 +425,7 @@ export default function SalidasScreen() {
         const cached = await AsyncStorage.getItem(BOARD_CACHE_KEY(dest.code, m));
         if (cached) {
           const { entries, ts } = JSON.parse(cached) as { entries: BoardEntry[]; ts: number };
-          const stale = dedupeAndFilter(entries);
+          const stale = dedupeAndFilter(entries, dest.code);
           if (stale.length > 0) {
             setBoard(stale);
             setLoading(false);
@@ -431,7 +448,7 @@ export default function SalidasScreen() {
     try {
       const raw = await getCountryBoard(dest.code, m, 50);
       if (token !== loadRef.current) return;
-      const entries = dedupeAndFilter(raw);
+      const entries = dedupeAndFilter(raw, dest.code);
       setBoard(entries);
       // Guardar en caché solo si hay datos útiles
       if (entries.length > 0) {
