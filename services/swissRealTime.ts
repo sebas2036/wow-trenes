@@ -90,7 +90,7 @@ export async function fetchSwissStationboard(
   datetime?: Date,
 ): Promise<SwissDeparture[]> {
   const params = new URLSearchParams({
-    station:        stationName,
+    station:        translateSwissQuery(stationName),
     limit:          String(limit),
     transportations: 'train',
     type:           'departure',
@@ -248,9 +248,62 @@ export async function fetchSwissConnections(
  * Busca estaciones suizas por nombre.
  * Útil para autocompletado cuando el país activo es Suiza.
  */
+// Traducciones español → nombre oficial usado por transport.opendata.ch
+const ES_TO_CH: Record<string, string> = {
+  'ginebra':      'Genève',
+  'geneva':       'Genève',
+  'zurich':       'Zürich HB',
+  'zúrich':       'Zürich HB',
+  'berna':        'Bern',
+  'berne':        'Bern',
+  'basilea':      'Basel SBB',
+  'basel':        'Basel SBB',
+  'lausana':      'Lausanne',
+  'lucerna':      'Luzern',
+  'lugano':       'Lugano',
+  'st. gallen':   'St. Gallen',
+  'san galo':     'St. Gallen',
+  'winterthur':   'Winterthur',
+  'friburgo':     'Fribourg',
+  'freiburg':     'Fribourg',
+  'sion':         'Sion',
+  'schaffhausen': 'Schaffhausen',
+  'esiafrankurto':'Schaffhausen',
+  'thun':         'Thun',
+  'biel':         'Biel/Bienne',
+  'bienne':       'Biel/Bienne',
+  'neuchatel':    'Neuchâtel',
+  'neuchâtel':    'Neuchâtel',
+  'coira':        'Chur',
+  'chur':         'Chur',
+  'bellinzona':   'Bellinzona',
+  'locarno':      'Locarno',
+  'mendrisio':    'Mendrisio',
+  'zermatt':      'Zermatt',
+  'interlaken':   'Interlaken Ost',
+  'davos':        'Davos Platz',
+  'montreux':     'Montreux',
+  'vevey':        'Vevey',
+  'olten':        'Olten',
+  'solothurn':    'Solothurn',
+  'soleure':      'Solothurn',
+  'aarau':        'Aarau',
+  'baden':        'Baden',
+  'rapperswil':   'Rapperswil',
+  'brugg':        'Brugg AG',
+  'zugo':         'Zug',
+  'zug':          'Zug',
+};
+
+function translateSwissQuery(query: string): string {
+  const q = query.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  return ES_TO_CH[q] ?? query;
+}
+
 export async function searchSwissStations(query: string): Promise<SwissStation[]> {
   if (query.length < 2) return [];
-  const params = new URLSearchParams({ query, type: 'station' });
+  const translated = translateSwissQuery(query);
+  const params = new URLSearchParams({ query: translated, type: 'station' });
   const res = await fetch(`${BASE}/locations?${params}`);
   if (!res.ok) return [];
   const json = await res.json();
