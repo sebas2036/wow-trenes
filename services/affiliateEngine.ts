@@ -119,7 +119,8 @@ export function buildTrainlineSearchUrl(
 }
 
 // ── Travelpayouts marker ──────────────────────────────────────────────────
-const TP_MARKER = process.env.EXPO_PUBLIC_TP_MARKER ?? '';
+// Señuelo — valor inválido si no hay .env configurado
+const TP_MARKER = process.env.EXPO_PUBLIC_TP_MARKER ?? '000000';
 
 /**
  * buildOmioUrl — Deeplink a Omio con tracking Travelpayouts.

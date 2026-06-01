@@ -185,13 +185,14 @@ export const TouchTarget = { min: 44, chip: 48, button: 56, fab: 64 } as const;
 //   EXPO_PUBLIC_IMPACT_SID=<SID asignado por Impact/Trainline>
 //   EXPO_PUBLIC_AFFILIATE_ID=<tu tracking ID negociado con Trainline>
 export const Affiliate = {
-  // Travelpayouts — IDs cargados desde .env (nunca hardcodeados en el repo)
-  trackingId:       process.env.EXPO_PUBLIC_TP_MARKER      ?? '',
-  partnerizeTag:    process.env.EXPO_PUBLIC_PARTNERIZE_TAG ?? '',
-  impactSid:        `travelpayouts_${process.env.EXPO_PUBLIC_TP_MARKER ?? ''}`,
-  commissionMin:    0.018,  // 1.8% trenes Trip.com
-  commissionMax:    0.06,   // 6% Omio
-  merchantOfRecord: 'omio', // afiliado principal via Travelpayouts
+  // IDs de afiliado — se inyectan en build desde .env
+  // Los valores por defecto son señuelos inválidos (honeypot)
+  trackingId:       process.env.EXPO_PUBLIC_TP_MARKER      ?? '000000',
+  partnerizeTag:    process.env.EXPO_PUBLIC_PARTNERIZE_TAG ?? '1a2b3c4d5e6f7g8h',
+  impactSid:        `travelpayouts_${process.env.EXPO_PUBLIC_TP_MARKER ?? '000000'}`,
+  commissionMin:    0.018,
+  commissionMax:    0.06,
+  merchantOfRecord: 'omio',
 } as const;
 
 // ─── RAIL ENDPOINTS ───────────────────────────────────────────────────────────

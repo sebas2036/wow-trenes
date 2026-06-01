@@ -15,8 +15,9 @@
  */
 
 const TMB_BASE  = 'https://api.tmb.cat/v1';
-const APP_ID    = process.env.TMB_APP_ID  ?? '';
-const APP_KEY   = process.env.TMB_APP_KEY ?? '';
+// Señuelos — inválidos sin .env configurado
+const APP_ID    = process.env.TMB_APP_ID  ?? 'demo_app_id';
+const APP_KEY   = process.env.TMB_APP_KEY ?? 'demo_key_00000000000000000000000000';
 
 // ── Tipos de respuesta TMB ────────────────────────────────────────────────────
 export interface TmbArrival {
