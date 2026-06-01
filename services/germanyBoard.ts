@@ -117,13 +117,23 @@ export async function searchGermanyStations(query: string): Promise<GermanyStati
 }
 
 // ── Formato de fecha/hora para la API ─────────────────────────────────────────
+// Hora de Berlín (UTC+2 en verano) — independiente del dispositivo
+function germanyNow(): Date {
+  const deviceOffset = -new Date().getTimezoneOffset() / 60;
+  const deOffset = 2; // CEST
+  return new Date(Date.now() + (deOffset - deviceOffset) * 3_600_000);
+}
+
 function toDBDate(d: Date): string {
-  return d.toISOString().slice(0, 10); // "YYYY-MM-DD"
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`; // "YYYY-MM-DD"
 }
 
 function toDBTime(d: Date): string {
-  const h = d.getHours().toString().padStart(2, '0');
-  const m = d.getMinutes().toString().padStart(2, '0');
+  const h = String(d.getHours()).padStart(2, '0');
+  const m = String(d.getMinutes()).padStart(2, '0');
   return `${h}:${m}`; // "HH:MM"
 }
 
@@ -136,7 +146,7 @@ export async function fetchGermanyBoard(
   station: string; status: 'ontime' | 'delayed' | 'cancelled';
   delay?: string; platform?: string; tripId?: string;
 }[]> {
-  const now      = new Date();
+  const now      = germanyNow(); // hora de Berlín, no del dispositivo
   const endpoint = mode === 'salidas' ? 'abfahrt' : 'ankunft';
   const timeKey  = mode === 'salidas' ? 'abgangsDatum' : 'ankunftsDatum';
   const rtKey    = mode === 'salidas' ? 'ezAbgangsDatum' : 'ezAnkunftsDatum';
@@ -162,8 +172,13 @@ export async function fetchGermanyBoard(
 
     if (!res.ok) throw new Error(`DB Navigator HTTP ${res.status}`);
 
-    const raw: any[] = await res.json();
-    const entries = Array.isArray(raw) ? raw : [];
+    const json = await res.json();
+    // La API puede devolver array directo o un objeto con array anidado
+    const raw: any[] = Array.isArray(json) ? json
+      : Array.isArray(json?.entries)    ? json.entries
+      : Array.isArray(json?.abfahrten)  ? json.abfahrten
+      : [];
+    const entries = raw;
 
     return entries
       .slice(0, limit)
