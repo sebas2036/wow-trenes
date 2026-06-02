@@ -117,7 +117,7 @@ export default memo(function TrainCountdown({
               index={i}
               onPress={() => onSelect(clock)}
               onBuy={() => onBuy(clock)}
-              isDestMatch={!!destStationId}
+              isDestMatch={!!destStationId && !!clock.train.isFinalDest}
               destLabel={destStationName}
             />
           ))}

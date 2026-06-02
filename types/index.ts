@@ -94,6 +94,7 @@ export interface TrainService {
   availableSeats?: number;
   priceEur?:       number;
   classes:         SeatClass[];
+  isFinalDest?:    boolean; // true si el destino buscado es la última parada del trip
 }
 
 export type SeatClass = 'first' | 'second' | 'business';

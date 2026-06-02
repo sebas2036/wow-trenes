@@ -556,6 +556,7 @@ export async function queryUpcomingTrains(
     origin_name:       string;
     origin_lat:        number;
     origin_lon:        number;
+    is_final_dest:     number; // 1 si el destino buscado es la última parada
   }>(`
     SELECT
       st.trip_id,
@@ -573,6 +574,7 @@ export async function queryUpcomingTrains(
       dest_s.stop_lon  AS dest_lon,
       orig_s.stop_name AS origin_name,
       orig_s.stop_lat  AS origin_lat,
+      CASE WHEN dest_st.stop_id = COALESCE(?, dest_st.stop_id) THEN 1 ELSE 0 END AS is_final_dest,
       orig_s.stop_lon  AS origin_lon
     FROM stop_times st
     JOIN trips t   ON t.trip_id  = st.trip_id
@@ -642,6 +644,7 @@ export async function queryUpcomingTrains(
     ORDER BY st.departure_time ASC
     LIMIT ?
   `, [
+    destStationId ?? null,  // para is_final_dest
     todayGTFS, todayGTFS,
     dow, dow, dow, dow, dow, dow, dow,
     todayGTFS,
@@ -1172,6 +1175,7 @@ function gtfsRowToTrainService(row: any, baseDate: Date): TrainService {
     delayMinutes: 0,
     status:       'on-time',
     classes:      ['first', 'second'],
+    isFinalDest:  row.is_final_dest === 1,
   };
 }
 
