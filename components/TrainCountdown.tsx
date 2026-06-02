@@ -155,6 +155,24 @@ function TrainCard({
     return () => clearInterval(id);
   }, []);
 
+  // Pulso verde para destino coincidente
+  const glowOpacity = useSharedValue(0.3);
+  useEffect(() => {
+    if (isDestMatch) {
+      glowOpacity.value = withRepeat(
+        withSequence(
+          withTiming(1,   { duration: 900 }),
+          withTiming(0.3, { duration: 900 }),
+        ),
+        -1, true,
+      );
+    }
+  }, [isDestMatch, glowOpacity]);
+  const glowStyle = useAnimatedStyle(() => ({
+    borderColor:  `rgba(48,209,88,${glowOpacity.value})`,
+    shadowOpacity: glowOpacity.value * 0.4,
+  }));
+
   // Pulso para warn/danger
   const opacity = useSharedValue(1);
   const prevStatus = useRef(clock.status);
@@ -187,11 +205,11 @@ function TrainCard({
       entering={FadeInDown.delay(index * 80).springify()}
       style={animStyle}
     >
+      <Animated.View style={isDestMatch ? [styles.cardDestMatch, glowStyle] : undefined}>
       <Pressable
         style={({ pressed }) => [
           styles.card,
           index === 0 && styles.cardFirst,
-          isDestMatch && styles.cardDestMatch,
           pressed && styles.cardPressed,
         ]}
         onPress={() => index === 0 ? setExpanded(e => !e) : onPress()}
@@ -200,13 +218,6 @@ function TrainCard({
       >
         {/* Stripe de estado (izquierda) — verde si es el destino buscado */}
         <View style={[styles.stripe, { backgroundColor: isDestMatch ? '#30D158' : cfg.stripe }]} />
-
-        {/* Chip "TU TREN" si coincide con el destino */}
-        {isDestMatch && (
-          <View style={styles.destMatchBadge}>
-            <Text style={styles.destMatchText}>✓ TU TREN</Text>
-          </View>
-        )}
 
         {/* Cuerpo */}
         <View style={styles.cardInner}>
@@ -220,9 +231,14 @@ function TrainCard({
                   {train.operator.toUpperCase()}
                 </Text>
                 <Text style={styles.trainNum}>{train.trainNumber}</Text>
-                {index === 0 && (
+                {index === 0 && !isDestMatch && (
                   <View style={styles.nextBadge}>
                     <Text style={styles.nextBadgeText}>PRÓXIMO</Text>
+                  </View>
+                )}
+                {isDestMatch && (
+                  <View style={styles.destMatchBadge}>
+                    <Text style={styles.destMatchText}>✓ TU TREN</Text>
                   </View>
                 )}
               </View>
@@ -286,6 +302,7 @@ function TrainCard({
         </View>
 
       </Pressable>
+      </Animated.View>
 
       {/* Panel expandido — fuera del row stripe+card para quedar debajo */}
       {expanded && (
@@ -411,13 +428,13 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.985 }],
   },
   cardDestMatch: {
-    borderColor:  '#30D158',
     borderWidth:  1.5,
+    borderRadius: 14,
     shadowColor:  '#30D158',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
+    shadowRadius: 10,
     elevation:    4,
+    overflow:     'hidden',
   },
   destMatchBadge: {
     position:        'absolute',
