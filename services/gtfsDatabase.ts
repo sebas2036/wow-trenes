@@ -1226,8 +1226,17 @@ export async function searchTrips(
 
   // Intento 3: buscar desde/hacia TODAS las estaciones de la misma ciudad
   // (ej: "Madrid Chamartín" → busca también desde "Madrid Puerta de Atocha")
+  // cityOf extrae solo el nombre de ciudad: "Madrid Chamartín-Clara Campoamor" → "Madrid"
   if (rows.length === 0) {
-    const cityOf = (stopName: string) => stopName.split(/[-–(]/)[0].trim();
+    const cityOf = (stopName: string) => {
+      // Primero dividir por guión/paréntesis, luego tomar solo la primera palabra si hay 2+
+      const part = stopName.split(/[-–(]/)[0].trim();
+      const words = part.split(' ');
+      // Ciudades de una sola palabra: "Barcelona", "Lyon", "Roma" → devolver completo
+      // Ciudades compuestas: "Madrid Chamartín" → devolver solo "Madrid"
+      // Excepción: "Frankfurt (Main)" → ya limpiado a "Frankfurt" por el split anterior
+      return words.length > 1 ? words[0] : part;
+    };
     const originStop = await conn.getFirstAsync<{ stop_name: string }>(
       'SELECT stop_name FROM stops WHERE stop_id = ?', [originId]
     );
