@@ -24,10 +24,11 @@ function computeStatus(bufferMinutes: number): ArrivalStatus {
 }
 
 interface UseTrainSchedulesOptions {
-  stationId:     string;
-  userLocation:  Coordinates | null;
-  transportMode: TransportMode;
-  maxResults?:   number;
+  stationId:      string;
+  destStationId?: string;
+  userLocation:   Coordinates | null;
+  transportMode:  TransportMode;
+  maxResults?:    number;
 }
 
 interface UseTrainSchedulesReturn {
@@ -40,6 +41,7 @@ interface UseTrainSchedulesReturn {
 
 export function useTrainSchedules({
   stationId,
+  destStationId,
   userLocation,
   transportMode,
   maxResults = 3,
@@ -101,7 +103,7 @@ export function useTrainSchedules({
 
     try {
       // PHASE 1 — instant offline data from SQLite
-      const rawServices = await queryUpcomingTrains(stationId, maxResults * 3);
+      const rawServices = await queryUpcomingTrains(stationId, maxResults * 3, destStationId);
       // Descartar trenes que ya partieron (margen de 2 min para "en curso")
       const services = rawServices.filter(s => s.departureTime.getTime() > Date.now() - 2 * 60_000);
       if (token !== refreshToken.current) return;

@@ -480,6 +480,7 @@ const COUNTRY_UTC_OFFSET: Partial<Record<CountryCode, number>> = {
 export async function queryUpcomingTrains(
   stationId: string,
   limit: number = 3,
+  destStationId?: string,
 ): Promise<TrainService[]> {
   const conn    = await db();
   // Adjust device time to the country's local time for correct GTFS comparison
@@ -575,6 +576,19 @@ export async function queryUpcomingTrains(
         OR NOT EXISTS (SELECT 1 FROM calendar LIMIT 1)
       )
       AND (cd.exception_type IS NULL OR cd.exception_type != 2)
+      ${destStationId ? `
+      AND EXISTS (
+        SELECT 1 FROM stop_times dest_filter
+        JOIN stops dest_filter_s ON dest_filter_s.stop_id = dest_filter.stop_id
+        WHERE dest_filter.trip_id = st.trip_id
+          AND dest_filter.stop_sequence > st.stop_sequence
+          AND (
+            dest_filter.stop_id = ?
+            OR dest_filter_s.parent_station = (
+              SELECT parent_station FROM stops WHERE stop_id = ? AND parent_station IS NOT NULL AND parent_station != ''
+            )
+          )
+      )` : ''}
     GROUP BY st.trip_id
     ORDER BY st.departure_time ASC
     LIMIT ?
@@ -583,6 +597,7 @@ export async function queryUpcomingTrains(
     dow, dow, dow, dow, dow, dow, dow,
     todayGTFS,
     stationId, stationId, depFrom,
+    ...(destStationId ? [destStationId, destStationId] : []),
     limit,
   ]);
 

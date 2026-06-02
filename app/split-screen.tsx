@@ -406,10 +406,11 @@ export default function SplitScreen() {
 
   // ── Train schedules for selected origin station ───────────────────────
   const { clocks, isLoading, isLive, refresh } = useTrainSchedules({
-    stationId:    selectedStation?.id ?? 'STOP_PLACEHOLDER',
-    userLocation: userCoords,
+    stationId:      selectedStation?.id ?? 'STOP_PLACEHOLDER',
+    destStationId:  destStation?.id,
+    userLocation:   userCoords,
     transportMode,
-    maxResults:   8,
+    maxResults:     8,
   });
 
   // ── Auto-seguimiento de cámara al tren en movimiento ─────────────────
