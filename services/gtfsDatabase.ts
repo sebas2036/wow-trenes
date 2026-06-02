@@ -650,7 +650,80 @@ export async function queryUpcomingTrains(
     limit,
   ]);
 
-  return rows.map((row) => gtfsRowToTrainService(row, now));
+  const results = rows.map((row) => gtfsRowToTrainService(row, now));
+
+  // Si no hay trenes hoy → buscar los primeros del día siguiente
+  if (results.length === 0) {
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    const tomorrowGTFS = tomorrow.getFullYear().toString()
+      + (tomorrow.getMonth() + 1).toString().padStart(2, '0')
+      + tomorrow.getDate().toString().padStart(2, '0');
+    const dowTomorrow = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][tomorrow.getDay()];
+
+    const nextRows = await conn.getAllAsync<typeof rows[0]>(`
+      SELECT
+        st.trip_id, st.departure_time, st.arrival_time,
+        NULL AS platform_code, t.route_id,
+        COALESCE(r.route_short_name, r.route_long_name) AS route_short_name,
+        NULL AS operator_code, t.trip_headsign,
+        dest_st.stop_id AS dest_stop_id, dest_st.arrival_time AS dest_arrival_time,
+        dest_s.stop_name AS dest_name, dest_s.stop_lat AS dest_lat, dest_s.stop_lon AS dest_lon,
+        orig_s.stop_name AS origin_name, orig_s.stop_lat AS origin_lat, orig_s.stop_lon AS origin_lon
+      FROM stop_times st
+      JOIN trips t   ON t.trip_id  = st.trip_id
+      JOIN routes r  ON r.route_id = t.route_id
+      JOIN stop_times dest_st ON dest_st.trip_id = st.trip_id
+        AND dest_st.stop_sequence = (SELECT MAX(s2.stop_sequence) FROM stop_times s2 WHERE s2.trip_id = st.trip_id)
+      JOIN stops dest_s ON dest_s.stop_id = dest_st.stop_id
+      JOIN stops orig_s ON orig_s.stop_id = st.stop_id
+      LEFT JOIN (
+        SELECT service_id FROM calendar
+        WHERE start_date <= ?
+          AND (end_date >= ? OR end_date = '' OR end_date IS NULL)
+          AND (
+            (? = 'monday' AND monday=1) OR (? = 'tuesday' AND tuesday=1) OR
+            (? = 'wednesday' AND wednesday=1) OR (? = 'thursday' AND thursday=1) OR
+            (? = 'friday' AND friday=1) OR (? = 'saturday' AND saturday=1) OR
+            (? = 'sunday' AND sunday=1)
+          )
+      ) AS cal ON cal.service_id = t.service_id
+      LEFT JOIN calendar_dates cd ON cd.service_id = t.service_id AND cd.date = ?
+      WHERE st.stop_id IN (
+        SELECT s2.stop_id FROM stops s2
+        WHERE s2.parent_station = (SELECT parent_station FROM stops WHERE stop_id = ? AND parent_station IS NOT NULL AND parent_station != '')
+        UNION SELECT ?
+      )
+        AND st.departure_time >= '00:00:00'
+        AND st.stop_sequence < (SELECT MAX(s3.stop_sequence) FROM stop_times s3 WHERE s3.trip_id = st.trip_id)
+        AND (cal.service_id IS NOT NULL OR cd.exception_type = 1 OR NOT EXISTS (SELECT 1 FROM calendar LIMIT 1))
+        AND (cd.exception_type IS NULL OR cd.exception_type != 2)
+        AND COALESCE(r.route_short_name, '') NOT IN (
+          'PROXIMDAD','PROXIMIDAD','Cercanías','CERCANIAS','AVANT','AVANT EXP',
+          'C1','C2','C3','C4','C5','C7','C8','C9','C10'
+        )
+        ${destStationId ? `AND EXISTS (
+          SELECT 1 FROM stop_times df JOIN stops dfs ON dfs.stop_id=df.stop_id
+          WHERE df.trip_id=st.trip_id AND df.stop_sequence > st.stop_sequence
+            AND (df.stop_id=? OR dfs.parent_station=(SELECT parent_station FROM stops WHERE stop_id=? AND parent_station IS NOT NULL AND parent_station!=''))
+        )` : ''}
+      GROUP BY st.trip_id
+      ORDER BY st.departure_time ASC
+      LIMIT ?
+    `, [
+      tomorrowGTFS, tomorrowGTFS,
+      dowTomorrow, dowTomorrow, dowTomorrow, dowTomorrow, dowTomorrow, dowTomorrow, dowTomorrow,
+      tomorrowGTFS,
+      stationId, stationId,
+      ...(destStationId ? [destStationId, destStationId] : []),
+      limit,
+    ]);
+
+    return nextRows.map((row) => gtfsRowToTrainService(row, tomorrow));
+  }
+
+  return results;
 }
 
 // ── Query: all stations for geofencing ───────────────────────────────────────
