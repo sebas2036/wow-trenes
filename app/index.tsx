@@ -305,15 +305,9 @@ export default function HomeScreen() {
           }
         } catch { /* GPS no disponible — usar prioridad por defecto */ }
 
-        // Prioridad de prefetch según país detectado
-        let dbsToPrefetch: string[];
-        if (detectedCountry === 'ES' || detectedCountry === 'PT') {
-          dbsToPrefetch = ['gtfs_france.db', 'gtfs_austria.db', 'gtfs_belgium.db'];
-        } else if (detectedCountry === 'DE' || detectedCountry === 'CH' || detectedCountry === 'AT') {
-          dbsToPrefetch = ['gtfs_austria.db', 'gtfs_france.db', 'gtfs_belgium.db'];
-        } else {
-          dbsToPrefetch = ['gtfs_france.db', 'gtfs_austria.db', 'gtfs_belgium.db'];
-        }
+        // Siempre descargar del más liviano al más pesado — AT(37MB) → BE(164MB) → FR(196MB)
+        // El orden garantiza que si el usuario toca un país vecino, ya está listo
+        const dbsToPrefetch = ['gtfs_austria.db', 'gtfs_belgium.db', 'gtfs_france.db'];
 
         prefetchInBackground(dbsToPrefetch);
       } catch (e) {
@@ -495,13 +489,7 @@ export default function HomeScreen() {
           })}
         </View>
 
-        {downloadState && (
-          <DownloadProgressBar
-            dbName={downloadState.dbName}
-            progress={downloadState.progress}
-            visible={true}
-          />
-        )}
+        {/* Descarga silenciosa en background — sin mostrar progreso al usuario */}
 
         {/* ── Sección Trenes ── */}
         {filter === 'trenes' && (
