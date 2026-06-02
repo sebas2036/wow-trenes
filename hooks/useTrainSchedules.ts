@@ -141,7 +141,7 @@ export function useTrainSchedules({
       setError('No se pudieron cargar los trenes. Verifica tu conexión.');
       setIsLoading(false);
     }
-  }, [stationId, maxResults, buildClocks]);
+  }, [stationId, destStationId, maxResults, buildClocks]);
 
   useEffect(() => {
     load();
