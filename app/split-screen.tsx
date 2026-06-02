@@ -313,7 +313,7 @@ export default function SplitScreen() {
   const [routePolyline,    setRoutePolyline]    = useState<Coordinates[]>([]);
   // Estación de llegada encontrada por búsqueda de dirección (modo metro)
   const [searchedDestWalk, setSearchedDestWalk] = useState<number>(0);
-  const [showDestSearch,   setShowDestSearch]   = useState(isMetro); // visible en modo metro
+  const [showDestSearch,   setShowDestSearch]   = useState(true); // visible en modo país y metro
 
   // ETAs para los 3 modos de transporte (minutos)
   const [etas, setEtas] = useState<Record<TransportMode, number | null>>({
@@ -720,8 +720,8 @@ export default function SplitScreen() {
           </View>
         )}
 
-        {/* ── Buscador de dirección (modo metro) ── */}
-        {isMetro && showDestSearch && (
+        {/* ── Buscador "¿A dónde vas?" — modo país y metro ── */}
+        {showDestSearch && (
           <Animated.View
             entering={FadeIn.duration(300)}
             exiting={FadeOut.duration(200)}
@@ -729,9 +729,9 @@ export default function SplitScreen() {
           >
             <View style={styles.destSearchHeader}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Ionicons name="subway-outline" size={14} color={colors.text.primary} />
+                <Ionicons name={isMetro ? 'subway-outline' : 'train-outline'} size={14} color={colors.text.primary} />
                 <Text style={[styles.destSearchTitle, { color: colors.text.primary }]}>
-                  {params.metroCity}
+                  {isMetro ? params.metroCity : '¿A dónde vas?'}
                 </Text>
               </View>
               <Pressable onPress={() => setShowDestSearch(false)} hitSlop={8}>
@@ -741,13 +741,13 @@ export default function SplitScreen() {
             <DestinationSearch
               onStationFound={handleDestinationFound}
               countryHint={countryHint}
-              placeholder="Escribe una calle o lugar…"
+              placeholder={isMetro ? 'Escribe una calle o lugar…' : 'Hotel, barrio, ciudad…'}
             />
           </Animated.View>
         )}
 
-        {/* ── Botón "¿A dónde vas?" para reabrir el buscador ── */}
-        {isMetro && !showDestSearch && (
+        {/* ── Botón para reabrir el buscador ── */}
+        {!showDestSearch && (
           <Pressable
             style={[styles.reopenSearchBtn, { backgroundColor: colors.bg.elevated, borderColor: colors.border.default }]}
             onPress={() => setShowDestSearch(true)}
@@ -756,7 +756,7 @@ export default function SplitScreen() {
             <Text style={[styles.reopenSearchText, { color: colors.text.secondary }]} numberOfLines={1}>
               {destStation
                 ? `Destino: ${destStation.name}`
-                : `¿A dónde vas en ${params.metroCity}?`}
+                : isMetro ? `¿A dónde vas en ${params.metroCity}?` : '¿A dónde vas?'}
             </Text>
             {destStation && searchedDestWalk > 0 && (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
