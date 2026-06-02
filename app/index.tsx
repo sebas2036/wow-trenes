@@ -34,6 +34,35 @@ import type { CountryCode, Coordinates } from '../types';
 // ── Tipo de filtro ──────────────────────────────────────────────────────────
 type FilterTab = 'trenes' | 'metro' | 'internacional';
 
+// ── Detección de ciudad metro por bounding box ───────────────────────────────
+// Si el GPS cae dentro de una ciudad con metro → abrir modo metro directo
+const METRO_CITY_BOUNDS: {
+  code: CountryCode; city: string;
+  minLat: number; maxLat: number; minLon: number; maxLon: number;
+}[] = [
+  { code: 'ES_MAD', city: 'Madrid',    minLat: 40.31, maxLat: 40.57, minLon: -3.83, maxLon: -3.52 },
+  { code: 'ES_BCN', city: 'Barcelona', minLat: 41.31, maxLat: 41.47, minLon:  2.05, maxLon:  2.23 },
+  { code: 'FR_PAR', city: 'París',     minLat: 48.81, maxLat: 48.91, minLon:  2.22, maxLon:  2.47 },
+  { code: 'IT_ROM', city: 'Roma',      minLat: 41.79, maxLat: 41.99, minLon: 12.36, maxLon: 12.61 },
+  { code: 'IT_MIL', city: 'Milán',     minLat: 45.38, maxLat: 45.54, minLon:  9.07, maxLon:  9.28 },
+  { code: 'AT_VIE', city: 'Viena',     minLat: 48.12, maxLat: 48.32, minLon: 16.18, maxLon: 16.58 },
+  { code: 'NL_AMS', city: 'Amsterdam', minLat: 52.29, maxLat: 52.43, minLon:  4.77, maxLon:  5.03 },
+  { code: 'PT_LIS', city: 'Lisboa',    minLat: 38.66, maxLat: 38.80, minLon: -9.23, maxLon: -9.08 },
+  { code: 'DE_BER', city: 'Berlín',    minLat: 52.34, maxLat: 52.68, minLon: 13.09, maxLon: 13.76 },
+  { code: 'DE_MUN', city: 'Múnich',    minLat: 48.06, maxLat: 48.24, minLon: 11.36, maxLon: 11.72 },
+  { code: 'BE_BRU', city: 'Bruselas',  minLat: 50.79, maxLat: 50.93, minLon:  4.27, maxLon:  4.47 },
+];
+
+function detectMetroCityFromCoords(coords: Coordinates): { code: CountryCode; city: string } | null {
+  for (const b of METRO_CITY_BOUNDS) {
+    if (coords.latitude  >= b.minLat && coords.latitude  <= b.maxLat &&
+        coords.longitude >= b.minLon && coords.longitude <= b.maxLon) {
+      return { code: b.code, city: b.city };
+    }
+  }
+  return null;
+}
+
 // ── Datos países ─────────────────────────────────────────────────────────────
 interface MetroOption { code: CountryCode; label: string }
 interface CountryEntry {
@@ -356,7 +385,25 @@ export default function HomeScreen() {
         return;
       }
 
-      // País detectado → buscar estación más cercana en el DB correcto
+      // ¿El usuario está dentro de una ciudad con metro?
+      const metroCity = detectMetroCityFromCoords(coords);
+      if (metroCity) {
+        // Dentro de ciudad → modo metro directo
+        await setActiveCountry(metroCity.code).catch(() => {});
+        router.push({
+          pathname: '/split-screen',
+          params: {
+            lat: String(coords.latitude),
+            lon: String(coords.longitude),
+            country:   metroCity.code,
+            metroCity: metroCity.city,
+            mode:      'tourist',
+          },
+        });
+        return;
+      }
+
+      // Fuera de ciudad metro → trenes de larga distancia
       const station = await findNearestStation(coords);
       router.push({
         pathname: '/split-screen',
