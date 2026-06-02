@@ -1274,7 +1274,7 @@ export async function searchStations(query: string, limit = 20, country?: Countr
        AND s.stop_name NOT LIKE '%Cercanías%'
        AND s.stop_name NOT LIKE '%Cercanias%'
      GROUP BY s.stop_id
-     ORDER BY s.stop_name ASC
+     ORDER BY COUNT(st.trip_id) DESC
      LIMIT ?`,
     [nq, limit],
   );

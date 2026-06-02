@@ -134,6 +134,7 @@ function StationSearch({ onStationFound, countryHint, placeholder }: {
                 style={({ pressed }) => [
                   styles.listItem,
                   i < results.length - 1 && styles.listItemBorder,
+                  i === 0 && styles.listItemMain,
                   pressed && { backgroundColor: 'rgba(139,92,246,0.10)' },
                 ]}
                 onPress={() => {
@@ -143,9 +144,24 @@ function StationSearch({ onStationFound, countryHint, placeholder }: {
                   onStationFound(station, 0);
                 }}
               >
-                <Ionicons name="train-outline" size={14} color={D.primary} style={{ marginTop: 1 }} />
-                <Text style={styles.listItemText} numberOfLines={1}>{station.name}</Text>
-                <Ionicons name="chevron-forward" size={12} color={D.muted} />
+                <Ionicons
+                  name="train-outline"
+                  size={14}
+                  color={i === 0 ? D.primary : D.muted}
+                  style={{ marginTop: 1 }}
+                />
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.listItemText, i === 0 && { color: D.text }]} numberOfLines={1}>
+                    {station.name}
+                  </Text>
+                  {i === 0 && (
+                    <Text style={styles.listItemSub}>Estación principal · más trenes</Text>
+                  )}
+                </View>
+                {i === 0
+                  ? <View style={styles.mainBadge}><Text style={styles.mainBadgeText}>⭐ Principal</Text></View>
+                  : <Ionicons name="chevron-forward" size={12} color={D.muted} />
+                }
               </Pressable>
             ))}
           </ScrollView>
@@ -289,7 +305,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing['3'], paddingVertical: 13,
   },
   listItemBorder: { borderBottomWidth: 1, borderBottomColor: D.border },
-  listItemText: { flex: 1, fontSize: Typography.size.sm, color: D.text },
+  listItemMain:   { backgroundColor: 'rgba(139,92,246,0.08)' },
+  listItemText:   { fontSize: Typography.size.sm, color: D.secondary },
+  listItemSub:    { fontSize: 11, color: D.muted, marginTop: 2 },
+  mainBadge: {
+    backgroundColor: 'rgba(139,92,246,0.20)',
+    borderRadius:    8,
+    paddingHorizontal: 7,
+    paddingVertical:   3,
+    borderWidth:     1,
+    borderColor:     D.primary + '55',
+  },
+  mainBadgeText: { fontSize: 10, fontWeight: '700', color: D.brand },
 
   // Resultado modo address
   resultCard: {
