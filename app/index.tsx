@@ -347,20 +347,7 @@ export default function HomeScreen() {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') { setGpsLoading(false); return; }
-
-      // Timeout de 10s — si el GPS no responde, intentar con última posición conocida
-      let loc = await Promise.race([
-        Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
-        new Promise<null>(r => setTimeout(() => r(null), 10000)),
-      ]);
-
-      // Fallback: última posición conocida (instant, sin señal)
-      if (!loc) {
-        loc = await Location.getLastKnownPositionAsync() ?? null;
-      }
-
-      if (!loc) { setGpsLoading(false); return; }
-
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       const coords: Coordinates = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
 
       // Detectar si el usuario está en zona de cobertura europea/soportada

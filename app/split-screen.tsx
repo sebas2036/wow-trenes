@@ -332,14 +332,6 @@ export default function SplitScreen() {
 
   const { locationState, requestLocation } = useLocation();
 
-  // Pedir GPS automáticamente al montar (igual que salidas.tsx)
-  useEffect(() => {
-    if (!params.lat && !params.lon) {
-      requestLocation();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   // Resolve user coordinates (from params or live GPS)
   // useMemo evita crear un objeto nuevo en cada render → previene infinite loops en useEffect
   const userCoords = useMemo<Coordinates | null>(() => {
@@ -390,8 +382,8 @@ export default function SplitScreen() {
         }, 500);
       }
     })();
-  // userCoords en deps: si GPS llega tarde, vuelve a correr y actualiza la estación
-  }, [userCoords]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Resolve destination station (tourist mode) ────────────────────────
   useEffect(() => {
