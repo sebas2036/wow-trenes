@@ -1246,6 +1246,10 @@ export async function searchTrips(
     if (originStop && destStop) {
       const oCity = cityOf(originStop.stop_name);
       const dCity = cityOf(destStop.stop_name);
+      // No buscar si origen y destino son la misma ciudad
+      if (oCity.toLowerCase() === dCity.toLowerCase()) {
+        rows = [];
+      } else
       rows = await conn.getAllAsync<TripRow>(BASE_SELECT + `
         WHERE s_o.stop_name LIKE ? AND s_d.stop_name LIKE ?
           AND st_o.departure_time >= ?
