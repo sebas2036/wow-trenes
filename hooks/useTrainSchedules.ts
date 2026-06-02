@@ -70,12 +70,13 @@ export function useTrainSchedules({
             try {
               const eta = await calculateETA(
                 userLocation,
-                svc.destination.coordinates,
+                svc.origin.coordinates,
                 transportMode,
               );
-              walkMinutes = eta.durationMinutes;
+              // Si la distancia es absurda (>120 min = usuario lejos del país), ignorar
+              walkMinutes = eta.durationMinutes > 120 ? 0 : eta.durationMinutes;
             } catch {
-              walkMinutes = 15; // fallback estimate
+              walkMinutes = 0;
             }
           }
 
