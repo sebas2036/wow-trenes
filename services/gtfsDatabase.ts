@@ -620,6 +620,11 @@ export async function queryUpcomingTrains(
         OR NOT EXISTS (SELECT 1 FROM calendar LIMIT 1)
       )
       AND (cd.exception_type IS NULL OR cd.exception_type != 2)
+      -- Excluir cercanías y trenes urbanos — solo larga distancia entre ciudades
+      AND COALESCE(r.route_short_name, '') NOT IN (
+        'PROXIMDAD','PROXIMIDAD','Cercanías','CERCANIAS',
+        'AVANT','AVANT EXP','C1','C2','C3','C4','C5','C7','C8','C9','C10'
+      )
       ${destStationId ? `
       AND EXISTS (
         SELECT 1 FROM stop_times dest_filter
