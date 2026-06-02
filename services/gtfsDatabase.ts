@@ -568,10 +568,11 @@ export async function queryUpcomingTrains(
       NULL            AS operator_code,
       t.trip_headsign,
       dest_st.stop_id       AS dest_stop_id,
-      dest_st.arrival_time  AS dest_arrival_time,
-      dest_s.stop_name AS dest_name,
-      dest_s.stop_lat  AS dest_lat,
-      dest_s.stop_lon  AS dest_lon,
+      -- Si hay destino buscado, usar su arrival_time; si no, el del terminus
+      COALESCE(user_dest_st.arrival_time, dest_st.arrival_time) AS dest_arrival_time,
+      COALESCE(user_dest_s.stop_name, dest_s.stop_name) AS dest_name,
+      COALESCE(user_dest_s.stop_lat,  dest_s.stop_lat)  AS dest_lat,
+      COALESCE(user_dest_s.stop_lon,  dest_s.stop_lon)  AS dest_lon,
       orig_s.stop_name AS origin_name,
       orig_s.stop_lat  AS origin_lat,
       orig_s.stop_lon  AS origin_lon,
@@ -585,6 +586,10 @@ export async function queryUpcomingTrains(
       )
     JOIN stops dest_s ON dest_s.stop_id = dest_st.stop_id
     JOIN stops orig_s ON orig_s.stop_id = st.stop_id
+    -- JOIN opcional al destino buscado para traer arrival_time real
+    LEFT JOIN stop_times user_dest_st ON user_dest_st.trip_id = st.trip_id
+      AND user_dest_st.stop_id = COALESCE(?, NULL)
+    LEFT JOIN stops user_dest_s ON user_dest_s.stop_id = user_dest_st.stop_id
     LEFT JOIN (
       SELECT service_id FROM calendar
       WHERE start_date <= ?
@@ -645,6 +650,7 @@ export async function queryUpcomingTrains(
     LIMIT ?
   `, [
     destStationId ?? null,  // para is_final_dest
+    destStationId ?? null,  // para LEFT JOIN user_dest_st
     todayGTFS, todayGTFS,
     dow, dow, dow, dow, dow, dow, dow,
     todayGTFS,
