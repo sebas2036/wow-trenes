@@ -1055,16 +1055,15 @@ function gtfsRowToTrainService(row: any, baseDate: Date): TrainService {
 
 // ── Estaciones principales por país (fallback cuando GPS no coincide) ─────────
 const MAIN_STATION_NAME: Partial<Record<CountryCode, string>> = {
-  FR: 'Paris Gare de Lyon',
-  DE: 'Frankfurt(Main)Hbf',
+  FR: 'Paris Montparnasse Hall 1 - 2',  // hub más activo Francia
+  DE: 'Frankfurt (Main) Hauptbahnhof',
   IT: 'Roma Termini',
   AT: 'Wien Hauptbahnhof',
   CH: 'Zürich HB',
   BE: 'Bruxelles-Midi',
   NL: 'Amsterdam Centraal',
   PT: 'Lisboa Oriente',
-  ES: 'Madrid Puerta de Atocha',
-  GB: 'London St Pancras International',
+  ES: 'Madrid Puerta de Atocha-Almudena Grandes',
 };
 
 /**
