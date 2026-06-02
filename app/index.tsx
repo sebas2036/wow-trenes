@@ -287,6 +287,7 @@ export default function HomeScreen() {
   const { colors, isDark } = useTheme();
   const [filter,     setFilter]     = useState<FilterTab>('trenes');
   const [gpsLoading, setGpsLoading] = useState(false);
+  const [userCoords, setUserCoords] = useState<Coordinates | null>(null);
   const { isOffline } = useNetwork();
   const [translator,    setTranslator]    = useState(false);
   const [notifVisible,  setNotifVisible]  = useState(false);
@@ -326,10 +327,9 @@ export default function HomeScreen() {
           if (status === 'granted') {
             const loc = await Location.getLastKnownPositionAsync();
             if (loc) {
-              detectedCountry = detectCountryFromCoords({
-                latitude: loc.coords.latitude,
-                longitude: loc.coords.longitude,
-              });
+              const c = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
+              detectedCountry = detectCountryFromCoords(c);
+              setUserCoords(c);
             }
           }
         } catch { /* GPS no disponible — usar prioridad por defecto */ }
@@ -355,14 +355,23 @@ export default function HomeScreen() {
   const handleCountryPress = useCallback((country: CountryEntry) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setActiveCountry(country.code).catch(() => {});
-    router.push({ pathname: '/split-screen', params: { country: country.code, mode: 'country' } });
-  }, [router]);
+    router.push({ pathname: '/split-screen', params: {
+      country: country.code,
+      mode: 'country',
+      ...(userCoords ? { lat: String(userCoords.latitude), lon: String(userCoords.longitude) } : {}),
+    }});
+  }, [router, userCoords]);
 
   const handleMetroPress = useCallback((code: CountryCode, label?: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setActiveCountry(code).catch(() => {});
-    router.push({ pathname: '/split-screen', params: { country: code, mode: 'country', metroCity: label ?? '' } });
-  }, [router]);
+    router.push({ pathname: '/split-screen', params: {
+      country: code,
+      mode: 'country',
+      metroCity: label ?? '',
+      ...(userCoords ? { lat: String(userCoords.latitude), lon: String(userCoords.longitude) } : {}),
+    }});
+  }, [router, userCoords]);
 
   const handleGPS = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -372,6 +381,7 @@ export default function HomeScreen() {
       if (status !== 'granted') { setGpsLoading(false); return; }
       const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       const coords: Coordinates = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
+      setUserCoords(coords);
 
       // Detectar si el usuario está en zona de cobertura europea/soportada
       const detectedCountry = detectCountryFromCoords(coords);
