@@ -29,9 +29,12 @@ interface UseLocationReturn {
 //   Paris:   { latitude: 48.8566, longitude:  2.3522 }
 //   London:  { latitude: 51.5074, longitude: -0.1278 }
 //   NYC:     { latitude: 40.7128, longitude: -74.0060 }
-const DEV_LOCATION: Coordinates | null = __DEV__
-  ? { latitude: 47.3769, longitude: 8.5417 }  // Zurich HB
-  : null;
+// DEV_LOCATION: null = usar GPS real del dispositivo (incluyendo fake GPS)
+// Cambiar a coordenadas para simular ubicación sin GPS real:
+//   Zurich:  { latitude: 47.3769, longitude:  8.5417 }
+//   Madrid:  { latitude: 40.4168, longitude: -3.7038 }
+//   Paris:   { latitude: 48.8566, longitude:  2.3522 }
+const DEV_LOCATION: Coordinates | null = null;
 
 export function useLocation(): UseLocationReturn {
   const [locationState, setLocationState] = useState<LocationState>({ status: 'idle' });

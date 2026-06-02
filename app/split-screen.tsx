@@ -382,8 +382,8 @@ export default function SplitScreen() {
         }, 500);
       }
     })();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // userCoords en deps: si GPS llega tarde, vuelve a correr y actualiza la estación
+  }, [userCoords]);
 
   // ── Resolve destination station (tourist mode) ────────────────────────
   useEffect(() => {
