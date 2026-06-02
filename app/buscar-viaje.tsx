@@ -102,6 +102,7 @@ export default function BuscarViaje() {
   const [trips,         setTrips]         = useState<TripResult[]>([]);
   const [loading,       setLoading]       = useState(false);
   const [error,         setError]         = useState<string | null>(null);
+  const [sameCity,      setSameCity]      = useState(false);
   const [popularDests,  setPopularDests]  = useState<{ id: string; name: string; durationMin: number }[]>([]);
 
   const originRef = useRef<TextInput>(null);
@@ -195,11 +196,14 @@ export default function BuscarViaje() {
   });
 
   // {t('search_title')}s — Navitia para FR, GTFS para el resto
+  const cityOf = (name: string) => name.split(/[-–( ]/)[0].trim().toLowerCase();
+
   const doSearch = useCallback(async (dayOff = dayOffset) => {
     if (!originStation || !destStation) return;
     setLoading(true);
     setError(null);
     setTrips([]);
+    setSameCity(false);
     try {
       const date = new Date();
       date.setDate(date.getDate() + dayOff);
@@ -212,7 +216,13 @@ export default function BuscarViaje() {
       } else {
         // Resto de países: GTFS local
         const results = await searchTrips(originStation.id, destStation.id, date, 12);
-        if (results.length === 0) setError(t('search_no_trains'));
+        if (results.length === 0) {
+          if (cityOf(originStation.name) === cityOf(destStation.name)) {
+            setSameCity(true);
+          } else {
+            setError(t('search_no_trains'));
+          }
+        }
         setTrips(results);
       }
     } catch {
@@ -374,6 +384,21 @@ export default function BuscarViaje() {
           <View style={styles.center}>
             <ActivityIndicator size="large" color={Colors.brand.primary} />
             <Text style={styles.loadingText}>{t('search_loading')}</Text>
+          </View>
+        ) : sameCity ? (
+          <View style={styles.sameCityBox}>
+            <Ionicons name="subway-outline" size={44} color={Colors.brand.primary} style={{ marginBottom: 12 }} />
+            <Text style={styles.sameCityTitle}>Trayecto dentro de {originStation?.name.split(/[-–( ]/)[0]}</Text>
+            <Text style={styles.sameCitySubtitle}>
+              Para moverte dentro de la ciudad usá el metro o transporte urbano.
+            </Text>
+            <Pressable
+              style={styles.sameCityBtn}
+              onPress={() => router.push({ pathname: '/split-screen', params: { country: params.country ?? 'ES', mode: 'country' } })}
+            >
+              <Ionicons name="map-outline" size={16} color="#fff" />
+              <Text style={styles.sameCityBtnText}>Ver metro y horarios urbanos</Text>
+            </Pressable>
           </View>
         ) : error ? (
           <View style={styles.center}>
@@ -610,4 +635,24 @@ const styles = StyleSheet.create({
   loadingText: { fontSize: Typography.size.sm, color: Colors.text.secondary },
   errorText: { fontSize: Typography.size.sm, color: Colors.text.secondary, textAlign: 'center', lineHeight: 20 },
   hintText: { fontSize: Typography.size.sm, color: Colors.text.muted, textAlign: 'center' },
+
+  // Panel misma ciudad
+  sameCityBox: {
+    flex: 1, alignItems: 'center', justifyContent: 'center',
+    padding: Spacing['8'], gap: Spacing['3'],
+  },
+  sameCityTitle: {
+    fontSize: 17, fontWeight: '700', color: Colors.text.primary,
+    textAlign: 'center',
+  },
+  sameCitySubtitle: {
+    fontSize: 13, color: Colors.text.secondary,
+    textAlign: 'center', lineHeight: 20,
+  },
+  sameCityBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    marginTop: 8, backgroundColor: Colors.brand.primary,
+    borderRadius: Radius.full, paddingVertical: 13, paddingHorizontal: 24,
+  },
+  sameCityBtnText: { fontSize: 14, fontWeight: '700', color: '#fff' },
 });
