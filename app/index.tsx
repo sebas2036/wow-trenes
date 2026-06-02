@@ -6,7 +6,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView,
-  ActivityIndicator, Platform, FlatList,
+  ActivityIndicator, Platform, FlatList, TextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -21,6 +21,8 @@ import { useTheme } from '../context/ThemeContext';
 import FlagCircle from '../components/FlagCircle';
 import { findNearestStation, setActiveCountry, detectCountryFromCoords } from '../services/gtfsDatabase';
 import { prefetchInBackground, onDownloadProgress } from '../services/dbDownloadService';
+import { buildBestBookingUrl } from '../services/affiliateEngine';
+import AffiliateWebView from '../components/AffiliateWebView';
 import { t } from '../services/i18n';
 import TranslatorSheet from '../components/TranslatorSheet';
 import DownloadProgressBar from '../components/DownloadProgressBar';
@@ -32,7 +34,7 @@ import { useNetwork } from '../hooks/useNetwork';
 import type { CountryCode, Coordinates } from '../types';
 
 // ── Tipo de filtro ──────────────────────────────────────────────────────────
-type FilterTab = 'trenes' | 'metro' | 'internacional';
+type FilterTab = 'trenes' | 'internacional';
 
 // ── Detección de ciudad metro por bounding box ───────────────────────────────
 // Si el GPS cae dentro de una ciudad con metro → abrir modo metro directo
@@ -295,6 +297,12 @@ export default function HomeScreen() {
   const [filter,     setFilter]     = useState<FilterTab>('trenes');
   const [gpsLoading, setGpsLoading] = useState(false);
   const [userCoords, setUserCoords] = useState<Coordinates | null>(null);
+  // Internacional
+  const [intlOrigin,   setIntlOrigin]   = useState('');
+  const [intlDest,     setIntlDest]     = useState('');
+  const [intlDate,     setIntlDate]     = useState(0); // 0=hoy, 1=mañana, 2=pasado
+  const [intlVisible,  setIntlVisible]  = useState(false);
+  const [intlUrl,      setIntlUrl]      = useState('');
   const { isOffline } = useNetwork();
   const [translator,    setTranslator]    = useState(false);
   const [notifVisible,  setNotifVisible]  = useState(false);
@@ -442,9 +450,8 @@ export default function HomeScreen() {
     .sort((a, b) => (favs.includes(a.code) ? 0 : 1) - (favs.includes(b.code) ? 0 : 1));
 
   const TABS: { key: FilterTab; label: string; icon: keyof typeof Ionicons.glyphMap; iconOut: keyof typeof Ionicons.glyphMap }[] = [
-    { key: 'trenes',        label: 'Trenes',    icon: 'train',  iconOut: 'train-outline'  },
-    { key: 'metro',         label: 'Metro',     icon: 'map',    iconOut: 'map-outline'    },
-    { key: 'internacional', label: 'Internat.', icon: 'globe',  iconOut: 'globe-outline'  },
+    { key: 'trenes',        label: 'Trenes',        icon: 'train',  iconOut: 'train-outline'  },
+    { key: 'internacional', label: 'Internacional',  icon: 'globe',  iconOut: 'globe-outline'  },
   ];
 
   return (
@@ -580,34 +587,76 @@ export default function HomeScreen() {
         )}
 
         {/* ── Sección Metro ── */}
-        {filter === 'metro' && (
-          <>
-            <Text style={[styles.sectionLabel, { color: colors.text.muted }]}>{t('home_metros_title')}</Text>
-            <FlatList
-              data={sortedMetros}
-              keyExtractor={(m) => m.code}
-              contentContainerStyle={styles.list}
-              scrollEnabled={false}
-              windowSize={5}
-              removeClippedSubviews={true}
-              renderItem={({ item: m }) => (
-                <MetroCard
-                  metro={m}
-                  isFav={favs.includes(m.code)}
-                  onPress={handleMetroPress}
-                  onFavToggle={handleFavToggle}
-                />
-              )}
-            />
-          </>
-        )}
 
-        {/* ── Internacional — próximamente ── */}
+        {/* ── Internacional ── */}
         {filter === 'internacional' && (
-          <View style={styles.empty}>
-            <Ionicons name="globe-outline" size={56} color={colors.text.muted} style={{ marginBottom: 18 }} />
-            <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>{t('home_intl_title')}</Text>
-            <Text style={[styles.emptySub,   { color: colors.text.secondary }]}>{t('home_intl_sub')}</Text>
+          <View style={styles.intlWrap}>
+            <Text style={[styles.intlTitle, { color: colors.text.primary }]}>Viaje internacional</Text>
+            <Text style={[styles.intlSub,   { color: colors.text.muted }]}>Trenes entre países · Trainline</Text>
+
+            {/* Origen */}
+            <View style={[styles.intlField, { backgroundColor: colors.bg.elevated, borderColor: colors.border.subtle }]}>
+              <Ionicons name="ellipse" size={10} color={colors.brand.primary} />
+              <TextInput
+                style={[styles.intlInput, { color: colors.text.primary }]}
+                placeholder="Ciudad de origen"
+                placeholderTextColor={colors.text.muted}
+                value={intlOrigin}
+                onChangeText={setIntlOrigin}
+                autoCorrect={false}
+              />
+            </View>
+
+            {/* Destino */}
+            <View style={[styles.intlField, { backgroundColor: colors.bg.elevated, borderColor: colors.border.subtle }]}>
+              <Ionicons name="ellipse" size={10} color="#30D158" />
+              <TextInput
+                style={[styles.intlInput, { color: colors.text.primary }]}
+                placeholder="Ciudad de destino"
+                placeholderTextColor={colors.text.muted}
+                value={intlDest}
+                onChangeText={setIntlDest}
+                autoCorrect={false}
+              />
+            </View>
+
+            {/* Fecha */}
+            <View style={styles.intlDayRow}>
+              {['Hoy', 'Mañana', 'Pasado'].map((label, i) => (
+                <Pressable
+                  key={i}
+                  style={[styles.intlDayChip,
+                    { backgroundColor: intlDate === i ? colors.brand.primary : colors.bg.elevated,
+                      borderColor: intlDate === i ? colors.brand.primary : colors.border.subtle }]}
+                  onPress={() => { Haptics.selectionAsync(); setIntlDate(i); }}
+                >
+                  <Text style={[styles.intlDayText, { color: intlDate === i ? '#fff' : colors.text.secondary }]}>{label}</Text>
+                </Pressable>
+              ))}
+            </View>
+
+            {/* Buscar */}
+            <Pressable
+              style={[styles.intlBtn, { backgroundColor: intlOrigin && intlDest ? colors.brand.primary : colors.bg.elevated }]}
+              onPress={() => {
+                if (!intlOrigin.trim() || !intlDest.trim()) return;
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                const date = new Date();
+                date.setDate(date.getDate() + intlDate);
+                const url = buildBestBookingUrl(intlOrigin.trim(), intlDest.trim(), date, 'EU');
+                setIntlUrl(url);
+                setIntlVisible(true);
+              }}
+            >
+              <Ionicons name="search" size={16} color={intlOrigin && intlDest ? '#fff' : colors.text.muted} />
+              <Text style={[styles.intlBtnText, { color: intlOrigin && intlDest ? '#fff' : colors.text.muted }]}>
+                Buscar en Trainline
+              </Text>
+            </Pressable>
+
+            <Text style={[styles.intlHint, { color: colors.text.muted }]}>
+              Compará precios y operadores internacionales
+            </Text>
           </View>
         )}
 
@@ -658,6 +707,28 @@ export default function HomeScreen() {
       <BottomTabBar active="inicio" onTranslatePress={() => setTranslator(true)} />
       <TranslatorSheet visible={translator} onClose={() => setTranslator(false)} />
       <NotificationSheet visible={notifVisible} onClose={() => setNotifVisible(false)} />
+
+      {/* ── WebView internacional ── */}
+      {intlVisible && intlUrl ? (
+        <AffiliateWebView
+          service={{
+            serviceId:     'intl',
+            operator:      'other',
+            trainType:     'intercity',
+            trainNumber:   '',
+            origin:        { id: '', name: intlOrigin, nameLocal: intlOrigin, country: 'ES', coordinates: { latitude: 0, longitude: 0 }, platforms: [] },
+            destination:   { id: '', name: intlDest,   nameLocal: intlDest,   country: 'ES', coordinates: { latitude: 0, longitude: 0 }, platforms: [] },
+            departureTime: (() => { const d = new Date(); d.setDate(d.getDate() + intlDate); return d; })(),
+            arrivalTime:   (() => { const d = new Date(); d.setDate(d.getDate() + intlDate); return d; })(),
+            delayMinutes:  0,
+            status:        'on-time',
+            classes:       ['second'],
+          }}
+          visible={intlVisible}
+          onClose={() => setIntlVisible(false)}
+          onPurchaseSuccess={() => setIntlVisible(false)}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -811,6 +882,18 @@ const styles = StyleSheet.create({
   favBtn: { paddingHorizontal: 10, paddingVertical: 8, flexShrink: 0 },
 
   // Empty state
+  // Internacional
+  intlWrap:     { paddingHorizontal: 16, paddingTop: 24, gap: 12 },
+  intlTitle:    { fontSize: 20, fontWeight: '700', letterSpacing: -0.4 },
+  intlSub:      { fontSize: 13, marginTop: -6, marginBottom: 4 },
+  intlField:    { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12 },
+  intlInput:    { flex: 1, fontSize: 16 },
+  intlDayRow:   { flexDirection: 'row', gap: 8 },
+  intlDayChip:  { flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: 10, borderWidth: 1 },
+  intlDayText:  { fontSize: 13, fontWeight: '600' },
+  intlBtn:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 14 },
+  intlBtnText:  { fontSize: 16, fontWeight: '700' },
+  intlHint:     { fontSize: 12, textAlign: 'center', marginTop: -4 },
   empty:      { alignItems: 'center', paddingVertical: 72, paddingHorizontal: 40 },
   emptyIcon:  { fontSize: 56, marginBottom: 18 },
   emptyTitle: { fontSize: 19, fontWeight: '600', marginBottom: 8, letterSpacing: -0.3 },
