@@ -149,6 +149,26 @@ export function buildBestBookingUrl(
   return `${AFFILIATE_PROXY}?${params.toString()}`;
 }
 
+/**
+ * buildTrainlineByName — Trainline directo por nombre de ciudad.
+ * Fallback cuando el proxy affiliate falla o el marker no está aprobado.
+ */
+export function buildTrainlineByName(
+  originName: string,
+  destName:   string,
+  departure:  Date,
+): string {
+  const date = departure.toISOString().slice(0, 10);
+  return (
+    `https://www.thetrainline.com/book/results` +
+    `?origin=${encodeURIComponent(originName)}` +
+    `&destination=${encodeURIComponent(destName)}` +
+    `&outwardDate=${date}` +
+    `&outwardDateType=departAfter` +
+    `&journeySearchType=single`
+  );
+}
+
 // Aliases por compatibilidad con código existente
 export function buildOmioUrl(
   originName: string, destName: string, departure: Date, passengers = 1,
