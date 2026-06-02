@@ -811,6 +811,7 @@ export default function SplitScreen() {
           onBuy={handleClockBuy}
           originName={selectedStation?.name}
           destStationId={destStation?.id}
+          destStationName={destStation?.name}
         />
       </View>
 

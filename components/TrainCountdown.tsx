@@ -64,7 +64,8 @@ interface TrainCountdownProps {
   onSelect:       (clock: PredictiveClock) => void;
   onBuy:          (clock: PredictiveClock) => void;
   originName?:    string;
-  destStationId?: string; // para destacar el tren que va al destino buscado
+  destStationId?:   string;
+  destStationName?: string; // nombre del destino para el badge
 }
 
 // ── Trainline ─────────────────────────────────────────────────────────────────
@@ -82,6 +83,7 @@ export default memo(function TrainCountdown({
   onBuy,
   originName = 'Origen',
   destStationId,
+  destStationName,
 }: TrainCountdownProps) {
   return (
     <View style={styles.container}>
@@ -115,13 +117,8 @@ export default memo(function TrainCountdown({
               index={i}
               onPress={() => onSelect(clock)}
               onBuy={() => onBuy(clock)}
-              isDestMatch={!!destStationId && (
-                clock.train.destination.id === destStationId ||
-                clock.train.destination.name.toLowerCase().includes(
-                  clocks.find(c => c.train.destination.id === destStationId)
-                    ?.train.destination.name.toLowerCase() ?? ''
-                )
-              )}
+              isDestMatch={!!destStationId}
+              destLabel={destStationName}
             />
           ))}
         </ScrollView>
@@ -137,12 +134,14 @@ function TrainCard({
   onPress,
   onBuy,
   isDestMatch = false,
+  destLabel,
 }: {
   clock:        PredictiveClock;
   index:        number;
   onPress:      () => void;
   onBuy:        () => void;
   isDestMatch?: boolean;
+  destLabel?:   string;
 }) {
   const cfg = STATUS[clock.status];
   const { train } = clock;
@@ -238,7 +237,9 @@ function TrainCard({
                 )}
                 {isDestMatch && (
                   <View style={styles.destMatchBadge}>
-                    <Text style={styles.destMatchText}>✓ TU TREN</Text>
+                    <Text style={styles.destMatchText} numberOfLines={1}>
+                      ✓ {destLabel ? destLabel.split('-')[0].split(' ')[0].toUpperCase() : 'OK'}
+                    </Text>
                   </View>
                 )}
               </View>
