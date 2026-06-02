@@ -422,7 +422,7 @@ export function detectCountryFromCoords(coords: Coordinates): CountryCode | null
 /**
  * findNearestMainStation — igual que findNearestStation pero filtra
  * solo estaciones con trenes de larga distancia (AVE, IC, TGV, etc.)
- * Excluye Cercanías, AVANT, Proximidad y similares.
+ * Excluye solo Cercanías/Proximidad. AVANT es media distancia entre ciudades → incluido.
  * Usar en modo país (trenes entre ciudades).
  */
 export async function findNearestMainStation(coords: Coordinates): Promise<Station | null> {
@@ -452,7 +452,7 @@ export async function findNearestMainStation(coords: Coordinates): Promise<Stati
       AND r.route_type IN (2, 100, 101, 102, 103, 104, 105, 107, 108)
       AND COALESCE(r.route_short_name, '') NOT IN (
         'PROXIMDAD','PROXIMIDAD','Cercanías','CERCANIAS',
-        'AVANT','C1','C2','C3','C4','C5','C7','C8','C9','C10'
+        'C1','C2','C3','C4','C5','C7','C8','C9','C10'
       )
     GROUP BY COALESCE(NULLIF(s.parent_station,''), s.stop_id)
     ORDER BY dist_sq ASC
@@ -623,7 +623,7 @@ export async function queryUpcomingTrains(
       -- Excluir cercanías y trenes urbanos — solo larga distancia entre ciudades
       AND COALESCE(r.route_short_name, '') NOT IN (
         'PROXIMDAD','PROXIMIDAD','Cercanías','CERCANIAS',
-        'AVANT','AVANT EXP','C1','C2','C3','C4','C5','C7','C8','C9','C10'
+        'C1','C2','C3','C4','C5','C7','C8','C9','C10'
       )
       ${destStationId ? `
       AND EXISTS (
@@ -700,7 +700,7 @@ export async function queryUpcomingTrains(
         AND (cal.service_id IS NOT NULL OR cd.exception_type = 1 OR NOT EXISTS (SELECT 1 FROM calendar LIMIT 1))
         AND (cd.exception_type IS NULL OR cd.exception_type != 2)
         AND COALESCE(r.route_short_name, '') NOT IN (
-          'PROXIMDAD','PROXIMIDAD','Cercanías','CERCANIAS','AVANT','AVANT EXP',
+          'PROXIMDAD','PROXIMIDAD','Cercanías','CERCANIAS',
           'C1','C2','C3','C4','C5','C7','C8','C9','C10'
         )
         ${destStationId ? `AND EXISTS (
