@@ -65,6 +65,7 @@ import type {
   Coordinates,
   Station,
   StoredTicket,
+  CountryCode,
 } from '../types';
 
 const { height: H, width: W } = Dimensions.get('window');
@@ -516,13 +517,14 @@ export default function SplitScreen() {
     const t = setTimeout(async () => {
       setStationSearching(true);
       try {
-        const results = await searchStations(stationQuery, 12);
+        const country = params.country as CountryCode | undefined;
+        const results = await searchStations(stationQuery, 12, country);
         setStationSuggestions(results);
       } catch { setStationSuggestions([]); }
       finally { setStationSearching(false); }
     }, 280);
     return () => clearTimeout(t);
-  }, [stationQuery]);
+  }, [stationQuery, params.country]);
 
   // ── Destino encontrado por búsqueda de dirección ─────────────────────
   const handleDestinationFound = useCallback((station: Station, walkMinutes: number) => {
@@ -936,6 +938,13 @@ export default function SplitScreen() {
                 onChangeText={setStationQuery}
                 autoFocus
                 autoCorrect={false}
+                returnKeyType="search"
+                onSubmitEditing={() => {
+                  if (stationSuggestions.length > 0) {
+                    setSelectedStation(stationSuggestions[0]);
+                    setShowStationPicker(false);
+                  }
+                }}
               />
               {stationSearching && <ActivityIndicator size="small" color={colors.brand.primary} />}
             </View>

@@ -1080,8 +1080,9 @@ function normalizeAccents(s: string): string {
   return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 }
 
-export async function searchStations(query: string, limit = 20): Promise<Station[]> {
+export async function searchStations(query: string, limit = 20, country?: CountryCode): Promise<Station[]> {
   if (!query.trim()) return [];
+  if (country) await setActiveCountry(country);
   const conn = await db();
   // Normalizamos el query en JS y también la columna en SQLite con REPLACEs encadenados
   const nq = `%${normalizeAccents(query)}%`;
