@@ -58,12 +58,13 @@ function fmtCountdown(ms: number): string {
 
 // ─────────────────────────────────────────────────────────────────────────────
 interface TrainCountdownProps {
-  clocks:       PredictiveClock[];
-  isLoading:    boolean;
-  isLive:       boolean;
-  onSelect:     (clock: PredictiveClock) => void;
-  onBuy:        (clock: PredictiveClock) => void;
-  originName?:  string;
+  clocks:         PredictiveClock[];
+  isLoading:      boolean;
+  isLive:         boolean;
+  onSelect:       (clock: PredictiveClock) => void;
+  onBuy:          (clock: PredictiveClock) => void;
+  originName?:    string;
+  destStationId?: string; // para destacar el tren que va al destino buscado
 }
 
 // ── Trainline ─────────────────────────────────────────────────────────────────
@@ -80,6 +81,7 @@ export default memo(function TrainCountdown({
   onSelect,
   onBuy,
   originName = 'Origen',
+  destStationId,
 }: TrainCountdownProps) {
   return (
     <View style={styles.container}>
@@ -113,6 +115,13 @@ export default memo(function TrainCountdown({
               index={i}
               onPress={() => onSelect(clock)}
               onBuy={() => onBuy(clock)}
+              isDestMatch={!!destStationId && (
+                clock.train.destination.id === destStationId ||
+                clock.train.destination.name.toLowerCase().includes(
+                  clocks.find(c => c.train.destination.id === destStationId)
+                    ?.train.destination.name.toLowerCase() ?? ''
+                )
+              )}
             />
           ))}
         </ScrollView>
@@ -127,11 +136,13 @@ function TrainCard({
   index,
   onPress,
   onBuy,
+  isDestMatch = false,
 }: {
-  clock:   PredictiveClock;
-  index:   number;
-  onPress: () => void;
-  onBuy:   () => void;
+  clock:        PredictiveClock;
+  index:        number;
+  onPress:      () => void;
+  onBuy:        () => void;
+  isDestMatch?: boolean;
 }) {
   const cfg = STATUS[clock.status];
   const { train } = clock;
@@ -180,14 +191,22 @@ function TrainCard({
         style={({ pressed }) => [
           styles.card,
           index === 0 && styles.cardFirst,
+          isDestMatch && styles.cardDestMatch,
           pressed && styles.cardPressed,
         ]}
         onPress={() => index === 0 ? setExpanded(e => !e) : onPress()}
         accessibilityRole="button"
         accessibilityLabel={`${train.operator} ${train.trainNumber} a ${train.destination.name} — ${fmt(train.departureTime)}`}
       >
-        {/* Stripe de estado (izquierda) */}
-        <View style={[styles.stripe, { backgroundColor: cfg.stripe }]} />
+        {/* Stripe de estado (izquierda) — verde si es el destino buscado */}
+        <View style={[styles.stripe, { backgroundColor: isDestMatch ? '#30D158' : cfg.stripe }]} />
+
+        {/* Chip "TU TREN" si coincide con el destino */}
+        {isDestMatch && (
+          <View style={styles.destMatchBadge}>
+            <Text style={styles.destMatchText}>✓ TU TREN</Text>
+          </View>
+        )}
 
         {/* Cuerpo */}
         <View style={styles.cardInner}>
@@ -390,6 +409,31 @@ const styles = StyleSheet.create({
   cardPressed: {
     opacity:   0.82,
     transform: [{ scale: 0.985 }],
+  },
+  cardDestMatch: {
+    borderColor:  '#30D158',
+    borderWidth:  1.5,
+    shadowColor:  '#30D158',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation:    4,
+  },
+  destMatchBadge: {
+    position:        'absolute',
+    top:             8,
+    right:           8,
+    backgroundColor: '#30D158',
+    borderRadius:    6,
+    paddingHorizontal: 7,
+    paddingVertical:   2,
+    zIndex:          10,
+  },
+  destMatchText: {
+    fontSize:   9,
+    fontWeight: '800',
+    color:      '#fff',
+    letterSpacing: 0.5,
   },
 
   // Accent stripe
