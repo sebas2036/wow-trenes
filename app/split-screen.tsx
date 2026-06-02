@@ -659,16 +659,18 @@ export default function SplitScreen() {
             <Text style={styles.backText}>‹ {isTourist ? 'Mapa' : 'Países'}</Text>
           </Pressable>
 
-          {/* Origin station pill — tappeable para cambiar manualmente */}
+          {/* Origin station pill — muestra estación actual, tappeable para cambiar */}
           <Pressable
             style={[styles.stationPill, { backgroundColor: colors.bg.elevated, borderColor: colors.brand.primary + '66' }]}
             onPress={() => { setStationQuery(''); setStationSuggestions([]); setShowStationPicker(true); }}
+            accessibilityLabel="Cambiar estación"
+            accessibilityHint="Toca para buscar otra estación"
           >
-            <Ionicons name="location-outline" size={12} color={colors.brand.primary} />
-            <Text style={[styles.stationPillText, { color: colors.text.primary }]} numberOfLines={1}>
-              {selectedStation?.name ?? 'Seleccionar estación'}
+            <Ionicons name="location" size={13} color={colors.brand.primary} />
+            <Text style={[styles.stationPillText, { color: selectedStation ? colors.text.primary : colors.text.muted }]} numberOfLines={1}>
+              {selectedStation?.name ?? '…'}
             </Text>
-            <Ionicons name="chevron-down" size={11} color={colors.text.muted} />
+            <Ionicons name="chevron-down" size={12} color={colors.brand.primary} />
           </Pressable>
 
           <Pressable onPress={refresh} style={styles.refreshBtn} accessibilityLabel="Actualizar horarios">
@@ -988,17 +990,19 @@ const styles = StyleSheet.create({
   },
   stationPill: {
     flex:              1,
-    paddingVertical:   Spacing['2'],
-    paddingHorizontal: Spacing['3'],
+    flexDirection:     'row',
+    alignItems:        'center',
+    gap:               6,
+    paddingVertical:   8,
+    paddingHorizontal: 12,
     backgroundColor:   '#2C2C2E',
     borderRadius:      Radius.full,
     borderWidth:       1,
     borderColor:       'rgba(255,255,255,0.09)',
   },
   stationPillText: {
-    fontSize:   Typography.size.sm,
-    color:      '#FFFFFF',
-    fontWeight: Typography.weight.medium,
+    fontSize:   13,
+    fontWeight: '600',
     flex:       1,
   },
 
