@@ -98,6 +98,17 @@ export default memo(function TrainCountdown({
             </View>
           )}
         </View>
+        {/* Fecha sutil — muestra si los trenes son de hoy o mañana */}
+        {clocks.length > 0 && (() => {
+          const d = clocks[0].train.departureTime;
+          const today = new Date();
+          const isToday = d.getDate() === today.getDate() && d.getMonth() === today.getMonth();
+          const isTomorrow = d.getDate() === today.getDate() + 1 && d.getMonth() === today.getMonth();
+          const label = isToday ? 'Hoy' : isTomorrow ? 'Mañana' : d.toLocaleDateString('es', { day: 'numeric', month: 'short' });
+          return (
+            <Text style={styles.dateLabel}>{label}</Text>
+          );
+        })()}
       </View>
 
       {/* Cards */}
@@ -404,6 +415,12 @@ const styles = StyleSheet.create({
     fontWeight:    Typography.weight.bold,
     color:         Colors.status.danger,
     letterSpacing: 1,
+  },
+  dateLabel: {
+    fontSize:      12,
+    fontWeight:    Typography.weight.medium,
+    color:         Colors.text.muted,
+    letterSpacing: 0.2,
   },
 
   // Card

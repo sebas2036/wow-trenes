@@ -574,8 +574,8 @@ export async function queryUpcomingTrains(
       dest_s.stop_lon  AS dest_lon,
       orig_s.stop_name AS origin_name,
       orig_s.stop_lat  AS origin_lat,
-      CASE WHEN dest_st.stop_id = COALESCE(?, dest_st.stop_id) THEN 1 ELSE 0 END AS is_final_dest,
-      orig_s.stop_lon  AS origin_lon
+      orig_s.stop_lon  AS origin_lon,
+      CASE WHEN dest_st.stop_id = COALESCE(?, dest_st.stop_id) THEN 1 ELSE 0 END AS is_final_dest
     FROM stop_times st
     JOIN trips t   ON t.trip_id  = st.trip_id
     JOIN routes r  ON r.route_id = t.route_id
