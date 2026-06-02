@@ -104,7 +104,11 @@ export default memo(function TrainCountdown({
           const today = new Date();
           const isToday = d.getDate() === today.getDate() && d.getMonth() === today.getMonth();
           const isTomorrow = d.getDate() === today.getDate() + 1 && d.getMonth() === today.getMonth();
-          const label = isToday ? 'Hoy' : isTomorrow ? 'Mañana' : d.toLocaleDateString('es', { day: 'numeric', month: 'short' });
+          const label = isToday
+            ? `Hoy ${d.getDate()} ${d.toLocaleDateString('es', { month: 'short' })}`
+            : isTomorrow
+            ? `Mañana ${d.getDate()} ${d.toLocaleDateString('es', { month: 'short' })}`
+            : d.toLocaleDateString('es', { weekday: 'short', day: 'numeric', month: 'short' });
           return (
             <Text style={styles.dateLabel}>{label}</Text>
           );
@@ -417,10 +421,15 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   dateLabel: {
-    fontSize:      12,
-    fontWeight:    Typography.weight.medium,
-    color:         Colors.text.muted,
-    letterSpacing: 0.2,
+    fontSize:        12,
+    fontWeight:      Typography.weight.semibold,
+    color:           Colors.text.muted,
+    letterSpacing:   0.2,
+    paddingRight:    Spacing['3'],
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    paddingHorizontal: 8,
+    paddingVertical:   3,
+    borderRadius:    6,
   },
 
   // Card
