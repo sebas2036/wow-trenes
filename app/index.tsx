@@ -96,9 +96,9 @@ const METRO_CITIES: MetroCity[] = [
   { code: 'NO_OSL', city: 'Oslo',         flag: '🇳🇴', lines: 'T-bane · L1-L6',               color: '#003F87' },
   { code: 'DE_BER', city: 'Berlín',       flag: '🇩🇪', lines: 'BVG · U1-U9 · S-Bahn',        color: '#224F9F' },
   { code: 'DE_MUN', city: 'Múnich',       flag: '🇩🇪', lines: 'MVG · U1-U6 · S1/S8',         color: '#428BC1' },
-  // ── NORTEAMÉRICA ─────────────────────────────────────────────────────
-  { code: 'US_LAX', city: 'Los Ángeles',  flag: '🇺🇸', lines: 'LA Metro · A,B,C,D,E,K,L',     color: '#7C3AED' },
-  { code: 'US_CHI', city: 'Chicago',      flag: '🇺🇸', lines: 'CTA L Train · 8 líneas',        color: '#0057A8' },
+  // ── NORTEAMÉRICA — ocultos hasta completar datos USA ────────────────
+  { code: 'US_LAX', city: 'Los Ángeles',  flag: '🇺🇸', lines: 'LA Metro · A,B,C,D,E,K,L',     color: '#7C3AED', hidden: true },
+  { code: 'US_CHI', city: 'Chicago',      flag: '🇺🇸', lines: 'CTA L Train · 8 líneas',        color: '#0057A8', hidden: true },
   // ── OCULTOS (sin datos aún) ───────────────────────────────────────────
   { code: 'US_NYC', city: 'New York',     flag: '🇺🇸', lines: 'MTA · 27 líneas',               color: '#1A6BBE', hidden: true },
   { code: 'GB_LON', city: 'London',       flag: '🇬🇧', lines: 'TfL · Elizabeth line',          color: '#C0192B', hidden: true },
