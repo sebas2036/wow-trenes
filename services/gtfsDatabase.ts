@@ -419,6 +419,50 @@ export function detectCountryFromCoords(coords: Coordinates): CountryCode | null
   return null; // Fuera de zona de cobertura (ej: Argentina)
 }
 
+/**
+ * findNearestMainStation — igual que findNearestStation pero filtra
+ * solo estaciones con trenes de larga distancia (AVE, IC, TGV, etc.)
+ * Excluye Cercanías, AVANT, Proximidad y similares.
+ * Usar en modo país (trenes entre ciudades).
+ */
+export async function findNearestMainStation(coords: Coordinates): Promise<Station | null> {
+  const { latitude: lat, longitude: lon } = coords;
+  const DELTA = 1.0;
+
+  const detectedCountry = detectCountryFromCoords(coords);
+  if (detectedCountry) await setActiveCountry(detectedCountry);
+
+  const conn = await db();
+
+  const row = await conn.getFirstAsync<{
+    stop_id: string; stop_name: string;
+    stop_lat: number; stop_lon: number; country_code: string;
+  }>(`
+    SELECT s.stop_id, s.stop_name, AVG(s.stop_lat) AS stop_lat,
+           AVG(s.stop_lon) AS stop_lon, s.country_code,
+           (AVG(s.stop_lat) - ?) * (AVG(s.stop_lat) - ?) +
+           (AVG(s.stop_lon) - ?) * (AVG(s.stop_lon) - ?) AS dist_sq
+    FROM stops s
+    INNER JOIN stop_times st ON st.stop_id = s.stop_id
+    INNER JOIN trips t       ON t.trip_id  = st.trip_id
+    INNER JOIN routes r      ON r.route_id = t.route_id
+    WHERE s.stop_lat BETWEEN ? AND ?
+      AND s.stop_lon BETWEEN ? AND ?
+      AND s.location_type IN (0, 1)
+      AND r.route_type IN (2, 100, 101, 102, 103, 104, 105, 107, 108)
+      AND COALESCE(r.route_short_name, '') NOT IN (
+        'PROXIMDAD','PROXIMIDAD','Cercanías','CERCANIAS',
+        'AVANT','C1','C2','C3','C4','C5','C7','C8','C9','C10'
+      )
+    GROUP BY COALESCE(NULLIF(s.parent_station,''), s.stop_id)
+    ORDER BY dist_sq ASC
+    LIMIT 1
+  `, [lat, lat, lon, lon, lat - DELTA, lat + DELTA, lon - DELTA, lon + DELTA]);
+
+  if (!row) return findNearestStation(coords); // fallback
+  return rowToStation(row);
+}
+
 export async function findNearestStation(coords: Coordinates): Promise<Station | null> {
   const { latitude: lat, longitude: lon } = coords;
   const DELTA = 1.0; // ~111 km por grado

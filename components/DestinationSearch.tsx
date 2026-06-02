@@ -40,12 +40,14 @@ interface DestinationSearchProps {
   onStationFound: (station: Station, walkMinutes: number) => void;
   countryHint?:   string;
   placeholder?:   string;
+  longDistance?:  boolean; // true = modo país, filtrar solo larga distancia
 }
 
 export default function DestinationSearch({
   onStationFound,
   countryHint,
   placeholder = '¿A dónde vas? Escribe la dirección…',
+  longDistance = false,
 }: DestinationSearchProps) {
   const [text, setText] = useState('');
   const inputRef = useRef<TextInput>(null);
@@ -56,7 +58,7 @@ export default function DestinationSearch({
   const handleSubmit = useCallback(() => {
     if (!text.trim() || isSearching) return;
     Keyboard.dismiss();
-    search(text.trim(), countryHint);
+    search(text.trim(), countryHint, longDistance);
   }, [text, isSearching, search, countryHint]);
 
   const handleClear = useCallback(() => {

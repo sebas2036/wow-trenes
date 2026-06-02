@@ -16,7 +16,7 @@
  */
 import { useState, useCallback, useRef } from 'react';
 import * as Location from 'expo-location';
-import { findNearestStation } from '../services/gtfsDatabase';
+import { findNearestStation, findNearestMainStation } from '../services/gtfsDatabase';
 import type { Station, Coordinates } from '../types';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -40,7 +40,7 @@ export interface UseAddressToStationReturn {
   status:    AddressSearchStatus;
   result:    AddressSearchResult | null;
   error:     string | null;
-  search:    (address: string, countryHint?: string) => Promise<void>;
+  search:    (address: string, countryHint?: string, longDistance?: boolean) => Promise<void>;
   clear:     () => void;
 }
 
@@ -76,6 +76,7 @@ export function useAddressToStation(): UseAddressToStationReturn {
   const search = useCallback(async (
     address: string,
     countryHint?: string,   // ISO-2 country code para mejorar precisión del geocoder
+    longDistance = false,   // true = modo país (filtrar solo larga distancia)
   ) => {
     const trimmed = address.trim();
     if (!trimmed) return;
@@ -135,7 +136,9 @@ export function useAddressToStation(): UseAddressToStationReturn {
 
     let station: Station | null = null;
     try {
-      station = await findNearestStation(resolvedCoords);
+      station = longDistance
+        ? await findNearestMainStation(resolvedCoords)
+        : await findNearestStation(resolvedCoords);
     } catch (e) {
       if (abortRef.current) return;
       setStatus('error');

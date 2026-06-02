@@ -741,7 +741,8 @@ export default function SplitScreen() {
             <DestinationSearch
               onStationFound={handleDestinationFound}
               countryHint={countryHint}
-              placeholder={isMetro ? 'Escribe una calle o lugar…' : 'Hotel, barrio, ciudad…'}
+              placeholder={isMetro ? 'Escribe una calle o lugar…' : 'Ciudad o estación destino…'}
+              longDistance={!isMetro}
             />
           </Animated.View>
         )}
