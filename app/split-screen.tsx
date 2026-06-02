@@ -750,13 +750,23 @@ export default function SplitScreen() {
         {/* ── Botón para reabrir el buscador ── */}
         {!showDestSearch && (
           <Pressable
-            style={[styles.reopenSearchBtn, { backgroundColor: colors.bg.elevated, borderColor: colors.border.default }]}
-            onPress={() => setShowDestSearch(true)}
+            style={[styles.reopenSearchBtn, {
+              backgroundColor: destStation ? colors.bg.elevated : colors.bg.elevated,
+              borderColor: destStation ? colors.brand.primary + '99' : colors.border.default,
+            }]}
+            onPress={() => !destStation && setShowDestSearch(true)}
           >
-            <Ionicons name="search-outline" size={13} color={colors.text.secondary} />
-            <Text style={[styles.reopenSearchText, { color: colors.text.secondary }]} numberOfLines={1}>
+            <Ionicons
+              name={destStation ? 'navigate' : 'search-outline'}
+              size={13}
+              color={destStation ? colors.brand.primary : colors.text.secondary}
+            />
+            <Text style={[styles.reopenSearchText, {
+              color: destStation ? colors.text.primary : colors.text.secondary,
+              flex: 1,
+            }]} numberOfLines={1}>
               {destStation
-                ? `Destino: ${destStation.name}`
+                ? destStation.name
                 : isMetro ? `¿A dónde vas en ${params.metroCity}?` : '¿A dónde vas?'}
             </Text>
             {destStation && searchedDestWalk > 0 && (
@@ -766,6 +776,20 @@ export default function SplitScreen() {
                   {searchedDestWalk} min
                 </Text>
               </View>
+            )}
+            {/* X para limpiar destino con un tap */}
+            {destStation && (
+              <Pressable
+                onPress={() => {
+                  setDestStation(null);
+                  setSearchedDestWalk(0);
+                  setMapDestination(null);
+                }}
+                hitSlop={10}
+                style={styles.destClearBtn}
+              >
+                <Ionicons name="close" size={13} color={colors.text.primary} />
+              </Pressable>
             )}
           </Pressable>
         )}
@@ -1117,6 +1141,15 @@ const styles = StyleSheet.create({
     fontSize:   Typography.size.xs,
     color:      '#C4B5FD',
     fontWeight: Typography.weight.semibold,
+  },
+  destClearBtn: {
+    width:           22,
+    height:          22,
+    borderRadius:    11,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    alignItems:      'center',
+    justifyContent:  'center',
+    marginLeft:      4,
   },
 
   // Destination strip (tourist mode)
