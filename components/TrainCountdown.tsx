@@ -243,9 +243,9 @@ function TrainCard({
                   </View>
                 )}
               </View>
-              {/* Destino */}
+              {/* Destino — muestra el destino buscado si existe, sino el terminus */}
               <Text style={styles.destination} numberOfLines={1}>
-                → {train.destination.name}
+                → {destLabel ?? train.destination.name}
               </Text>
             </View>
 
