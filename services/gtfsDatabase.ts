@@ -1053,6 +1053,34 @@ function gtfsRowToTrainService(row: any, baseDate: Date): TrainService {
   };
 }
 
+// ── Estaciones principales por país (fallback cuando GPS no coincide) ─────────
+const MAIN_STATION_NAME: Partial<Record<CountryCode, string>> = {
+  FR: 'Paris Gare de Lyon',
+  DE: 'Frankfurt(Main)Hbf',
+  IT: 'Roma Termini',
+  AT: 'Wien Hauptbahnhof',
+  CH: 'Zürich HB',
+  BE: 'Bruxelles-Midi',
+  NL: 'Amsterdam Centraal',
+  PT: 'Lisboa Oriente',
+  ES: 'Madrid Puerta de Atocha',
+  GB: 'London St Pancras International',
+};
+
+/**
+ * getMainStation — busca la estación principal del país activo por nombre.
+ * Si no la encuentra por nombre exacto, cae a getFirstStation (la más ocupada).
+ */
+export async function getMainStation(country?: CountryCode): Promise<Station | null> {
+  const target = country ?? activeCountry;
+  const name = MAIN_STATION_NAME[target];
+  if (name) {
+    const results = await searchStations(name, 1, target);
+    if (results.length > 0) return results[0];
+  }
+  return getFirstStation();
+}
+
 /**
  * getFirstStation — returns the busiest stop from the active country's DB.
  * Uses stop_times count as proxy for importance → returns the main hub station.

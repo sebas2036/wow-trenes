@@ -49,7 +49,7 @@ import AffiliateWebView  from '../components/AffiliateWebView';
 import { useTrainSchedules }          from '../hooks/useTrainSchedules';
 import { useLocation }                from '../hooks/useLocation';
 import { useLiveTrainPosition }       from '../services/liveTrainPosition';
-import { findNearestStation, getStationById, getFirstStation, searchStations, detectCountryFromCoords, setActiveCountry } from '../services/gtfsDatabase';
+import { findNearestStation, getStationById, getFirstStation, getMainStation, searchStations, detectCountryFromCoords, setActiveCountry } from '../services/gtfsDatabase';
 import { optimizeRoute, calculateETA } from '../services/routeOptimizer';
 import { startPlatformMonitoring, stopPlatformMonitoring } from '../services/trainArrivalMonitor';
 import { registerDestinationGeofence, refreshGeofences }  from '../tasks/geofenceTask';
@@ -365,14 +365,13 @@ export default function SplitScreen() {
           if (station) { setSelectedStation(station); return; }
         }
       }
-      // GPS no coincide con el país → estación principal del país seleccionado
+      // GPS no coincide con el país → estación principal hardcodeada del país
       if (params.country) {
         await setActiveCountry(params.country as any).catch(() => {});
       }
-      const fallback = await getFirstStation();
+      const fallback = await getMainStation(params.country as CountryCode | undefined);
       if (fallback) {
         setSelectedStation(fallback);
-        // Centrar mapa en la estación si el usuario está lejos
         setTimeout(() => {
           mapRef.current?.animateToRegion({
             latitude:      fallback.coordinates.latitude,
