@@ -1,12 +1,11 @@
 /**
- * routeOptimizer — Route ETA engine (STEP 3)
- * Hierarchy (offline-first, zero cost):
- *   1. Walk: Haversine estimate (instant, 0$ network)
- *   2. Bus:  OpenRouteService or OSRM public endpoint (network, free tier)
- *   3. Rideshare: Uber/Cabify ETA approximation via Haversine × 1.3 road factor
- * Only calls network when UI explicitly selects Bus mode.
+ * routeOptimizer — Route ETA engine
+ * Walk/Transit → Google Directions API (real streets/transit)
+ * Rideshare    → Haversine estimate + Uber deeplink
  */
 import type { Coordinates, TransportMode, RouteSegment } from '../types';
+
+const GMAPS_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_KEY ?? '';
 
 // ── Speed constants (km/h) ────────────────────────────────────────────────
 const SPEED: Record<TransportMode, number> = {
@@ -45,12 +44,61 @@ export async function calculateETA(
   return { durationMinutes, distanceKm: roadKm };
 }
 
+// ── Google Directions API ─────────────────────────────────────────────────
+async function fetchGoogleDirections(
+  from: Coordinates,
+  to:   Coordinates,
+  travelMode: 'walking' | 'transit',
+): Promise<{ polyline: Coordinates[]; durationMinutes: number; distanceMeters: number } | null> {
+  if (!GMAPS_KEY) return null;
+  try {
+    const url =
+      `https://maps.googleapis.com/maps/api/directions/json` +
+      `?origin=${from.latitude},${from.longitude}` +
+      `&destination=${to.latitude},${to.longitude}` +
+      `&mode=${travelMode}` +
+      `&key=${GMAPS_KEY}`;
+
+    const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
+    if (!res.ok) return null;
+
+    const json = await res.json();
+    if (json.status !== 'OK') return null;
+
+    const leg = json.routes?.[0]?.legs?.[0];
+    if (!leg) return null;
+
+    // Decodificar polyline encoded de Google
+    const encoded: string = json.routes[0].overview_polyline.points;
+    const coords = decodePolyline(encoded);
+
+    return {
+      polyline:        coords,
+      durationMinutes: Math.round(leg.duration.value / 60),
+      distanceMeters:  leg.distance.value,
+    };
+  } catch {
+    return null;
+  }
+}
+
+// Decoder del formato polyline encoded de Google
+function decodePolyline(encoded: string): Coordinates[] {
+  const coords: Coordinates[] = [];
+  let index = 0, lat = 0, lng = 0;
+  while (index < encoded.length) {
+    let b: number, shift = 0, result = 0;
+    do { b = encoded.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+    lat += result & 1 ? ~(result >> 1) : result >> 1;
+    shift = 0; result = 0;
+    do { b = encoded.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+    lng += result & 1 ? ~(result >> 1) : result >> 1;
+    coords.push({ latitude: lat / 1e5, longitude: lng / 1e5 });
+  }
+  return coords;
+}
+
 // ── optimizeRoute (used by split-screen map) ──────────────────────────────
-/**
- * Returns a RouteSegment with polyline for the map.
- * Walk & Rideshare → straight line (no network call).
- * Bus → tries OSRM public API; falls back to straight line on error.
- */
 export async function optimizeRoute(
   from: Coordinates,
   to:   Coordinates,
@@ -58,51 +106,29 @@ export async function optimizeRoute(
 ): Promise<RouteSegment> {
   const eta = await calculateETA(from, to, mode);
 
-  if (mode === 'walk' || mode === 'rideshare') {
+  if (mode === 'rideshare') {
     return {
       mode,
       durationMinutes: Math.round(eta.durationMinutes),
       distanceMeters:  Math.round(eta.distanceKm * 1000),
       polyline:        [from, to],
-      deepLink:        mode === 'rideshare'
-        ? buildRideshareLink(to)
-        : undefined,
+      deepLink:        buildRideshareLink(to),
     };
   }
 
-  // Bus: try OSRM free public API
-  try {
-    const osrmUrl =
-      `https://router.project-osrm.org/route/v1/driving/` +
-      `${from.longitude},${from.latitude};${to.longitude},${to.latitude}` +
-      `?overview=full&geometries=geojson&steps=false`;
-
-    const res  = await fetch(osrmUrl, { signal: AbortSignal.timeout(4000) });
-    if (!res.ok) throw new Error('OSRM error');
-
-    const json = await res.json();
-    const route = json.routes?.[0];
-    if (!route) throw new Error('No route');
-
-    const coords: Coordinates[] = route.geometry.coordinates.map(
-      ([lon, lat]: [number, number]) => ({ latitude: lat, longitude: lon }),
-    );
-
-    return {
-      mode,
-      durationMinutes: Math.round(route.duration / 60),
-      distanceMeters:  Math.round(route.distance),
-      polyline:        coords,
-    };
-  } catch {
-    // Graceful fallback: straight line
-    return {
-      mode,
-      durationMinutes: Math.round(eta.durationMinutes),
-      distanceMeters:  Math.round(eta.distanceKm * 1000),
-      polyline:        [from, to],
-    };
+  // Walk → Google Directions walking
+  if (mode === 'walk') {
+    const google = await fetchGoogleDirections(from, to, 'walking');
+    if (google) return { mode, ...google };
+    // Fallback línea recta
+    return { mode, durationMinutes: Math.round(eta.durationMinutes), distanceMeters: Math.round(eta.distanceKm * 1000), polyline: [from, to] };
   }
+
+  // Bus → Google Directions transit
+  const google = await fetchGoogleDirections(from, to, 'transit');
+  if (google) return { mode, ...google };
+  // Fallback línea recta
+  return { mode, durationMinutes: Math.round(eta.durationMinutes), distanceMeters: Math.round(eta.distanceKm * 1000), polyline: [from, to] };
 }
 
 // ── Deep link builders ────────────────────────────────────────────────────

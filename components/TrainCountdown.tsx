@@ -62,6 +62,7 @@ interface TrainCountdownProps {
   isLoading:    boolean;
   isLive:       boolean;
   onSelect:     (clock: PredictiveClock) => void;
+  onBuy:        (clock: PredictiveClock) => void;
   originName?:  string;
 }
 
@@ -77,6 +78,7 @@ export default memo(function TrainCountdown({
   isLoading,
   isLive,
   onSelect,
+  onBuy,
   originName = 'Origen',
 }: TrainCountdownProps) {
   return (
@@ -110,6 +112,7 @@ export default memo(function TrainCountdown({
               clock={clock}
               index={i}
               onPress={() => onSelect(clock)}
+              onBuy={() => onBuy(clock)}
             />
           ))}
         </ScrollView>
@@ -123,10 +126,12 @@ function TrainCard({
   clock,
   index,
   onPress,
+  onBuy,
 }: {
   clock:   PredictiveClock;
   index:   number;
   onPress: () => void;
+  onBuy:   () => void;
 }) {
   const cfg = STATUS[clock.status];
   const { train } = clock;
@@ -251,7 +256,7 @@ function TrainCard({
             {/* Comprar billete — siempre visible */}
             <Pressable
               style={[styles.buyChip, { backgroundColor: cfg.stripe }]}
-              onPress={onPress}
+              onPress={onBuy}
               accessibilityRole="button"
               accessibilityLabel="Comprar billete"
             >

@@ -301,6 +301,8 @@ export default function SplitScreen() {
   // ── State ──────────────────────────────────────────────────────────────
   const [transportMode,    setTransportMode]    = useState<TransportMode>('walk');
   const [selectedStation,  setSelectedStation]  = useState<Station | null>(null);
+  // Destino del mapa (separado de selectedStation para no recargar el tablero)
+  const [mapDestination,   setMapDestination]   = useState<Station | null>(null);
   const [showStationPicker,  setShowStationPicker]  = useState(false);
   const [stationQuery,       setStationQuery]       = useState('');
   const [stationSuggestions, setStationSuggestions] = useState<Station[]>([]);
@@ -458,18 +460,17 @@ export default function SplitScreen() {
 
   // ── ETAs para los 3 modos en paralelo ────────────────────────────────
   useEffect(() => {
-    if (!userCoords || !selectedStation) return;
-    // Si el usuario está a más de 500 km de la estación (ej: desde Argentina)
-    // no calculamos ETAs — no tiene sentido mostrar miles de minutos
-    const distKm = haversineKm(userCoords, selectedStation.coordinates);
+    const target = mapDestination ?? selectedStation;
+    if (!userCoords || !target) return;
+    const distKm = haversineKm(userCoords, target.coordinates);
     if (distKm > 500) {
       setEtas({ walk: null, bus: null, rideshare: null });
       return;
     }
     Promise.all([
-      calculateETA(userCoords, selectedStation.coordinates, 'walk'),
-      calculateETA(userCoords, selectedStation.coordinates, 'bus'),
-      calculateETA(userCoords, selectedStation.coordinates, 'rideshare'),
+      calculateETA(userCoords, target.coordinates, 'walk'),
+      calculateETA(userCoords, target.coordinates, 'bus'),
+      calculateETA(userCoords, target.coordinates, 'rideshare'),
     ]).then(([walk, bus, ride]) => {
       setEtas({
         walk:      Math.round(walk.durationMinutes),
@@ -477,17 +478,17 @@ export default function SplitScreen() {
         rideshare: Math.round(ride.durationMinutes),
       });
     }).catch(() => {});
-  }, [userCoords, selectedStation]);
+  }, [userCoords, selectedStation, mapDestination]);
 
-  // ── Route optimization (user → origin station) ────────────────────────
+  // ── Route optimization (user → destino del mapa) ──────────────────────
   useEffect(() => {
-    if (!userCoords || !selectedStation) return;
-    // No trazar ruta si el usuario está a más de 500km (modo remoto/testing)
-    const distKm = haversineKm(userCoords, selectedStation.coordinates);
+    const target = mapDestination ?? selectedStation;
+    if (!userCoords || !target) return;
+    const distKm = haversineKm(userCoords, target.coordinates);
     if (distKm > 500) { setRoutePolyline([]); return; }
     (async () => {
       try {
-        const route = await optimizeRoute(userCoords, selectedStation.coordinates, transportMode);
+        const route = await optimizeRoute(userCoords, target.coordinates, transportMode);
         setRoutePolyline(route.polyline ?? []);
         if (mapRef.current && route.polyline && route.polyline.length > 0) {
           mapRef.current.fitToCoordinates(route.polyline, {
@@ -499,12 +500,13 @@ export default function SplitScreen() {
         setRoutePolyline([]);
       }
     })();
-  }, [transportMode, userCoords, selectedStation]);
+  }, [transportMode, userCoords, selectedStation, mapDestination]);
 
   // ── Rideshare deeplink ────────────────────────────────────────────────
   useEffect(() => {
-    if (transportMode === 'rideshare' && selectedStation) {
-      openRideshare(selectedStation.coordinates, selectedStation.name);
+    const target = mapDestination ?? selectedStation;
+    if (transportMode === 'rideshare' && target) {
+      openRideshare(target.coordinates, target.name);
     }
   }, [transportMode, selectedStation]);
 
@@ -543,14 +545,30 @@ export default function SplitScreen() {
   }, []);
 
   // ── Clock / service selection ─────────────────────────────────────────
+  // Tap en la card → solo actualiza destino del mapa, sin tocar el tablero
   const handleClockSelect = useCallback((clock: PredictiveClock) => {
     const svc = clock.train;
     setSelectedService(svc);
 
-    // Start platform arrival monitor ("tu tren llega en N min")
-    startPlatformMonitoring(svc);
+    if (svc.destination?.coordinates) {
+      setMapDestination({
+        id:          svc.destination.id,
+        name:        svc.destination.name,
+        nameLocal:   svc.destination.nameLocal ?? svc.destination.name,
+        country:     svc.destination.country ?? (params.country ?? 'ES'),
+        coordinates: svc.destination.coordinates,
+        platforms:   [],
+      });
+    }
 
-    // Open affiliate checkout
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }, [params.country]);
+
+  // Tap en "Comprar" → abre checkout + monitoreo
+  const handleClockBuy = useCallback((clock: PredictiveClock) => {
+    const svc = clock.train;
+    setSelectedService(svc);
+    startPlatformMonitoring(svc);
     setAffiliateVisible(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   }, []);
@@ -763,19 +781,15 @@ export default function SplitScreen() {
           isLoading={isLoading}
           isLive={isLive}
           onSelect={handleClockSelect}
+          onBuy={handleClockBuy}
           originName={selectedStation?.name}
         />
       </View>
 
-      {/* Divider — dos acciones en paralelo */}
+      {/* Divider — acceso a otros horarios */}
       <View style={styles.divider}>
         <View style={styles.dividerLine} />
         <View style={styles.dividerActions}>
-          <Pressable style={styles.dividerPill} onPress={() => {}}>
-            <Ionicons name="navigate-outline" size={13} color="#A78BFA" />
-            <Text style={styles.dividerPillText}>{t('split_how_to_get')}</Text>
-          </Pressable>
-          <View style={styles.dividerSep} />
           <Pressable
             style={[styles.dividerPill, styles.dividerPillBuy]}
             onPress={() => router.push({
@@ -837,7 +851,8 @@ export default function SplitScreen() {
                 lineDashPattern={transportMode === 'walk' ? [8, 6] : undefined}
               />
             )}
-            {selectedStation && (
+            {/* Marker estación origen (púrpura) — solo si no hay destino de tren */}
+            {selectedStation && !mapDestination && (
               <Marker
                 coordinate={selectedStation.coordinates}
                 title={selectedStation.name}
@@ -845,7 +860,16 @@ export default function SplitScreen() {
                 pinColor="#C4B5FD"
               />
             )}
-            {destStation && (
+            {/* Marker destino del tren seleccionado (verde) */}
+            {mapDestination && (
+              <Marker
+                coordinate={mapDestination.coordinates}
+                title={mapDestination.name}
+                description="Destino del tren"
+                pinColor="#30D158"
+              />
+            )}
+            {destStation && !mapDestination && (
               <Marker
                 coordinate={destStation.coordinates}
                 title={destLabel ?? destStation.name}
