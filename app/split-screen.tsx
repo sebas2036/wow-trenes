@@ -1009,7 +1009,7 @@ export default function SplitScreen() {
             isLive={livePosition.isLive}
           />
         )}
-      </View>
+      </Animated.View>
 
       {/* ── Purchase success banner ── */}
       {purchaseBookingRef && (
