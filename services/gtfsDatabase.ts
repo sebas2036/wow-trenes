@@ -870,6 +870,11 @@ async function getCountryBoardGTFS(
   stationId?: string,
 ): Promise<BoardEntry[]> {
   const conn = await ensureDB(country);
+  // Si no hay stationId, usar la estación principal del país
+  if (!stationId) {
+    const main = await getMainStation(country);
+    if (main) stationId = main.id;
+  }
   const utcOffset    = COUNTRY_UTC_OFFSET[country] ?? 0;
   const deviceOffset = -new Date().getTimezoneOffset() / 60;
   const diffMs       = (utcOffset - deviceOffset) * 3_600_000;

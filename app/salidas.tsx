@@ -502,6 +502,7 @@ export default function SalidasScreen() {
   const handleDestPress = useCallback((dest: typeof DESTINATIONS[0]) => {
     Haptics.selectionAsync();
     setGpsDetected(false);
+    setCurrentStationId(undefined); // limpiar al cambiar país
     setSelected(dest);
   }, []);
 
