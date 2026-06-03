@@ -51,6 +51,7 @@ import { useLocation }                from '../hooks/useLocation';
 import { useLiveTrainPosition }       from '../services/liveTrainPosition';
 import { findNearestStation, getStationById, getFirstStation, getMainStation, searchStations, detectCountryFromCoords, setActiveCountry } from '../services/gtfsDatabase';
 import { translateStationQuery } from '../services/stationTranslations';
+import { buildTrainlineByName } from '../services/affiliateEngine';
 import { optimizeRoute, calculateETA } from '../services/routeOptimizer';
 import { startPlatformMonitoring, stopPlatformMonitoring } from '../services/trainArrivalMonitor';
 import { registerDestinationGeofence, refreshGeofences }  from '../tasks/geofenceTask';
@@ -328,6 +329,7 @@ export default function SplitScreen() {
 
   // Checkout — affiliate WebView (primary)
   const [affiliateVisible, setAffiliateVisible] = useState(false);
+  const [glacierVisible,   setGlacierVisible]   = useState(false);
 
   // Post-purchase success banner
   const [purchaseBookingRef, setPurchaseBookingRef] = useState<string | null>(null);
@@ -816,6 +818,23 @@ export default function SplitScreen() {
         />
       </View>
 
+      {/* ── Trenes panorámicos destacados por país ── */}
+      {params.country === 'CH' && (
+        <Pressable
+          style={[styles.scenicCard, { backgroundColor: colors.bg.elevated, borderColor: colors.brand.primary + '44' }]}
+          onPress={() => setGlacierVisible(true)}
+        >
+          <Text style={styles.scenicEmoji}>🏔️</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.scenicTitle, { color: colors.text.primary }]}>Glacier Express</Text>
+            <Text style={[styles.scenicSub, { color: colors.text.muted }]}>Zermatt → St. Moritz · 7h 45min · Reserva requerida</Text>
+          </View>
+          <View style={[styles.scenicBadge, { backgroundColor: colors.brand.primary }]}>
+            <Text style={styles.scenicBadgeText}>Reservar</Text>
+          </View>
+        </Pressable>
+      )}
+
       {/* Divider — acceso a otros horarios */}
       <View style={styles.divider}>
         <View style={styles.dividerLine} />
@@ -1013,6 +1032,28 @@ export default function SplitScreen() {
         />
       )}
 
+      {/* WebView Glacier Express */}
+      {glacierVisible && (
+        <AffiliateWebView
+          service={{
+            serviceId:    'glacier-express',
+            operator:     'sbb',
+            trainType:    'high-speed',
+            trainNumber:  'GEX',
+            origin:       { id: '', name: 'Zermatt', nameLocal: 'Zermatt', country: 'CH', coordinates: { latitude: 46.0207, longitude: 7.7491 }, platforms: [] },
+            destination:  { id: '', name: 'St. Moritz', nameLocal: 'St. Moritz', country: 'CH', coordinates: { latitude: 46.4983, longitude: 9.8394 }, platforms: [] },
+            departureTime: (() => { const d = new Date(); d.setHours(9, 0, 0, 0); return d; })(),
+            arrivalTime:   (() => { const d = new Date(); d.setHours(16, 45, 0, 0); return d; })(),
+            delayMinutes: 0,
+            status:       'on-time',
+            classes:      ['first', 'second'],
+          }}
+          visible={glacierVisible}
+          onClose={() => setGlacierVisible(false)}
+          onPurchaseSuccess={() => setGlacierVisible(false)}
+        />
+      )}
+
     </View>
   );
 }
@@ -1179,6 +1220,27 @@ const styles = StyleSheet.create({
   },
 
   // Divider
+  // Trenes panorámicos destacados
+  scenicCard: {
+    flexDirection:    'row',
+    alignItems:       'center',
+    marginHorizontal: Spacing['3'],
+    marginBottom:     Spacing['2'],
+    padding:          Spacing['3'],
+    borderRadius:     Radius.lg,
+    borderWidth:      1,
+    gap:              Spacing['3'],
+  },
+  scenicEmoji:      { fontSize: 28 },
+  scenicTitle:      { fontSize: Typography.size.sm, fontWeight: Typography.weight.bold },
+  scenicSub:        { fontSize: Typography.size.xs, marginTop: 2 },
+  scenicBadge: {
+    paddingHorizontal: Spacing['3'],
+    paddingVertical:   Spacing['1'],
+    borderRadius:      Radius.md,
+  },
+  scenicBadgeText:  { fontSize: Typography.size.xs, fontWeight: Typography.weight.bold, color: '#fff' },
+
   divider: {
     flexDirection:     'row',
     alignItems:        'center',
