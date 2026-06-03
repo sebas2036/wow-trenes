@@ -34,6 +34,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { t } from '../services/i18n';
 import { buildBestBookingUrl } from '../services/affiliateEngine';
 import { useLocation } from '../hooks/useLocation';
+import * as Location from 'expo-location';
 import BottomTabBar from '../components/BottomTabBar';
 import TranslatorSheet from '../components/TranslatorSheet';
 import FlagCircle from '../components/FlagCircle';
@@ -322,7 +323,16 @@ export default function SalidasScreen() {
     (async () => {
       setGpsStatus('loading');
       try {
-        const coords = await requestLocation();
+        // Usar GPS real del dispositivo (evita DEV_LOCATION hardcodeado en useLocation)
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') { setGpsStatus('notfound'); return; }
+        let loc = await Promise.race([
+          Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+          new Promise<null>(r => setTimeout(() => r(null), 10000)),
+        ]);
+        if (!loc) loc = await Location.getLastKnownPositionAsync() ?? null;
+        if (!loc) { setGpsStatus('notfound'); return; }
+        const coords = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
         if (!coords) {
           setGpsStatus('notfound');
           return;
@@ -525,8 +535,15 @@ export default function SalidasScreen() {
     setGpsStatus('loading');
     setGpsDetected(false);
     try {
-      const coords = await requestLocation();
-      if (!coords) { setGpsStatus('notfound'); return; }
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') { setGpsStatus('notfound'); return; }
+      let loc2 = await Promise.race([
+        Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+        new Promise<null>(r => setTimeout(() => r(null), 10000)),
+      ]);
+      if (!loc2) loc2 = await Location.getLastKnownPositionAsync() ?? null;
+      if (!loc2) { setGpsStatus('notfound'); return; }
+      const coords = { latitude: loc2.coords.latitude, longitude: loc2.coords.longitude };
       const countryCode = detectCountryFromCoords(coords);
       if (!countryCode) { setGpsStatus('notfound'); return; }
       const dest = getDestByCode(countryCode);
