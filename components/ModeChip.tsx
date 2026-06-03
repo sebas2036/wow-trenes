@@ -79,22 +79,22 @@ export default memo(function ModeChip({ selected, onChange, etas }: ModeChipProp
 const styles = StyleSheet.create({
   wrap: {
     flexDirection: 'row',
-    marginHorizontal: 12,
-    marginVertical: 6,
+    marginHorizontal: 40,
+    marginVertical: 4,
     borderRadius: Radius.md,
-    padding: 3,
+    padding: 2,
   },
   btn: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 6,
+    paddingVertical: 4,
     borderRadius: Radius.sm,
-    gap: 2,
+    gap: 1,
   },
   btnActive: {
     borderRadius: Radius.sm,
   },
-  label: { fontSize: 11, fontWeight: '500' },
-  eta:   { fontSize: 10, fontWeight: '600', marginTop: 1 },
+  label: { fontSize: 10, fontWeight: '500' },
+  eta:   { fontSize: 9, fontWeight: '600', marginTop: 1 },
 });
