@@ -940,9 +940,9 @@ const styles = StyleSheet.create({
 
   // Empty state
   // Internacional
-  intlWrap:     { paddingHorizontal: 16, paddingTop: 12, gap: 8 },
-  intlTitle:    { fontSize: 17, fontWeight: '700', letterSpacing: -0.4 },
-  intlSub:      { fontSize: 12, marginTop: -4, marginBottom: 0 },
+  intlWrap:     { paddingHorizontal: 16, paddingTop: 4, gap: 6 },
+  intlTitle:    { fontSize: 16, fontWeight: '700', letterSpacing: -0.4 },
+  intlSub:      { fontSize: 11, marginTop: -4, marginBottom: 0 },
   intlField:    { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
   intlInput:    { flex: 1, fontSize: 14 },
   intlDayRow:   { flexDirection: 'row', gap: 6 },
