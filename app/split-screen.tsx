@@ -27,6 +27,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import Constants from 'expo-constants';
+import { LinearGradient } from 'expo-linear-gradient';
 import { t } from '../services/i18n';
 
 // En Expo Go el mapa de Google no funciona (requiere build nativo)
@@ -328,8 +329,10 @@ export default function SplitScreen() {
   const [distToStation, setDistToStation] = useState<number | null>(null);
 
   // Checkout — affiliate WebView (primary)
-  const [affiliateVisible, setAffiliateVisible] = useState(false);
-  const [glacierVisible,   setGlacierVisible]   = useState(false);
+  const [affiliateVisible,  setAffiliateVisible]  = useState(false);
+  const [glacierVisible,    setGlacierVisible]    = useState(false);
+  const [berninaVisible,    setBerninaVisible]    = useState(false);
+  const [goldenPassVisible, setGoldenPassVisible] = useState(false);
 
   // Post-purchase success banner
   const [purchaseBookingRef, setPurchaseBookingRef] = useState<string | null>(null);
@@ -820,19 +823,58 @@ export default function SplitScreen() {
 
       {/* ── Trenes panorámicos destacados por país ── */}
       {params.country === 'CH' && (
-        <Pressable
-          style={[styles.scenicCard, { backgroundColor: colors.bg.elevated, borderColor: colors.brand.primary + '44' }]}
-          onPress={() => setGlacierVisible(true)}
-        >
-          <Text style={styles.scenicEmoji}>🏔️</Text>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.scenicTitle, { color: colors.text.primary }]}>Glacier Express</Text>
-            <Text style={[styles.scenicSub, { color: colors.text.muted }]}>Zermatt → St. Moritz · 7h 45min · Reserva requerida</Text>
-          </View>
-          <View style={[styles.scenicBadge, { backgroundColor: colors.brand.primary }]}>
-            <Text style={styles.scenicBadgeText}>Reservar</Text>
-          </View>
-        </Pressable>
+        <>
+          {[
+            {
+              id: 'glacier',
+              name: 'Glacier Express',
+              route: 'Zermatt → St. Moritz',
+              duration: '7h 45min',
+              colors: ['#C0392B', '#922B21'] as const,
+              icon: 'train' as const,
+              onPress: () => setGlacierVisible(true),
+            },
+            {
+              id: 'bernina',
+              name: 'Bernina Express',
+              route: 'Chur → Tirano',
+              duration: '4h 0min',
+              colors: ['#1A5276', '#154360'] as const,
+              icon: 'train' as const,
+              onPress: () => setBerninaVisible(true),
+            },
+            {
+              id: 'goldenpass',
+              name: 'GoldenPass Express',
+              route: 'Montreux → Interlaken',
+              duration: '3h 19min',
+              colors: ['#B7950B', '#9A7D0A'] as const,
+              icon: 'train' as const,
+              onPress: () => setGoldenPassVisible(true),
+            },
+          ].map((train) => (
+            <Pressable
+              key={train.id}
+              style={[styles.scenicCard, { backgroundColor: colors.bg.elevated, borderColor: train.colors[0] + '55' }]}
+              onPress={train.onPress}
+            >
+              <LinearGradient
+                colors={train.colors}
+                style={styles.scenicIconBadge}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+              >
+                <Ionicons name={train.icon} size={16} color="#fff" />
+              </LinearGradient>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.scenicTitle, { color: colors.text.primary }]}>{train.name}</Text>
+                <Text style={[styles.scenicSub, { color: colors.text.muted }]}>{train.route} · {train.duration} · Reserva requerida</Text>
+              </View>
+              <View style={[styles.scenicBadge, { backgroundColor: train.colors[0] }]}>
+                <Text style={styles.scenicBadgeText}>Reservar</Text>
+              </View>
+            </Pressable>
+          ))}
+        </>
       )}
 
       {/* Divider — acceso a otros horarios */}
@@ -1054,6 +1096,50 @@ export default function SplitScreen() {
         />
       )}
 
+      {/* WebView Bernina Express */}
+      {berninaVisible && (
+        <AffiliateWebView
+          service={{
+            serviceId:   'bernina-express',
+            operator:    'sbb',
+            trainType:   'high-speed',
+            trainNumber: 'BEX',
+            origin:      { id: '', name: 'Chur', nameLocal: 'Chur', country: 'CH', coordinates: { latitude: 46.8499, longitude: 9.5329 }, platforms: [] },
+            destination: { id: '', name: 'Tirano', nameLocal: 'Tirano', country: 'IT', coordinates: { latitude: 46.2154, longitude: 10.1706 }, platforms: [] },
+            departureTime: (() => { const d = new Date(); d.setHours(8, 2, 0, 0); return d; })(),
+            arrivalTime:   (() => { const d = new Date(); d.setHours(12, 2, 0, 0); return d; })(),
+            delayMinutes: 0,
+            status:      'on-time',
+            classes:     ['first', 'second'],
+          }}
+          visible={berninaVisible}
+          onClose={() => setBerninaVisible(false)}
+          onPurchaseSuccess={() => setBerninaVisible(false)}
+        />
+      )}
+
+      {/* WebView GoldenPass Express */}
+      {goldenPassVisible && (
+        <AffiliateWebView
+          service={{
+            serviceId:   'goldenpass-express',
+            operator:    'mob',
+            trainType:   'high-speed',
+            trainNumber: 'GPX',
+            origin:      { id: '', name: 'Montreux', nameLocal: 'Montreux', country: 'CH', coordinates: { latitude: 46.4312, longitude: 6.9109 }, platforms: [] },
+            destination: { id: '', name: 'Interlaken Ost', nameLocal: 'Interlaken Ost', country: 'CH', coordinates: { latitude: 46.6863, longitude: 7.8687 }, platforms: [] },
+            departureTime: (() => { const d = new Date(); d.setHours(8, 6, 0, 0); return d; })(),
+            arrivalTime:   (() => { const d = new Date(); d.setHours(11, 25, 0, 0); return d; })(),
+            delayMinutes: 0,
+            status:      'on-time',
+            classes:     ['first', 'second'],
+          }}
+          visible={goldenPassVisible}
+          onClose={() => setGoldenPassVisible(false)}
+          onPurchaseSuccess={() => setGoldenPassVisible(false)}
+        />
+      )}
+
     </View>
   );
 }
@@ -1231,7 +1317,10 @@ const styles = StyleSheet.create({
     borderWidth:      1,
     gap:              Spacing['3'],
   },
-  scenicEmoji:      { fontSize: 28 },
+  scenicIconBadge: {
+    width: 40, height: 40, borderRadius: 10,
+    alignItems: 'center', justifyContent: 'center',
+  },
   scenicTitle:      { fontSize: Typography.size.sm, fontWeight: Typography.weight.bold },
   scenicSub:        { fontSize: Typography.size.xs, marginTop: 2 },
   scenicBadge: {
