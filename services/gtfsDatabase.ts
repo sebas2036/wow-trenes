@@ -867,6 +867,7 @@ async function getCountryBoardGTFS(
   country: CountryCode,
   mode: 'salidas' | 'arribos',
   limit: number,
+  stationId?: string,
 ): Promise<BoardEntry[]> {
   const conn = await ensureDB(country);
   const utcOffset    = COUNTRY_UTC_OFFSET[country] ?? 0;
@@ -876,12 +877,23 @@ async function getCountryBoardGTFS(
   const fromTime     = timeToGTFS(now);
   const timeCol      = mode === 'salidas' ? 'st.departure_time' : 'st.arrival_time';
   try {
+    // Filtro de estación: si hay stationId, filtrar por esa estación o su parent
+    const stationFilter = stationId
+      ? `AND (st.stop_id = ? OR st.stop_id IN (
+           SELECT stop_id FROM stops WHERE parent_station = ?
+             OR parent_station = (SELECT parent_station FROM stops WHERE stop_id = ? AND parent_station IS NOT NULL AND parent_station != '')
+         ))`
+      : '';
+    const params: any[] = stationId
+      ? [fromTime, stationId, stationId, stationId, limit]
+      : [fromTime, limit];
+
     const rows = await conn.getAllAsync<{
       t: string; train: string | null; head: string | null; stop: string; trip_id: string;
     }>(`
       SELECT MIN(${timeCol}) AS t,
         COALESCE(r.route_short_name, r.route_long_name, '') AS train,
-        COALESCE(t.trip_headsign, '') AS head,
+        COALESCE(t.trip_headsign, s.stop_name, '') AS head,
         s.stop_name AS stop,
         st.trip_id
       FROM stop_times st
@@ -889,8 +901,9 @@ async function getCountryBoardGTFS(
       JOIN routes r ON t.route_id = r.route_id
       JOIN stops  s ON st.stop_id = s.stop_id
       WHERE ${timeCol} >= ? AND s.location_type IN (0, 1)
+      ${stationFilter}
       GROUP BY st.trip_id ORDER BY t ASC LIMIT ?
-    `, [fromTime, limit]);
+    `, params);
     return rows.map((r) => ({
       time:     formatBoardTime(r.t),
       train:    r.train ?? '—',
@@ -912,12 +925,13 @@ export async function getCountryBoard(
   country: CountryCode,
   mode: 'salidas' | 'arribos',
   limit = 30,
+  stationId?: string,
 ): Promise<BoardEntry[]> {
   // Modo offline — saltar APIs real-time, usar solo GTFS local
   const online = await isOnline();
   if (!online) {
     console.log(`[GTFS] Offline — usando GTFS local para ${country}`);
-    return getCountryBoardGTFS(country, mode, limit);
+    return getCountryBoardGTFS(country, mode, limit, stationId);
   }
 
   // Suiza: API real-time transport.opendata.ch
@@ -939,7 +953,7 @@ export async function getCountryBoard(
     } catch (e) {
       console.warn('[DE] Board fallback a GTFS+RT:', e);
     }
-    const gtfsEntries = await getCountryBoardGTFS('DE', mode, limit);
+    const gtfsEntries = await getCountryBoardGTFS('DE', mode, limit, stationId);
     return overlayGermanyDelays(gtfsEntries);
   }
 
@@ -961,7 +975,7 @@ export async function getCountryBoard(
     } catch (e) {
       console.warn('[IT RT] fallback a GTFS:', e);
     }
-    return getCountryBoardGTFS('IT', mode, limit);
+    return getCountryBoardGTFS('IT', mode, limit, stationId);
   }
 
   // Francia: SNCF API real-time (Navitia), fallback GTFS
@@ -982,12 +996,12 @@ export async function getCountryBoard(
     } catch (e) {
       console.warn('[FR RT] fallback a GTFS:', e);
     }
-    return getCountryBoardGTFS('FR', mode, limit);
+    return getCountryBoardGTFS('FR', mode, limit, stationId);
   }
 
   // Portugal: CP API oficialmente caída (404) — usar GTFS directamente
   if (country === 'PT') {
-    return getCountryBoardGTFS('PT', mode, limit);
+    return getCountryBoardGTFS('PT', mode, limit, stationId);
   }
 
   // Austria: ÖBB Hafas real-time (no oficial), fallback GTFS
@@ -1008,7 +1022,7 @@ export async function getCountryBoard(
     } catch (e) {
       console.warn('[AT RT] fallback a GTFS:', e);
     }
-    return getCountryBoardGTFS('AT', mode, limit);
+    return getCountryBoardGTFS('AT', mode, limit, stationId);
   }
 
   // Bélgica: iRail API real-time (NMBS/SNCB), fallback GTFS
@@ -1029,7 +1043,7 @@ export async function getCountryBoard(
     } catch (e) {
       console.warn('[BE RT] fallback a GTFS:', e);
     }
-    return getCountryBoardGTFS('BE', mode, limit);
+    return getCountryBoardGTFS('BE', mode, limit, stationId);
   }
 
   // Madrid Metro: CRTM real-time → fallback GTFS
@@ -1040,7 +1054,7 @@ export async function getCountryBoard(
     } catch (e) {
       console.warn('[ES_MAD] CRTM fallback a GTFS:', e);
     }
-    return getCountryBoardGTFS('ES_MAD', mode, limit);
+    return getCountryBoardGTFS('ES_MAD', mode, limit, stationId);
   }
 
   // Barcelona Metro: TMB real-time → fallback GTFS
@@ -1051,15 +1065,15 @@ export async function getCountryBoard(
     } catch (e) {
       console.warn('[ES_BCN] TMB fallback a GTFS:', e);
     }
-    return getCountryBoardGTFS('ES_BCN', mode, limit);
+    return getCountryBoardGTFS('ES_BCN', mode, limit, stationId);
   }
 
   // París Metro: IDFM real-time cuando haya API key → fallback GTFS (gtfs_fr_par.db)
   if (country === 'FR_PAR') {
-    return getCountryBoardGTFS('FR_PAR', mode, limit);
+    return getCountryBoardGTFS('FR_PAR', mode, limit, stationId);
   }
 
-  return getCountryBoardGTFS(country, mode, limit);
+  return getCountryBoardGTFS(country, mode, limit, stationId);
 }
 
 function formatBoardTime(gtfsTime: string): string {

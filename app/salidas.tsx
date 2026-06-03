@@ -302,6 +302,7 @@ export default function SalidasScreen() {
   const [loading,         setLoading]         = useState(false);
   const [pickerOpen,      setPickerOpen]      = useState(false);
   const [stationName,     setStationName]     = useState('');
+  const [currentStationId, setCurrentStationId] = useState<string | undefined>(undefined);
   // GPS: null = no intentado; 'loading' = buscando; 'found' | 'notfound'
   const [gpsStatus,       setGpsStatus]       = useState<'idle' | 'loading' | 'found' | 'notfound'>('idle');
   const [gpsStationName,  setGpsStationName]  = useState<string>('');
@@ -340,7 +341,7 @@ export default function SalidasScreen() {
         const station = await findNearestStation(coords);
         if (station) {
           setGpsStationName(station.name);
-          // Si el país tiene selector de estación real-time, activar la estación
+          setCurrentStationId(station.id);
           if (RT_STATION_COUNTRIES[countryCode]) {
             setStationForCountry(countryCode, station.id, station.name);
           }
@@ -447,7 +448,7 @@ export default function SalidasScreen() {
     }
 
     try {
-      const raw = await getCountryBoard(dest.code, m, 50);
+      const raw = await getCountryBoard(dest.code, m, 50, currentStationId);
       if (token !== loadRef.current) return;
       const entries = dedupeAndFilter(raw, dest.code);
       setBoard(entries);
@@ -508,6 +509,7 @@ export default function SalidasScreen() {
     setStationForCountry(selected.code, id, name);
     setStationName(name);
     setGpsStationName(name);
+    setCurrentStationId(id);
     setPickerOpen(false);
     setTimeout(() => loadBoard(selected, mode), 100);
   }, [selected, mode, loadBoard]);
