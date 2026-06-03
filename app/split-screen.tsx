@@ -698,7 +698,7 @@ export default function SplitScreen() {
     <View style={styles.root}>
 
       {/* ── TOP HALF: Predictive Clock ── */}
-      <ScrollView style={styles.topHalf} contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false} bounces={false}>
+      <ScrollView style={styles.topHalf} showsVerticalScrollIndicator={false} bounces={false}>
 
         {/* Nav bar */}
         <View style={styles.topNav}>
@@ -1123,7 +1123,7 @@ const styles = StyleSheet.create({
 
   // Upper 50%
   topHalf: {
-    flex:              1,
+    flexShrink:        1,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.05)',
   },
