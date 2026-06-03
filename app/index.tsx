@@ -21,7 +21,7 @@ import { useTheme } from '../context/ThemeContext';
 import FlagCircle from '../components/FlagCircle';
 import { findNearestStation, setActiveCountry, detectCountryFromCoords } from '../services/gtfsDatabase';
 import { prefetchInBackground, onDownloadProgress } from '../services/dbDownloadService';
-import { buildTrainlineByName } from '../services/affiliateEngine';
+import { buildTrainlineByName, buildBestBookingUrl } from '../services/affiliateEngine';
 import { SCENIC_TRAINS } from '../data/scenicTrains';
 import AffiliateWebView from '../components/AffiliateWebView';
 import { t } from '../services/i18n';
@@ -645,7 +645,7 @@ export default function HomeScreen() {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 const date = new Date();
                 date.setDate(date.getDate() + intlDate);
-                const url = buildTrainlineByName(intlOrigin.trim(), intlDest.trim(), date);
+                const url = buildBestBookingUrl(intlOrigin.trim(), intlDest.trim(), date, 'INTL');
                 setIntlUrl(url);
                 setIntlVisible(true);
               }}
