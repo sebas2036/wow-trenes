@@ -13,7 +13,7 @@ import {
   StyleSheet,
   Pressable,
   ActivityIndicator,
-  ScrollView,
+
   Modal,
   Platform,
   SafeAreaView,
@@ -121,10 +121,7 @@ export default memo(function TrainCountdown({
       ) : clocks.length === 0 ? (
         <EmptyState />
       ) : (
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 8 }}
-        >
+        <View>
           {clocks.slice(0, 8).map((clock, i) => {
             const today = new Date();
             const dep   = clock.train.departureTime;
@@ -155,7 +152,7 @@ export default memo(function TrainCountdown({
               </React.Fragment>
             );
           })}
-        </ScrollView>
+        </View>
       )}
     </View>
   );
