@@ -125,17 +125,36 @@ export default memo(function TrainCountdown({
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 8 }}
         >
-          {clocks.slice(0, 8).map((clock, i) => (
-            <TrainCard
-              key={clock.train.serviceId}
-              clock={clock}
-              index={i}
-              onPress={() => onSelect(clock)}
-              onBuy={() => onBuy(clock)}
-              isDestMatch={!!destStationId && !!clock.train.isFinalDest}
-              destLabel={destStationName}
-            />
-          ))}
+          {clocks.slice(0, 8).map((clock, i) => {
+            const today = new Date();
+            const dep   = clock.train.departureTime;
+            const isToday = dep.getDate() === today.getDate() && dep.getMonth() === today.getMonth() && dep.getFullYear() === today.getFullYear();
+            const prevDep = i > 0 ? clocks[i - 1].train.departureTime : null;
+            const prevIsToday = prevDep
+              ? prevDep.getDate() === today.getDate() && prevDep.getMonth() === today.getMonth() && prevDep.getFullYear() === today.getFullYear()
+              : true;
+            const showDateSep = !isToday && prevIsToday;
+            const dateLabel = dep.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' });
+            return (
+              <React.Fragment key={clock.train.serviceId}>
+                {showDateSep && (
+                  <View style={styles.dateSep}>
+                    <View style={styles.dateSepLine} />
+                    <Text style={styles.dateSepLabel}>Mañana · {dateLabel}</Text>
+                    <View style={styles.dateSepLine} />
+                  </View>
+                )}
+                <TrainCard
+                  clock={clock}
+                  index={i}
+                  onPress={() => onSelect(clock)}
+                  onBuy={() => onBuy(clock)}
+                  isDestMatch={!!destStationId && !!clock.train.isFinalDest}
+                  destLabel={destStationName}
+                />
+              </React.Fragment>
+            );
+          })}
         </ScrollView>
       )}
     </View>
@@ -431,6 +450,16 @@ const styles = StyleSheet.create({
     paddingVertical:   3,
     borderRadius:    6,
   },
+  dateSep: {
+    flexDirection:  'row',
+    alignItems:     'center',
+    marginHorizontal: Spacing['3'],
+    marginTop:      Spacing['3'],
+    marginBottom:   Spacing['1'],
+    gap:            8,
+  },
+  dateSepLine:  { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.08)' },
+  dateSepLabel: { fontSize: 11, fontWeight: '600', color: Colors.text.muted, letterSpacing: 0.5 },
 
   // Card
   card: {
