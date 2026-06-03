@@ -667,13 +667,16 @@ export async function queryUpcomingTrains(
 
   // Si hay pocos trenes hoy → completar con los primeros del día siguiente
   if (results.length < limit) {
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(0, 0, 0, 0);
-    const tomorrowGTFS = tomorrow.getFullYear().toString()
-      + (tomorrow.getMonth() + 1).toString().padStart(2, '0')
-      + tomorrow.getDate().toString().padStart(2, '0');
-    const dowTomorrow = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][tomorrow.getDay()];
+    // Calcular mañana desde todayGTFS para evitar errores de timezone
+    const yr  = parseInt(todayGTFS.slice(0, 4));
+    const mo  = parseInt(todayGTFS.slice(4, 6)) - 1;
+    const dy  = parseInt(todayGTFS.slice(6, 8));
+    const tomorrowDate = new Date(yr, mo, dy + 1);
+    const tomorrowGTFS = tomorrowDate.getFullYear().toString()
+      + (tomorrowDate.getMonth() + 1).toString().padStart(2, '0')
+      + tomorrowDate.getDate().toString().padStart(2, '0');
+    const dowTomorrow = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][tomorrowDate.getDay()];
+    const tomorrow = tomorrowDate;
 
     const nextRows = await conn.getAllAsync<typeof rows[0]>(`
       SELECT
