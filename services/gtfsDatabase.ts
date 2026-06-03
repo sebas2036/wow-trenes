@@ -898,7 +898,7 @@ async function getCountryBoardGTFS(
     }>(`
       SELECT ${timeCol} AS t,
         COALESCE(r.route_short_name, r.route_long_name, '') AS train,
-        COALESCE(t.trip_headsign, dest_s.stop_name, '') AS head,
+        dest_s.stop_name AS head,
         s.stop_name AS stop,
         st.trip_id
       FROM stop_times st
