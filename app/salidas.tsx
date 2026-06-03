@@ -346,13 +346,26 @@ export default function SalidasScreen() {
           setGpsStatus('notfound');
           return;
         }
-        // Buscar estación más cercana
+        // Buscar estación más cercana en GTFS
         const station = await findNearestStation(coords);
         if (station) {
           setGpsStationName(station.name);
           setCurrentStationId(station.id);
           if (RT_STATION_COUNTRIES[countryCode]) {
-            setStationForCountry(countryCode, station.id, station.name);
+            // Para países con API real-time, buscar el ID correcto del API por nombre
+            // (el ID de GTFS no coincide con el formato del API real-time)
+            try {
+              const rtResults = await searchForCountry(countryCode, station.name);
+              const rtStation = rtResults[0];
+              if (rtStation) {
+                setStationForCountry(countryCode, rtStation.id, rtStation.name);
+                setGpsStationName(rtStation.name);
+              } else {
+                setStationForCountry(countryCode, station.id, station.name);
+              }
+            } catch {
+              setStationForCountry(countryCode, station.id, station.name);
+            }
           }
         }
         setSelected(dest);
@@ -551,12 +564,29 @@ export default function SalidasScreen() {
       const dest = getDestByCode(countryCode);
       if (!dest) { setGpsStatus('notfound'); return; }
       const station = await findNearestStation(coords);
-      if (station && RT_STATION_COUNTRIES[countryCode]) {
-        setStationForCountry(countryCode, station.id, station.name);
+      if (station) {
+        setCurrentStationId(station.id);
+        if (RT_STATION_COUNTRIES[countryCode]) {
+          try {
+            const rtResults = await searchForCountry(countryCode, station.name);
+            const rtStation = rtResults[0];
+            if (rtStation) {
+              setStationForCountry(countryCode, rtStation.id, rtStation.name);
+              setGpsStationName(rtStation.name);
+            } else {
+              setStationForCountry(countryCode, station.id, station.name);
+              setGpsStationName(station.name);
+            }
+          } catch {
+            setStationForCountry(countryCode, station.id, station.name);
+            setGpsStationName(station.name);
+          }
+        } else {
+          setGpsStationName(station.name);
+        }
       }
       setSelected(dest);
       setStationName(station?.name ?? getStationNameForCountry(countryCode));
-      setGpsStationName(station?.name ?? '');
       setGpsDetected(true);
       setGpsStatus('found');
     } catch {
