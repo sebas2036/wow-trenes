@@ -1098,11 +1098,11 @@ export default function SplitScreen() {
           <AffiliateWebView
             service={{
               serviceId:    train.id,
-              operator:     'trainline',
+              operator:     'other' as any,
               trainType:    'high-speed',
               trainNumber:  train.id.toUpperCase().slice(0, 3),
-              origin:       { id: '', name: train.origin, nameLocal: train.origin, country: train.originCountry, coordinates: train.originCoords, platforms: [] },
-              destination:  { id: '', name: train.dest,   nameLocal: train.dest,   country: train.destCountry,   coordinates: train.destCoords,   platforms: [] },
+              origin:       { id: '', name: train.origin, nameLocal: train.origin, country: train.originCountry as any, coordinates: train.originCoords, platforms: [] },
+              destination:  { id: '', name: train.dest,   nameLocal: train.dest,   country: train.destCountry as any,   coordinates: train.destCoords,   platforms: [] },
               departureTime: dep,
               arrivalTime:   arr,
               delayMinutes: 0,
