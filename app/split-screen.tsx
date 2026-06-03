@@ -73,8 +73,8 @@ import type {
 } from '../types';
 
 const { height: H, width: W } = Dimensions.get('window');
-// Tarjetas dominantes: 58% superior para trenes, 42% para mapa + modos
-const HALF_H = H * 0.58;
+// 50% superior scrolleable para trenes + escénicos, 50% para mapa + modos
+const HALF_H = H * 0.50;
 
 // ── Deep links for rideshare ─────────────────────────────────────────────
 // En Android 11+ canOpenURL() siempre falla para apps de terceros sin
