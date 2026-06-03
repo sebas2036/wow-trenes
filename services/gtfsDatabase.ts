@@ -587,8 +587,12 @@ export async function queryUpcomingTrains(
     JOIN stops dest_s ON dest_s.stop_id = dest_st.stop_id
     JOIN stops orig_s ON orig_s.stop_id = st.stop_id
     -- JOIN opcional al destino buscado para traer arrival_time real
-    LEFT JOIN stop_times user_dest_st ON user_dest_st.trip_id = st.trip_id
-      AND user_dest_st.stop_id = COALESCE(?, NULL)
+    LEFT JOIN (
+      SELECT trip_id, stop_id, MIN(arrival_time) AS arrival_time
+      FROM stop_times
+      WHERE stop_id = COALESCE(?, NULL)
+      GROUP BY trip_id
+    ) user_dest_st ON user_dest_st.trip_id = st.trip_id
     LEFT JOIN stops user_dest_s ON user_dest_s.stop_id = user_dest_st.stop_id
     LEFT JOIN (
       SELECT service_id FROM calendar
