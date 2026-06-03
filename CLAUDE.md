@@ -90,22 +90,20 @@ Salidas duplicadas por múltiples stop_times del mismo trip → resuelto con `LE
 
 > Actualizar esta sección al inicio de cada sesión con lo que se está trabajando.
 
-**Último estado conocido (2026-06-03) — barrido completo:**
+**Último estado conocido (2026-06-03) — sesión 2 completa:**
 
-Fixes aplicados hoy:
-- Destino final del tren: `dest_s.stop_name` directo en `getCountryBoardGTFS` — todos los países
-- Horarios locales correctos desde cualquier timezone: `Intl.DateTimeFormat.formatToParts` en Suiza, Bélgica, Italia, Alemania
-- Suiza arrivals: `stop.arrival` y `j.from` en `fetchSwissStationboard`
-- GPS `loadBoard` stale closure corregida — `useCallback([currentStationId])`
-- GPS busca ID correcto del API real-time por nombre (`searchForCountry`) antes de `setStationForCountry`
-- `DEV_LOCATION` desactivado — usa GPS real del dispositivo
-- Header limpia `gpsStationName` al cambiar país manualmente
-- Tablero salidas: removidos NY, LA, Chicago, Madrid Metro, London Tube
-- Trenes escénicos: 13 trenes en `data/scenicTrains.ts`, por país en split-screen + sección Internacional
-- Badges premium con `LinearGradient` + Ionicons en lugar de emojis
-- Tocar "Inicio" desde Internacional resetea a pestaña Trenes
+Fixes críticos de GTFS:
+- `TIME()` en comparaciones SQL — `'6:16:00' >= '22:15:00'` era TRUE por string, ahora correcto
+- `tomorrowGTFS` calculado desde `todayGTFS` string — evita error de timezone al buscar día siguiente
+- Cuando quedan pocos trenes hoy, completa con los primeros de mañana + separador "Mañana · fecha"
+- `TrainCountdown` usa `View` en vez de `ScrollView` interno — evitaba colapso de altura con ScrollView anidado
 
-**Pendiente / próximos pasos:**
-- Autocompletar "Ciudad de origen" en Internacional con ciudad GPS del usuario
-- Verificar flujo completo buscar-viaje.tsx (origen→destino, compra)
-- `stationTranslations` — revisar si necesita ajustes
+Split-screen layout:
+- Mapa animado: oculto por defecto → peek 38% al seleccionar tren → full 62% tras pago
+- Trenes en ScrollView arriba, "Otros Horarios" + "Experiencias Especiales" estáticos al fondo
+- Trenes escénicos (13) en `data/scenicTrains.ts` por país + sección Internacional
+
+Pendiente:
+- Autocompletar "Ciudad de origen" en Internacional con ciudad GPS
+- Verificar flujo completo `buscar-viaje.tsx`
+- Revisar `stationTranslations`
