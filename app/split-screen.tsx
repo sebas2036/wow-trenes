@@ -698,7 +698,8 @@ export default function SplitScreen() {
     <View style={styles.root}>
 
       {/* ── TOP HALF: Predictive Clock ── */}
-      <ScrollView style={styles.topHalf} showsVerticalScrollIndicator={false} bounces={false}>
+      <View style={styles.topHalf}>
+      <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
 
         {/* Nav bar */}
         <View style={styles.topNav}>
@@ -846,6 +847,11 @@ export default function SplitScreen() {
           destStationName={destStation?.name}
         />
 
+      </ScrollView>
+
+        {/* Spacer flexible — empuja divider y escénicos hacia abajo */}
+        <View style={{ flex: 1 }} />
+
         {/* Divider — acceso a otros horarios */}
         <View style={styles.divider}>
           <View style={styles.dividerLine} />
@@ -896,7 +902,7 @@ export default function SplitScreen() {
             ))}
           </>
         )}
-      </ScrollView>
+      </View>
 
       {/* ── BOTTOM HALF: Mapa animado ── */}
       <Animated.View style={[styles.bottomHalf, animatedMapStyle]}>
@@ -1123,7 +1129,7 @@ const styles = StyleSheet.create({
 
   // Upper 50%
   topHalf: {
-    flexShrink:        1,
+    flex:              1,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.05)',
   },
