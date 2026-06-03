@@ -22,6 +22,7 @@ import FlagCircle from '../components/FlagCircle';
 import { findNearestStation, setActiveCountry, detectCountryFromCoords } from '../services/gtfsDatabase';
 import { prefetchInBackground, onDownloadProgress } from '../services/dbDownloadService';
 import { buildTrainlineByName } from '../services/affiliateEngine';
+import { SCENIC_TRAINS } from '../data/scenicTrains';
 import AffiliateWebView from '../components/AffiliateWebView';
 import { t } from '../services/i18n';
 import TranslatorSheet from '../components/TranslatorSheet';
@@ -303,6 +304,7 @@ export default function HomeScreen() {
   const [intlDate,     setIntlDate]     = useState(0); // 0=hoy, 1=mañana, 2=pasado
   const [intlVisible,  setIntlVisible]  = useState(false);
   const [intlUrl,      setIntlUrl]      = useState('');
+  const [scenicIntlId, setScenicIntlId] = useState<string | null>(null);
   const { isOffline } = useNetwork();
   const [translator,    setTranslator]    = useState(false);
   const [notifVisible,  setNotifVisible]  = useState(false);
@@ -657,6 +659,34 @@ export default function HomeScreen() {
             <Text style={[styles.intlHint, { color: colors.text.muted }]}>
               Compará precios y operadores internacionales
             </Text>
+
+            {/* ── Trenes escénicos destacados ── */}
+            <Text style={[styles.intlSectionLabel, { color: colors.text.muted }]}>TRENES ESCÉNICOS · EXPERIENCIAS ÚNICAS</Text>
+            {SCENIC_TRAINS.map((train) => (
+              <Pressable
+                key={train.id}
+                style={[styles.scenicIntlCard, { backgroundColor: colors.bg.elevated, borderColor: train.colors[0] + '44' }]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  setScenicIntlId(train.id);
+                }}
+              >
+                <LinearGradient
+                  colors={train.colors}
+                  style={styles.scenicIntlBadge}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                >
+                  <Ionicons name="train" size={14} color="#fff" />
+                </LinearGradient>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.scenicIntlName, { color: colors.text.primary }]}>{train.name}</Text>
+                  <Text style={[styles.scenicIntlRoute, { color: colors.text.muted }]}>{train.route} · {train.duration}</Text>
+                </View>
+                <View style={[styles.scenicIntlReservar, { backgroundColor: train.colors[0] }]}>
+                  <Text style={styles.scenicIntlReservarText}>Reservar</Text>
+                </View>
+              </Pressable>
+            ))}
           </View>
         )}
 
@@ -729,6 +759,33 @@ export default function HomeScreen() {
           onPurchaseSuccess={() => setIntlVisible(false)}
         />
       ) : null}
+
+      {/* WebView tren escénico desde Internacional */}
+      {(() => {
+        const train = SCENIC_TRAINS.find(t => t.id === scenicIntlId);
+        if (!train) return null;
+        const dep = new Date(); dep.setHours(9, 0, 0, 0);
+        return (
+          <AffiliateWebView
+            service={{
+              serviceId:    train.id,
+              operator:     'trainline',
+              trainType:    'high-speed',
+              trainNumber:  train.id.toUpperCase().slice(0, 3),
+              origin:       { id: '', name: train.origin, nameLocal: train.origin, country: train.originCountry, coordinates: train.originCoords, platforms: [] },
+              destination:  { id: '', name: train.dest,   nameLocal: train.dest,   country: train.destCountry,   coordinates: train.destCoords,   platforms: [] },
+              departureTime: dep,
+              arrivalTime:   dep,
+              delayMinutes: 0,
+              status:       'on-time',
+              classes:      ['first', 'second'],
+            }}
+            visible={!!scenicIntlId}
+            onClose={() => setScenicIntlId(null)}
+            onPurchaseSuccess={() => setScenicIntlId(null)}
+          />
+        );
+      })()}
     </SafeAreaView>
   );
 }
@@ -893,7 +950,14 @@ const styles = StyleSheet.create({
   intlDayText:  { fontSize: 13, fontWeight: '600' },
   intlBtn:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 14 },
   intlBtnText:  { fontSize: 16, fontWeight: '700' },
-  intlHint:     { fontSize: 12, textAlign: 'center', marginTop: -4 },
+  intlHint:          { fontSize: 12, textAlign: 'center', marginTop: -4 },
+  intlSectionLabel:  { fontSize: 10, fontWeight: '700', letterSpacing: 1.2, marginTop: 8, marginBottom: -4 },
+  scenicIntlCard:    { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 14, borderWidth: 1 },
+  scenicIntlBadge:   { width: 36, height: 36, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+  scenicIntlName:    { fontSize: 13, fontWeight: '700' },
+  scenicIntlRoute:   { fontSize: 11, marginTop: 1 },
+  scenicIntlReservar:    { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
+  scenicIntlReservarText:{ fontSize: 11, fontWeight: '700', color: '#fff' },
   empty:      { alignItems: 'center', paddingVertical: 72, paddingHorizontal: 40 },
   emptyIcon:  { fontSize: 56, marginBottom: 18 },
   emptyTitle: { fontSize: 19, fontWeight: '600', marginBottom: 8, letterSpacing: -0.3 },

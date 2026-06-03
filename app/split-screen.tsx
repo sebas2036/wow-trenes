@@ -53,6 +53,7 @@ import { useLiveTrainPosition }       from '../services/liveTrainPosition';
 import { findNearestStation, getStationById, getFirstStation, getMainStation, searchStations, detectCountryFromCoords, setActiveCountry } from '../services/gtfsDatabase';
 import { translateStationQuery } from '../services/stationTranslations';
 import { buildTrainlineByName } from '../services/affiliateEngine';
+import { SCENIC_TRAINS, getScenicByCountry } from '../data/scenicTrains';
 import { optimizeRoute, calculateETA } from '../services/routeOptimizer';
 import { startPlatformMonitoring, stopPlatformMonitoring } from '../services/trainArrivalMonitor';
 import { registerDestinationGeofence, refreshGeofences }  from '../tasks/geofenceTask';
@@ -330,9 +331,7 @@ export default function SplitScreen() {
 
   // Checkout — affiliate WebView (primary)
   const [affiliateVisible,  setAffiliateVisible]  = useState(false);
-  const [glacierVisible,    setGlacierVisible]    = useState(false);
-  const [berninaVisible,    setBerninaVisible]    = useState(false);
-  const [goldenPassVisible, setGoldenPassVisible] = useState(false);
+  const [scenicVisible,     setScenicVisible]     = useState<string | null>(null);
 
   // Post-purchase success banner
   const [purchaseBookingRef, setPurchaseBookingRef] = useState<string | null>(null);
@@ -821,61 +820,29 @@ export default function SplitScreen() {
         />
       </View>
 
-      {/* ── Trenes panorámicos destacados por país ── */}
-      {params.country === 'CH' && (
-        <>
-          {[
-            {
-              id: 'glacier',
-              name: 'Glacier Express',
-              route: 'Zermatt → St. Moritz',
-              duration: '7h 45min',
-              colors: ['#C0392B', '#922B21'] as const,
-              icon: 'train' as const,
-              onPress: () => setGlacierVisible(true),
-            },
-            {
-              id: 'bernina',
-              name: 'Bernina Express',
-              route: 'Chur → Tirano',
-              duration: '4h 0min',
-              colors: ['#1A5276', '#154360'] as const,
-              icon: 'train' as const,
-              onPress: () => setBerninaVisible(true),
-            },
-            {
-              id: 'goldenpass',
-              name: 'GoldenPass Express',
-              route: 'Montreux → Interlaken',
-              duration: '3h 19min',
-              colors: ['#B7950B', '#9A7D0A'] as const,
-              icon: 'train' as const,
-              onPress: () => setGoldenPassVisible(true),
-            },
-          ].map((train) => (
-            <Pressable
-              key={train.id}
-              style={[styles.scenicCard, { backgroundColor: colors.bg.elevated, borderColor: train.colors[0] + '55' }]}
-              onPress={train.onPress}
-            >
-              <LinearGradient
-                colors={train.colors}
-                style={styles.scenicIconBadge}
-                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              >
-                <Ionicons name={train.icon} size={16} color="#fff" />
-              </LinearGradient>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.scenicTitle, { color: colors.text.primary }]}>{train.name}</Text>
-                <Text style={[styles.scenicSub, { color: colors.text.muted }]}>{train.route} · {train.duration} · Reserva requerida</Text>
-              </View>
-              <View style={[styles.scenicBadge, { backgroundColor: train.colors[0] }]}>
-                <Text style={styles.scenicBadgeText}>Reservar</Text>
-              </View>
-            </Pressable>
-          ))}
-        </>
-      )}
+      {/* ── Trenes escénicos destacados por país ── */}
+      {params.country && getScenicByCountry(params.country).map((train) => (
+        <Pressable
+          key={train.id}
+          style={[styles.scenicCard, { backgroundColor: colors.bg.elevated, borderColor: train.colors[0] + '55' }]}
+          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setScenicVisible(train.id); }}
+        >
+          <LinearGradient
+            colors={train.colors}
+            style={styles.scenicIconBadge}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+          >
+            <Ionicons name="train" size={16} color="#fff" />
+          </LinearGradient>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.scenicTitle, { color: colors.text.primary }]}>{train.name}</Text>
+            <Text style={[styles.scenicSub, { color: colors.text.muted }]}>{train.route} · {train.duration} · Reserva requerida</Text>
+          </View>
+          <View style={[styles.scenicBadge, { backgroundColor: train.colors[0] }]}>
+            <Text style={styles.scenicBadgeText}>Reservar</Text>
+          </View>
+        </Pressable>
+      ))}
 
       {/* Divider — acceso a otros horarios */}
       <View style={styles.divider}>
@@ -1074,71 +1041,33 @@ export default function SplitScreen() {
         />
       )}
 
-      {/* WebView Glacier Express */}
-      {glacierVisible && (
-        <AffiliateWebView
-          service={{
-            serviceId:    'glacier-express',
-            operator:     'sbb',
-            trainType:    'high-speed',
-            trainNumber:  'GEX',
-            origin:       { id: '', name: 'Zermatt', nameLocal: 'Zermatt', country: 'CH', coordinates: { latitude: 46.0207, longitude: 7.7491 }, platforms: [] },
-            destination:  { id: '', name: 'St. Moritz', nameLocal: 'St. Moritz', country: 'CH', coordinates: { latitude: 46.4983, longitude: 9.8394 }, platforms: [] },
-            departureTime: (() => { const d = new Date(); d.setHours(9, 0, 0, 0); return d; })(),
-            arrivalTime:   (() => { const d = new Date(); d.setHours(16, 45, 0, 0); return d; })(),
-            delayMinutes: 0,
-            status:       'on-time',
-            classes:      ['first', 'second'],
-          }}
-          visible={glacierVisible}
-          onClose={() => setGlacierVisible(false)}
-          onPurchaseSuccess={() => setGlacierVisible(false)}
-        />
-      )}
-
-      {/* WebView Bernina Express */}
-      {berninaVisible && (
-        <AffiliateWebView
-          service={{
-            serviceId:   'bernina-express',
-            operator:    'sbb',
-            trainType:   'high-speed',
-            trainNumber: 'BEX',
-            origin:      { id: '', name: 'Chur', nameLocal: 'Chur', country: 'CH', coordinates: { latitude: 46.8499, longitude: 9.5329 }, platforms: [] },
-            destination: { id: '', name: 'Tirano', nameLocal: 'Tirano', country: 'IT', coordinates: { latitude: 46.2154, longitude: 10.1706 }, platforms: [] },
-            departureTime: (() => { const d = new Date(); d.setHours(8, 2, 0, 0); return d; })(),
-            arrivalTime:   (() => { const d = new Date(); d.setHours(12, 2, 0, 0); return d; })(),
-            delayMinutes: 0,
-            status:      'on-time',
-            classes:     ['first', 'second'],
-          }}
-          visible={berninaVisible}
-          onClose={() => setBerninaVisible(false)}
-          onPurchaseSuccess={() => setBerninaVisible(false)}
-        />
-      )}
-
-      {/* WebView GoldenPass Express */}
-      {goldenPassVisible && (
-        <AffiliateWebView
-          service={{
-            serviceId:   'goldenpass-express',
-            operator:    'mob',
-            trainType:   'high-speed',
-            trainNumber: 'GPX',
-            origin:      { id: '', name: 'Montreux', nameLocal: 'Montreux', country: 'CH', coordinates: { latitude: 46.4312, longitude: 6.9109 }, platforms: [] },
-            destination: { id: '', name: 'Interlaken Ost', nameLocal: 'Interlaken Ost', country: 'CH', coordinates: { latitude: 46.6863, longitude: 7.8687 }, platforms: [] },
-            departureTime: (() => { const d = new Date(); d.setHours(8, 6, 0, 0); return d; })(),
-            arrivalTime:   (() => { const d = new Date(); d.setHours(11, 25, 0, 0); return d; })(),
-            delayMinutes: 0,
-            status:      'on-time',
-            classes:     ['first', 'second'],
-          }}
-          visible={goldenPassVisible}
-          onClose={() => setGoldenPassVisible(false)}
-          onPurchaseSuccess={() => setGoldenPassVisible(false)}
-        />
-      )}
+      {/* WebView tren escénico seleccionado */}
+      {(() => {
+        const train = SCENIC_TRAINS.find(t => t.id === scenicVisible);
+        if (!train) return null;
+        const dep = new Date(); dep.setHours(9, 0, 0, 0);
+        const arr = new Date(); arr.setHours(9, 0, 0, 0);
+        return (
+          <AffiliateWebView
+            service={{
+              serviceId:    train.id,
+              operator:     'trainline',
+              trainType:    'high-speed',
+              trainNumber:  train.id.toUpperCase().slice(0, 3),
+              origin:       { id: '', name: train.origin, nameLocal: train.origin, country: train.originCountry, coordinates: train.originCoords, platforms: [] },
+              destination:  { id: '', name: train.dest,   nameLocal: train.dest,   country: train.destCountry,   coordinates: train.destCoords,   platforms: [] },
+              departureTime: dep,
+              arrivalTime:   arr,
+              delayMinutes: 0,
+              status:       'on-time',
+              classes:      ['first', 'second'],
+            }}
+            visible={!!scenicVisible}
+            onClose={() => setScenicVisible(null)}
+            onPurchaseSuccess={() => setScenicVisible(null)}
+          />
+        );
+      })()}
 
     </View>
   );
