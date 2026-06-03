@@ -898,16 +898,22 @@ async function getCountryBoardGTFS(
     }>(`
       SELECT MIN(${timeCol}) AS t,
         COALESCE(r.route_short_name, r.route_long_name, '') AS train,
-        COALESCE(t.trip_headsign, s.stop_name, '') AS head,
+        COALESCE(t.trip_headsign, dest_s.stop_name, '') AS head,
         s.stop_name AS stop,
         st.trip_id
       FROM stop_times st
       JOIN trips  t ON st.trip_id = t.trip_id
       JOIN routes r ON t.route_id = r.route_id
       JOIN stops  s ON st.stop_id = s.stop_id
+      -- Última parada del trip = destino real
+      LEFT JOIN stop_times dest_st ON dest_st.trip_id = st.trip_id
+        AND dest_st.stop_sequence = (
+          SELECT MAX(s2.stop_sequence) FROM stop_times s2 WHERE s2.trip_id = st.trip_id
+        )
+      LEFT JOIN stops dest_s ON dest_s.stop_id = dest_st.stop_id
       WHERE ${timeCol} >= ? AND s.location_type IN (0, 1)
       ${stationFilter}
-      GROUP BY MIN(${timeCol}), COALESCE(t.trip_headsign, r.route_short_name, '') ORDER BY t ASC LIMIT ?
+      GROUP BY MIN(${timeCol}), COALESCE(t.trip_headsign, dest_s.stop_name, '') ORDER BY t ASC LIMIT ?
     `, params);
     return rows.map((r) => ({
       time:     formatBoardTime(r.t),
