@@ -618,7 +618,7 @@ export async function queryUpcomingTrains(
       UNION
       SELECT ?
     )
-      AND st.departure_time >= ?
+      AND TIME(st.departure_time) >= TIME(?)
       -- Solo salidas: excluir si la estación es la última parada del trip
       AND st.stop_sequence < (
         SELECT MAX(s3.stop_sequence) FROM stop_times s3 WHERE s3.trip_id = st.trip_id
@@ -920,7 +920,7 @@ async function getCountryBoardGTFS(
           SELECT MAX(s2.stop_sequence) FROM stop_times s2 WHERE s2.trip_id = st.trip_id
         )
       JOIN stops dest_s ON dest_s.stop_id = dest_st.stop_id
-      WHERE ${timeCol} >= ? AND s.location_type IN (0, 1)
+      WHERE TIME(${timeCol}) >= TIME(?) AND s.location_type IN (0, 1)
       AND dest_s.stop_id != s.stop_id
       ${stationFilter}
       GROUP BY ${timeCol}, dest_s.stop_name ORDER BY t ASC LIMIT ?
