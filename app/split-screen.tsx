@@ -73,8 +73,8 @@ import type {
 } from '../types';
 
 const { height: H, width: W } = Dimensions.get('window');
-// 50% superior scrolleable para trenes + escénicos, 50% para mapa + modos
-const HALF_H = H * 0.50;
+// 38% superior scrolleable para trenes, 62% para mapa (guía GPS es función central)
+const HALF_H = H * 0.38;
 
 // ── Deep links for rideshare ─────────────────────────────────────────────
 // En Android 11+ canOpenURL() siempre falla para apps de terceros sin
