@@ -907,7 +907,7 @@ async function getCountryBoardGTFS(
       JOIN stops  s ON st.stop_id = s.stop_id
       WHERE ${timeCol} >= ? AND s.location_type IN (0, 1)
       ${stationFilter}
-      GROUP BY st.trip_id ORDER BY t ASC LIMIT ?
+      GROUP BY MIN(${timeCol}), COALESCE(t.trip_headsign, r.route_short_name, '') ORDER BY t ASC LIMIT ?
     `, params);
     return rows.map((r) => ({
       time:     formatBoardTime(r.t),

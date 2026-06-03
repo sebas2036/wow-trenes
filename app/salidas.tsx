@@ -600,7 +600,7 @@ export default function SalidasScreen() {
             />
           )}
           <View>
-            <Text style={[styles.title, { color: colors.text.primary }]} numberOfLines={1}>
+            <Text style={[styles.title, { color: colors.text.primary }]} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>
               {displayStation}
             </Text>
             <Text style={[styles.subtitle, { color: colors.text.secondary }]}>
