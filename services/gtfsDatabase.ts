@@ -845,9 +845,15 @@ async function getSwissBoard(
   try {
     const departures = await fetchSwissStationboard(station, limit, undefined, mode === 'salidas' ? 'departure' : 'arrival');
     return departures.map((d: SwissDeparture): BoardEntry => ({
-      time:     formatBoardTime(
-        `${d.departureTime.getHours().toString().padStart(2,'0')}:${d.departureTime.getMinutes().toString().padStart(2,'0')}:00`
-      ),
+      time:     formatBoardTime((() => {
+        if (!d.departureISO) return '00:00:00';
+        const parts = new Intl.DateTimeFormat('en-US', {
+          hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Europe/Zurich',
+        }).formatToParts(new Date(d.departureISO));
+        const h = parts.find(p => p.type === 'hour')?.value   ?? '00';
+        const m = parts.find(p => p.type === 'minute')?.value ?? '00';
+        return `${h}:${m}:00`;
+      })()),
       train:    d.category || d.trainNumber.split(' ')[0] || '—',
       endpoint: d.destination || '—',
       station:  d.stationName,

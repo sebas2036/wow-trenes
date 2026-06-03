@@ -55,8 +55,11 @@ export function getActiveBelgiumStationName(): string {
 
 function unixToHHMM(ts: number): string {
   const d = new Date(ts * 1000);
-  const h = d.toLocaleString('fr-BE', { hour: '2-digit',   hour12: false, timeZone: 'Europe/Brussels' });
-  const m = d.toLocaleString('fr-BE', { minute: '2-digit',               timeZone: 'Europe/Brussels' }).padStart(2, '0');
+  const parts = new Intl.DateTimeFormat('en-US', {
+    hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Europe/Brussels',
+  }).formatToParts(d);
+  const h = parts.find(p => p.type === 'hour')?.value   ?? '00';
+  const m = parts.find(p => p.type === 'minute')?.value ?? '00';
   return `${h}:${m}`;
 }
 
