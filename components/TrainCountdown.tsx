@@ -152,6 +152,17 @@ export default memo(function TrainCountdown({
               </React.Fragment>
             );
           })}
+
+          {/* Card fin de servicio — rellena espacio cuando hay pocos trenes */}
+          {clocks.length < 4 && (
+            <View style={styles.endOfServiceCard}>
+              <Text style={styles.endOfServiceIcon}>🌙</Text>
+              <View>
+                <Text style={styles.endOfServiceTitle}>Fin de servicio nocturno</Text>
+                <Text style={styles.endOfServiceSub}>Próximas salidas · mañana desde las 05:00</Text>
+              </View>
+            </View>
+          )}
         </View>
       )}
     </View>
@@ -457,6 +468,16 @@ const styles = StyleSheet.create({
   },
   dateSepLine:  { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.08)' },
   dateSepLabel: { fontSize: 11, fontWeight: '600', color: Colors.text.muted, letterSpacing: 0.5 },
+  endOfServiceCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    marginHorizontal: Spacing['3'], marginTop: Spacing['2'],
+    padding: Spacing['3'], borderRadius: Radius.md,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+  },
+  endOfServiceIcon:  { fontSize: 24 },
+  endOfServiceTitle: { fontSize: 13, fontWeight: '600', color: Colors.text.secondary },
+  endOfServiceSub:   { fontSize: 11, color: Colors.text.muted, marginTop: 2 },
 
   // Card
   card: {
