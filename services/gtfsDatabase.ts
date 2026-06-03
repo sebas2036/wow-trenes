@@ -665,8 +665,8 @@ export async function queryUpcomingTrains(
 
   const results = rows.map((row) => gtfsRowToTrainService(row, now));
 
-  // Si no hay trenes hoy → buscar los primeros del día siguiente
-  if (results.length === 0) {
+  // Si hay pocos trenes hoy → completar con los primeros del día siguiente
+  if (results.length < limit) {
     const tomorrow = new Date(now);
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setHours(0, 0, 0, 0);
@@ -730,10 +730,10 @@ export async function queryUpcomingTrains(
       tomorrowGTFS,
       stationId, stationId,
       ...(destStationId ? [destStationId, destStationId] : []),
-      limit,
+      limit - results.length,
     ]);
 
-    return nextRows.map((row) => gtfsRowToTrainService(row, tomorrow));
+    return [...results, ...nextRows.map((row) => gtfsRowToTrainService(row, tomorrow))];
   }
 
   return results;
