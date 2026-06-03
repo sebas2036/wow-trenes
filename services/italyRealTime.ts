@@ -66,9 +66,11 @@ function formatDateTimeIT(date: Date): string {
 
 function parseTime(ts: number | null): string {
   if (!ts) return '--:--';
-  const d = new Date(ts);
-  const h = d.toLocaleString('it-IT', { hour: '2-digit', hour12: false, timeZone: 'Europe/Rome' });
-  const m = d.toLocaleString('it-IT', { minute: '2-digit', timeZone: 'Europe/Rome' }).padStart(2, '0');
+  const parts = new Intl.DateTimeFormat('en-US', {
+    hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Europe/Rome',
+  }).formatToParts(new Date(ts));
+  const h = parts.find(p => p.type === 'hour')?.value   ?? '00';
+  const m = parts.find(p => p.type === 'minute')?.value ?? '00';
   return `${h}:${m}`;
 }
 

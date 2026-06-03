@@ -215,8 +215,10 @@ export async function fetchGermanyBoard(
 
 // ── Helper ────────────────────────────────────────────────────────────────────
 function formatTime(d: Date): string {
-  return d.toLocaleTimeString('de-DE', {
-    hour: '2-digit', minute: '2-digit', hour12: false,
-    timeZone: 'Europe/Berlin',
-  });
+  const parts = new Intl.DateTimeFormat('en-US', {
+    hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Europe/Berlin',
+  }).formatToParts(d);
+  const h = parts.find(p => p.type === 'hour')?.value   ?? '00';
+  const m = parts.find(p => p.type === 'minute')?.value ?? '00';
+  return `${h}:${m}`;
 }
