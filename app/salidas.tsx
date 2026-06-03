@@ -473,7 +473,7 @@ export default function SalidasScreen() {
       if (token === loadRef.current) setBoard(prev => prev.length > 0 ? prev : []);
     }
     finally { if (token === loadRef.current) setLoading(false); }
-  }, []);
+  }, [currentStationId]);
 
   useEffect(() => {
     // Solo cargar si ya pasó el GPS (o falló)
