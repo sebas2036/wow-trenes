@@ -56,8 +56,6 @@ const DESTINATIONS = [
   { code: 'AT'     as CountryCode, iso: 'at', name: 'Austria',       sub: 'Railjet · ÖBB'    },
   { code: 'PT'     as CountryCode, iso: 'pt', name: 'Portugal',      sub: 'Alfa Pendular'    },
   { code: 'BE'     as CountryCode, iso: 'be', name: 'Bélgica',       sub: 'IC · Thalys'      },
-  { code: 'ES_MAD' as CountryCode, iso: 'es', name: 'Madrid Metro',  sub: '13 líneas'        },
-  { code: 'GB_LON' as CountryCode, iso: 'gb', name: 'London Tube',   sub: 'TfL'              },
 ];
 
 // Países con selector de estación real-time
