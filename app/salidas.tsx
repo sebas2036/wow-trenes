@@ -322,13 +322,15 @@ export default function SalidasScreen() {
 
     (async () => {
       setGpsStatus('loading');
+      // Timeout global — nunca queda colgado más de 12 segundos
+      const safetyTimer = setTimeout(() => setGpsStatus('notfound'), 12000);
       try {
         // Usar GPS real del dispositivo (evita DEV_LOCATION hardcodeado en useLocation)
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') { setGpsStatus('notfound'); return; }
         let loc = await Promise.race([
           Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
-          new Promise<null>(r => setTimeout(() => r(null), 10000)),
+          new Promise<null>(r => setTimeout(() => r(null), 8000)),
         ]);
         if (!loc) loc = await Location.getLastKnownPositionAsync() ?? null;
         if (!loc) { setGpsStatus('notfound'); return; }
@@ -362,6 +364,8 @@ export default function SalidasScreen() {
         setGpsStatus('found');
       } catch {
         setGpsStatus('notfound');
+      } finally {
+        clearTimeout(safetyTimer);
       }
     })();
   }, [requestLocation]);
