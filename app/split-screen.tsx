@@ -695,11 +695,16 @@ export default function SplitScreen() {
   const destLabel = params.destName ?? destStation?.name ?? null;
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor: colors.bg.base }]}>
 
       {/* ── TOP HALF: Predictive Clock ── */}
-      <View style={[styles.topHalf, { backgroundColor: colors.bg.base }]}>
-      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} bounces={false}>
+      <ScrollView
+        style={[styles.topHalf, { backgroundColor: colors.bg.base }]}
+        contentContainerStyle={{ flexGrow: 1, justifyContent: 'space-between' }}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
+        <View>
 
         {/* Nav bar */}
         <View style={styles.topNav}>
@@ -847,64 +852,62 @@ export default function SplitScreen() {
           destStationName={destStation?.name}
         />
 
-      </ScrollView>
-
-        {/* Spacer solo cuando hay escénicos — empuja divider hacia abajo */}
-        {params.country && getScenicByCountry(params.country).length > 0 && (
-          <View style={{ flex: 1 }} />
-        )}
-
-        {/* Divider — acceso a otros horarios */}
-        <View style={styles.divider}>
-          <View style={styles.dividerLine} />
-          <View style={styles.dividerActions}>
-            <Pressable
-              style={[styles.dividerPill, styles.dividerPillBuy]}
-              onPress={() => router.push({
-                pathname: '/buscar-viaje',
-                params: {
-                  originId:   selectedStation?.id   ?? '',
-                  originName: selectedStation?.name ?? '',
-                  country:    params.country ?? 'ES',
-                },
-              })}
-            >
-              <Ionicons name="calendar-outline" size={13} color="#fff" />
-              <Text style={[styles.dividerPillText, { color: '#fff' }]}>{t('split_other_times')}</Text>
-            </Pressable>
-          </View>
-          <View style={styles.dividerLine} />
         </View>
 
-        {/* ── Trenes escénicos — debajo del divider ── */}
-        {params.country && getScenicByCountry(params.country).length > 0 && (
-          <>
-            <Text style={[styles.scenicSectionLabel, { color: colors.text.muted }]}>EXPERIENCIAS ESPECIALES</Text>
-            {getScenicByCountry(params.country).map((train) => (
+        {/* Divider + escénicos — siempre al fondo gracias a justifyContent:'space-between' */}
+        <View>
+          {/* Divider — acceso a otros horarios */}
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <View style={styles.dividerActions}>
               <Pressable
-                key={train.id}
-                style={[styles.scenicCard, { backgroundColor: colors.bg.elevated, borderColor: train.colors[0] + '55' }]}
-                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setScenicVisible(train.id); }}
+                style={[styles.dividerPill, styles.dividerPillBuy]}
+                onPress={() => router.push({
+                  pathname: '/buscar-viaje',
+                  params: {
+                    originId:   selectedStation?.id   ?? '',
+                    originName: selectedStation?.name ?? '',
+                    country:    params.country ?? 'ES',
+                  },
+                })}
               >
-                <LinearGradient
-                  colors={train.colors}
-                  style={styles.scenicIconBadge}
-                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                >
-                  <Ionicons name="train" size={16} color="#fff" />
-                </LinearGradient>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.scenicTitle, { color: colors.text.primary }]}>{train.name}</Text>
-                  <Text style={[styles.scenicSub, { color: colors.text.muted }]}>{train.route} · {train.duration}</Text>
-                </View>
-                <View style={[styles.scenicBadge, { backgroundColor: train.colors[0] }]}>
-                  <Text style={styles.scenicBadgeText}>Reservar</Text>
-                </View>
+                <Ionicons name="calendar-outline" size={13} color="#fff" />
+                <Text style={[styles.dividerPillText, { color: '#fff' }]}>{t('split_other_times')}</Text>
               </Pressable>
-            ))}
-          </>
-        )}
-      </View>
+            </View>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* ── Trenes escénicos ── */}
+          {params.country && getScenicByCountry(params.country).length > 0 && (
+            <>
+              <Text style={[styles.scenicSectionLabel, { color: colors.text.muted }]}>EXPERIENCIAS ESPECIALES</Text>
+              {getScenicByCountry(params.country).map((train) => (
+                <Pressable
+                  key={train.id}
+                  style={[styles.scenicCard, { backgroundColor: colors.bg.elevated, borderColor: train.colors[0] + '55' }]}
+                  onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setScenicVisible(train.id); }}
+                >
+                  <LinearGradient
+                    colors={train.colors}
+                    style={styles.scenicIconBadge}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                  >
+                    <Ionicons name="train" size={16} color="#fff" />
+                  </LinearGradient>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.scenicTitle, { color: colors.text.primary }]}>{train.name}</Text>
+                    <Text style={[styles.scenicSub, { color: colors.text.muted }]}>{train.route} · {train.duration}</Text>
+                  </View>
+                  <View style={[styles.scenicBadge, { backgroundColor: train.colors[0] }]}>
+                    <Text style={styles.scenicBadgeText}>Reservar</Text>
+                  </View>
+                </Pressable>
+              ))}
+            </>
+          )}
+        </View>
+      </ScrollView>
 
       {/* ── BOTTOM HALF: Mapa animado ── */}
       <Animated.View style={[styles.bottomHalf, animatedMapStyle]}>
