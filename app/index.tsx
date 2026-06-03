@@ -734,7 +734,7 @@ export default function HomeScreen() {
         </Pressable>
       </Pressable>
 
-      <BottomTabBar active="inicio" onTranslatePress={() => setTranslator(true)} />
+      <BottomTabBar active="inicio" onTranslatePress={() => setTranslator(true)} onHomePress={() => setFilter('trenes')} />
       <TranslatorSheet visible={translator} onClose={() => setTranslator(false)} />
       <NotificationSheet visible={notifVisible} onClose={() => setNotifVisible(false)} />
 

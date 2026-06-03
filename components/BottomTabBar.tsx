@@ -30,9 +30,10 @@ const TABS: TabConfig[] = [
 interface Props {
   active: TabName;
   onTranslatePress?: () => void;
+  onHomePress?: () => void;
 }
 
-export default function BottomTabBar({ active, onTranslatePress }: Props) {
+export default function BottomTabBar({ active, onTranslatePress, onHomePress }: Props) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
@@ -40,6 +41,7 @@ export default function BottomTabBar({ active, onTranslatePress }: Props) {
   const handlePress = (tab: TabConfig) => {
     Haptics.selectionAsync();
     if (tab.name === 'traducir') { onTranslatePress?.(); return; }
+    if (tab.name === 'inicio' && active === 'inicio') { onHomePress?.(); return; }
     if (tab.name === active) return;
     router.push(tab.path as any);
   };
