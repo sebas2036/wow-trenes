@@ -62,31 +62,12 @@ export const NOTIF_COLORS: Record<NotifType, string> = {
 // ── Notificaciones de demo — aparecen al primer lanzamiento ──────────────────
 const DEMO_NOTIFICATIONS: AppNotification[] = [
   {
-    id:          'demo_1',
-    type:        'info',
-    title:       'Bienvenido a WoW TRENES',
-    body:        'Activá las alertas para recibir avisos de retrasos y último tren.',
-    timestamp:   new Date(Date.now() - 1000 * 60 * 2),
-    read:        false,
-  },
-  {
-    id:          'demo_2',
-    type:        'arrival',
-    title:       'AVE Madrid → Barcelona',
-    body:        'Tu tren sale en 45 minutos desde Atocha. ¡Es hora de ir a la estación!',
-    timestamp:   new Date(Date.now() - 1000 * 60 * 8),
-    read:        false,
-    countryCode: 'es',
-    icon:        'train-outline',
-  },
-  {
-    id:          'demo_3',
-    type:        'delay',
-    title:       'Retraso — ICE Frankfurt',
-    body:        'El ICE 514 lleva 18 minutos de retraso. Nueva salida: 14:33.',
-    timestamp:   new Date(Date.now() - 1000 * 60 * 22),
-    read:        false,
-    countryCode: 'de',
+    id:        'welcome',
+    type:      'info',
+    title:     'Alertas activadas',
+    body:      'Te avisamos cuando tu tren se retrasa, cuando es el último del día o cuando estás cerca de la estación.',
+    timestamp: new Date(Date.now() - 1000 * 60 * 2),
+    read:      false,
   },
 ];
 
