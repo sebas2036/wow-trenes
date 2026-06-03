@@ -849,8 +849,10 @@ export default function SplitScreen() {
 
       </ScrollView>
 
-        {/* Spacer flexible — empuja divider y escénicos hacia abajo */}
-        <View style={{ flex: 1 }} />
+        {/* Spacer solo cuando hay escénicos — empuja divider hacia abajo */}
+        {params.country && getScenicByCountry(params.country).length > 0 && (
+          <View style={{ flex: 1 }} />
+        )}
 
         {/* Divider — acceso a otros horarios */}
         <View style={styles.divider}>
