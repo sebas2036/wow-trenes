@@ -820,30 +820,6 @@ export default function SplitScreen() {
         />
       </View>
 
-      {/* ── Trenes escénicos destacados por país ── */}
-      {params.country && getScenicByCountry(params.country).map((train) => (
-        <Pressable
-          key={train.id}
-          style={[styles.scenicCard, { backgroundColor: colors.bg.elevated, borderColor: train.colors[0] + '55' }]}
-          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setScenicVisible(train.id); }}
-        >
-          <LinearGradient
-            colors={train.colors}
-            style={styles.scenicIconBadge}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-          >
-            <Ionicons name="train" size={16} color="#fff" />
-          </LinearGradient>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.scenicTitle, { color: colors.text.primary }]}>{train.name}</Text>
-            <Text style={[styles.scenicSub, { color: colors.text.muted }]}>{train.route} · {train.duration} · Reserva requerida</Text>
-          </View>
-          <View style={[styles.scenicBadge, { backgroundColor: train.colors[0] }]}>
-            <Text style={styles.scenicBadgeText}>Reservar</Text>
-          </View>
-        </Pressable>
-      ))}
-
       {/* Divider — acceso a otros horarios */}
       <View style={styles.divider}>
         <View style={styles.dividerLine} />
@@ -865,6 +841,35 @@ export default function SplitScreen() {
         </View>
         <View style={styles.dividerLine} />
       </View>
+
+      {/* ── Trenes escénicos — debajo del divider ── */}
+      {params.country && getScenicByCountry(params.country).length > 0 && (
+        <>
+          <Text style={[styles.scenicSectionLabel, { color: colors.text.muted }]}>EXPERIENCIAS ESPECIALES</Text>
+          {getScenicByCountry(params.country).map((train) => (
+            <Pressable
+              key={train.id}
+              style={[styles.scenicCard, { backgroundColor: colors.bg.elevated, borderColor: train.colors[0] + '55' }]}
+              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setScenicVisible(train.id); }}
+            >
+              <LinearGradient
+                colors={train.colors}
+                style={styles.scenicIconBadge}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+              >
+                <Ionicons name="train" size={16} color="#fff" />
+              </LinearGradient>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.scenicTitle, { color: colors.text.primary }]}>{train.name}</Text>
+                <Text style={[styles.scenicSub, { color: colors.text.muted }]}>{train.route} · {train.duration}</Text>
+              </View>
+              <View style={[styles.scenicBadge, { backgroundColor: train.colors[0] }]}>
+                <Text style={styles.scenicBadgeText}>Reservar</Text>
+              </View>
+            </Pressable>
+          ))}
+        </>
+      )}
 
       {/* ── BOTTOM HALF: Multimodal Map ── */}
       <View style={styles.bottomHalf}>
@@ -1245,6 +1250,10 @@ const styles = StyleSheet.create({
     borderRadius:     Radius.lg,
     borderWidth:      1,
     gap:              Spacing['3'],
+  },
+  scenicSectionLabel: {
+    fontSize: 10, fontWeight: '700', letterSpacing: 1.2,
+    marginHorizontal: Spacing['3'], marginTop: Spacing['2'], marginBottom: 2,
   },
   scenicIconBadge: {
     width: 40, height: 40, borderRadius: 10,
