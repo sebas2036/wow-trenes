@@ -336,30 +336,23 @@ export default function SplitScreen() {
   // Mapa: 'hidden' | 'peek' (precompra, 38%) | 'full' (post-pago, 62%)
   const [mapMode, setMapMode] = useState<'hidden' | 'peek' | 'full'>('hidden');
   const mapHeight = useSharedValue(0);
-  const topHeight = useSharedValue(H);
 
-  const animatedMapStyle  = useAnimatedStyle(() => ({ height: mapHeight.value }));
-  const animatedTopStyle  = useAnimatedStyle(() => ({ height: topHeight.value }));
+  const animatedMapStyle = useAnimatedStyle(() => ({ height: mapHeight.value, overflow: 'hidden' }));
 
   const openMapPeek = useCallback(() => {
-    const peek = H * 0.38;
-    mapHeight.value  = withTiming(peek,   { duration: 350, easing: Easing.out(Easing.cubic) });
-    topHeight.value  = withTiming(H - peek, { duration: 350, easing: Easing.out(Easing.cubic) });
+    mapHeight.value = withTiming(H * 0.38, { duration: 350, easing: Easing.out(Easing.cubic) });
     setMapMode('peek');
-  }, [mapHeight, topHeight]);
+  }, [mapHeight]);
 
   const openMapFull = useCallback(() => {
-    const full = H * 0.62;
-    mapHeight.value  = withTiming(full,   { duration: 400, easing: Easing.out(Easing.cubic) });
-    topHeight.value  = withTiming(H - full, { duration: 400, easing: Easing.out(Easing.cubic) });
+    mapHeight.value = withTiming(H * 0.62, { duration: 400, easing: Easing.out(Easing.cubic) });
     setMapMode('full');
-  }, [mapHeight, topHeight]);
+  }, [mapHeight]);
 
   const closeMap = useCallback(() => {
-    mapHeight.value  = withTiming(0, { duration: 300, easing: Easing.out(Easing.cubic) });
-    topHeight.value  = withTiming(H, { duration: 300, easing: Easing.out(Easing.cubic) });
+    mapHeight.value = withTiming(0, { duration: 300, easing: Easing.out(Easing.cubic) });
     setMapMode('hidden');
-  }, [mapHeight, topHeight]);
+  }, [mapHeight]);
 
   // Checkout — affiliate WebView (primary)
   const [affiliateVisible,  setAffiliateVisible]  = useState(false);
@@ -705,7 +698,7 @@ export default function SplitScreen() {
     <View style={styles.root}>
 
       {/* ── TOP HALF: Predictive Clock ── */}
-      <Animated.ScrollView style={[styles.topHalf, animatedTopStyle]} contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false} bounces={false}>
+      <ScrollView style={styles.topHalf} contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false} bounces={false}>
 
         {/* Nav bar */}
         <View style={styles.topNav}>
@@ -903,7 +896,7 @@ export default function SplitScreen() {
             ))}
           </>
         )}
-      </Animated.ScrollView>
+      </ScrollView>
 
       {/* ── BOTTOM HALF: Mapa animado ── */}
       <Animated.View style={[styles.bottomHalf, animatedMapStyle]}>
@@ -1130,7 +1123,7 @@ const styles = StyleSheet.create({
 
   // Upper 50%
   topHalf: {
-    overflow:          'hidden',
+    flex:              1,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.05)',
   },
