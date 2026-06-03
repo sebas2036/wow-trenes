@@ -29,9 +29,7 @@ interface UseLocationReturn {
 //   Paris:   { latitude: 48.8566, longitude:  2.3522 }
 //   London:  { latitude: 51.5074, longitude: -0.1278 }
 //   NYC:     { latitude: 40.7128, longitude: -74.0060 }
-const DEV_LOCATION: Coordinates | null = __DEV__
-  ? { latitude: 47.3769, longitude: 8.5417 }  // Zurich HB
-  : null;
+const DEV_LOCATION: Coordinates | null = null;
 
 export function useLocation(): UseLocationReturn {
   const [locationState, setLocationState] = useState<LocationState>({ status: 'idle' });
