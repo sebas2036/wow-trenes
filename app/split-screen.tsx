@@ -38,6 +38,10 @@ import * as Haptics from 'expo-haptics';
 import Animated, {
   FadeIn,
   FadeOut,
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
 } from 'react-native-reanimated';
 
 import { Colors, Typography, Spacing, Radius, Shadows } from '../theme';
@@ -329,6 +333,34 @@ export default function SplitScreen() {
   // Distancia en metros a la estación más cercana
   const [distToStation, setDistToStation] = useState<number | null>(null);
 
+  // Mapa: 'hidden' | 'peek' (precompra, 38%) | 'full' (post-pago, 62%)
+  const [mapMode, setMapMode] = useState<'hidden' | 'peek' | 'full'>('hidden');
+  const mapHeight = useSharedValue(0);
+  const topHeight = useSharedValue(H);
+
+  const animatedMapStyle  = useAnimatedStyle(() => ({ height: mapHeight.value }));
+  const animatedTopStyle  = useAnimatedStyle(() => ({ height: topHeight.value }));
+
+  const openMapPeek = useCallback(() => {
+    const peek = H * 0.38;
+    mapHeight.value  = withTiming(peek,   { duration: 350, easing: Easing.out(Easing.cubic) });
+    topHeight.value  = withTiming(H - peek, { duration: 350, easing: Easing.out(Easing.cubic) });
+    setMapMode('peek');
+  }, [mapHeight, topHeight]);
+
+  const openMapFull = useCallback(() => {
+    const full = H * 0.62;
+    mapHeight.value  = withTiming(full,   { duration: 400, easing: Easing.out(Easing.cubic) });
+    topHeight.value  = withTiming(H - full, { duration: 400, easing: Easing.out(Easing.cubic) });
+    setMapMode('full');
+  }, [mapHeight, topHeight]);
+
+  const closeMap = useCallback(() => {
+    mapHeight.value  = withTiming(0, { duration: 300, easing: Easing.out(Easing.cubic) });
+    topHeight.value  = withTiming(H, { duration: 300, easing: Easing.out(Easing.cubic) });
+    setMapMode('hidden');
+  }, [mapHeight, topHeight]);
+
   // Checkout — affiliate WebView (primary)
   const [affiliateVisible,  setAffiliateVisible]  = useState(false);
   const [scenicVisible,     setScenicVisible]     = useState<string | null>(null);
@@ -569,7 +601,8 @@ export default function SplitScreen() {
     }
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  }, [params.country]);
+    openMapPeek();
+  }, [params.country, openMapPeek]);
 
   // Tap en "Comprar" → abre checkout + monitoreo
   const handleClockBuy = useCallback((clock: PredictiveClock) => {
@@ -592,6 +625,7 @@ export default function SplitScreen() {
 
     setAffiliateVisible(false);
     setPurchaseBookingRef(bookingRef);
+    openMapFull();
 
     // Determine destination station id for Ring-3
     const destId = params.destStationId ?? selectedService.destination.id;
@@ -636,7 +670,7 @@ export default function SplitScreen() {
     }
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-  }, [selectedService, params.destStationId, params.destName]);
+  }, [selectedService, params.destStationId, params.destName, openMapFull]);
 
   // ── Back ──────────────────────────────────────────────────────────────
   const handleBack = useCallback(() => {
@@ -671,7 +705,7 @@ export default function SplitScreen() {
     <View style={styles.root}>
 
       {/* ── TOP HALF: Predictive Clock ── */}
-      <ScrollView style={styles.topHalf} contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false} bounces={false}>
+      <Animated.ScrollView style={[styles.topHalf, animatedTopStyle]} contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false} bounces={false}>
 
         {/* Nav bar */}
         <View style={styles.topNav}>
@@ -869,16 +903,25 @@ export default function SplitScreen() {
             ))}
           </>
         )}
-      </ScrollView>
+      </Animated.ScrollView>
 
-      {/* ── BOTTOM HALF: Multimodal Map ── */}
-      <View style={styles.bottomHalf}>
-        <ModeChip
-          selected={transportMode}
-          onChange={setTransportMode}
-          destination={selectedStation?.coordinates}
-          etas={etas}
-        />
+      {/* ── BOTTOM HALF: Mapa animado ── */}
+      <Animated.View style={[styles.bottomHalf, animatedMapStyle]}>
+        {/* Barra superior del mapa con botón cerrar */}
+        {mapMode !== 'hidden' && (
+          <View style={styles.mapBar}>
+            <ModeChip
+              selected={transportMode}
+              onChange={setTransportMode}
+              destination={selectedStation?.coordinates}
+              etas={etas}
+            />
+            <Pressable onPress={closeMap} style={styles.mapCloseBtn} hitSlop={12}>
+              <Ionicons name="chevron-down" size={18} color="rgba(255,255,255,0.5)" />
+            </Pressable>
+          </View>
+        )}
+
 
         {IS_EXPO_GO ? (
           // Expo Go no soporta Google Maps nativo — mostrar placeholder
@@ -1087,7 +1130,7 @@ const styles = StyleSheet.create({
 
   // Upper 50%
   topHalf: {
-    height:            HALF_H,
+    overflow:          'hidden',
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.05)',
   },
@@ -1343,8 +1386,16 @@ const styles = StyleSheet.create({
 
   // Lower 50%
   bottomHalf: {
-    flex:     1,
     overflow: 'hidden',
+  },
+  mapBar: {
+    flexDirection:  'row',
+    alignItems:     'center',
+    paddingRight:   8,
+  },
+  mapCloseBtn: {
+    padding: 6,
+    marginLeft: -4,
   },
   map: {
     flex: 1,
