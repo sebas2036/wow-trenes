@@ -88,12 +88,13 @@ export async function fetchSwissStationboard(
   stationName: string,
   limit = 20,
   datetime?: Date,
+  type: 'departure' | 'arrival' = 'departure',
 ): Promise<SwissDeparture[]> {
   const params = new URLSearchParams({
     station:        translateSwissQuery(stationName),
     limit:          String(limit),
     transportations: 'train',
-    type:           'departure',
+    type,
   });
   if (datetime) {
     const d = datetime;
@@ -118,20 +119,21 @@ export async function fetchSwissStationboard(
     if (['S', 'BUS', 'B', 'T', 'TRAM', 'BAT', 'SL', 'PB'].includes(cat)) continue;
     if (cat === '' && !j.name?.match(/^(IC|IR|EC|RE|TGV|RJX)/i)) continue;
 
-    const stop      = j.stop ?? {};
-    const depISO    = stop.departure ?? null;
-    const progDep   = stop.prognosis?.departure ?? null;
-    const delayMins = depISO && progDep
-      ? Math.max(0, Math.round((new Date(progDep).getTime() - new Date(depISO).getTime()) / 60_000))
+    const stop       = j.stop ?? {};
+    const isArrival  = type === 'arrival';
+    const timeISO    = isArrival ? (stop.arrival ?? null) : (stop.departure ?? null);
+    const progTime   = isArrival ? (stop.prognosis?.arrival ?? null) : (stop.prognosis?.departure ?? null);
+    const delayMins  = timeISO && progTime
+      ? Math.max(0, Math.round((new Date(progTime).getTime() - new Date(timeISO).getTime()) / 60_000))
       : 0;
 
     board.push({
       trainNumber:   j.name ?? '',
       category:      cat,
       operator:      j.operator ?? '',
-      destination:   j.to ?? '',
-      departureISO:  depISO ?? '',
-      departureTime: depISO ? new Date(depISO) : new Date(),
+      destination:   isArrival ? (j.from ?? '—') : (j.to ?? '—'),
+      departureISO:  timeISO ?? '',
+      departureTime: timeISO ? new Date(timeISO) : new Date(),
       delayMin:      delayMins,
       platform:      stop.platform ?? stop.prognosis?.platform ?? '',
       stationId:     station.id ?? '',

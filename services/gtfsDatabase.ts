@@ -843,7 +843,7 @@ async function getSwissBoard(
 ): Promise<BoardEntry[]> {
   const station = activeSwissStation?.name ?? 'Zürich HB';
   try {
-    const departures = await fetchSwissStationboard(station, limit);
+    const departures = await fetchSwissStationboard(station, limit, undefined, mode === 'salidas' ? 'departure' : 'arrival');
     return departures.map((d: SwissDeparture): BoardEntry => ({
       time:     formatBoardTime(
         `${d.departureTime.getHours().toString().padStart(2,'0')}:${d.departureTime.getMinutes().toString().padStart(2,'0')}:00`
