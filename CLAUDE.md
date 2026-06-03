@@ -90,14 +90,22 @@ Salidas duplicadas por múltiples stop_times del mismo trip → resuelto con `LE
 
 > Actualizar esta sección al inicio de cada sesión con lo que se está trabajando.
 
-**Último estado conocido (2026-06-02):**
-El tablero de salidas muestra el destino final correcto para todos los países.
-Se espera confirmar visualmente en el simulador que España/Atocha muestra:
-- AVE → Sevilla-Santa Justa
-- ALVIA → Cádiz
-- AVANT → Puertollano
+**Último estado conocido (2026-06-03) — barrido completo:**
 
-**Pendiente por confirmar / posibles próximos pasos:**
-- Verificar que el fix del destino final funciona correctamente en todos los países (no solo España)
-- Revisar si hay países con real-time propio (`*RealTime.ts`) que tienen su propio query y también muestran el origen en vez del destino
-- `stationTranslations` — búsqueda en idioma natural del turista (funcionalidad reciente, puede necesitar ajustes)
+Fixes aplicados hoy:
+- Destino final del tren: `dest_s.stop_name` directo en `getCountryBoardGTFS` — todos los países
+- Horarios locales correctos desde cualquier timezone: `Intl.DateTimeFormat.formatToParts` en Suiza, Bélgica, Italia, Alemania
+- Suiza arrivals: `stop.arrival` y `j.from` en `fetchSwissStationboard`
+- GPS `loadBoard` stale closure corregida — `useCallback([currentStationId])`
+- GPS busca ID correcto del API real-time por nombre (`searchForCountry`) antes de `setStationForCountry`
+- `DEV_LOCATION` desactivado — usa GPS real del dispositivo
+- Header limpia `gpsStationName` al cambiar país manualmente
+- Tablero salidas: removidos NY, LA, Chicago, Madrid Metro, London Tube
+- Trenes escénicos: 13 trenes en `data/scenicTrains.ts`, por país en split-screen + sección Internacional
+- Badges premium con `LinearGradient` + Ionicons en lugar de emojis
+- Tocar "Inicio" desde Internacional resetea a pestaña Trenes
+
+**Pendiente / próximos pasos:**
+- Autocompletar "Ciudad de origen" en Internacional con ciudad GPS del usuario
+- Verificar flujo completo buscar-viaje.tsx (origen→destino, compra)
+- `stationTranslations` — revisar si necesita ajustes
