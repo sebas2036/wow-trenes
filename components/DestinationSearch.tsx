@@ -20,6 +20,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Typography, Spacing, Radius } from '../theme';
 import { useAddressToStation, type AddressSearchResult } from '../hooks/useAddressToStation';
 import { searchStations } from '../services/gtfsDatabase';
+import { translateStationQuery } from '../services/stationTranslations';
 import type { Station, CountryCode } from '../types';
 
 const D = {
@@ -80,7 +81,9 @@ function StationSearch({ onStationFound, countryHint, placeholder }: {
       setSearching(true);
       try {
         const country = countryHint as CountryCode | undefined;
-        const found = await searchStations(text.trim(), 15, country);
+        // Traducir "Florencia" → "Firenze", "Viena" → "Wien", etc.
+        const translated = translateStationQuery(text.trim());
+        const found = await searchStations(translated, 15, country);
         setResults(found);
       } catch { setResults([]); }
       finally { setSearching(false); }

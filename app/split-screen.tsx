@@ -50,6 +50,7 @@ import { useTrainSchedules }          from '../hooks/useTrainSchedules';
 import { useLocation }                from '../hooks/useLocation';
 import { useLiveTrainPosition }       from '../services/liveTrainPosition';
 import { findNearestStation, getStationById, getFirstStation, getMainStation, searchStations, detectCountryFromCoords, setActiveCountry } from '../services/gtfsDatabase';
+import { translateStationQuery } from '../services/stationTranslations';
 import { optimizeRoute, calculateETA } from '../services/routeOptimizer';
 import { startPlatformMonitoring, stopPlatformMonitoring } from '../services/trainArrivalMonitor';
 import { registerDestinationGeofence, refreshGeofences }  from '../tasks/geofenceTask';
@@ -518,7 +519,7 @@ export default function SplitScreen() {
       setStationSearching(true);
       try {
         const country = params.country as CountryCode | undefined;
-        const results = await searchStations(stationQuery, 12, country);
+        const results = await searchStations(translateStationQuery(stationQuery), 12, country);
         setStationSuggestions(results);
       } catch { setStationSuggestions([]); }
       finally { setStationSearching(false); }
