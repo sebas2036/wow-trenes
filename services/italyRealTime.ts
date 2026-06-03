@@ -156,9 +156,16 @@ export async function fetchItalyBoard(
       };
     });
 
-    boardCache = { entries, fetchedAt: now, stationId: station.id, mode };
-    console.log(`[IT RT] ${entries.length} ${mode} desde ${station.name}`);
-    return entries;
+    const seen = new Set<string>();
+    const deduped = entries.filter(e => {
+      const key = `${e.trainNumber}|${e.scheduledTime}|${e.destination}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    boardCache = { entries: deduped, fetchedAt: now, stationId: station.id, mode };
+    return deduped;
   } catch (e) {
     console.warn('[IT RT] fetchItalyBoard error:', e);
     return boardCache?.entries ?? [];

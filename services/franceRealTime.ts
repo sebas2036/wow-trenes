@@ -184,9 +184,17 @@ export async function fetchFranceBoard(
       };
     });
 
-    boardCache = { entries, fetchedAt: now, stationId, mode };
-    console.log(`[FR RT] ${entries.length} ${mode} desde ${stationName}`);
-    return entries;
+    // Deduplicar — Navitia devuelve el mismo tren por cada plataforma del stop_area
+    const seen = new Set<string>();
+    const deduped = entries.filter(e => {
+      const key = `${e.trainNumber}|${e.scheduledTime}|${e.destination}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    boardCache = { entries: deduped, fetchedAt: now, stationId, mode };
+    return deduped;
   } catch (e) {
     console.warn('[FR RT] fetchFranceBoard error:', e);
     return boardCache?.entries ?? [];

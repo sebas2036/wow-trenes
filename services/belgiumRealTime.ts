@@ -152,9 +152,16 @@ export async function fetchBelgiumBoard(
       };
     });
 
-    boardCache = { entries, fetchedAt: now, stationId, mode };
-    console.log(`[BE RT] ${entries.length} ${mode} desde ${stationName}`);
-    return entries;
+    const seen = new Set<string>();
+    const deduped = entries.filter(e => {
+      const key = `${e.trainNumber}|${e.scheduledTime}|${e.destination}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    boardCache = { entries: deduped, fetchedAt: now, stationId, mode };
+    return deduped;
   } catch (e) {
     console.warn('[BE RT] fetchBelgiumBoard error:', e);
     return boardCache?.entries ?? [];
