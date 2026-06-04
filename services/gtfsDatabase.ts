@@ -770,14 +770,15 @@ export async function getAllGeofenceStations(): Promise<{
 
 // ── Board: salidas / arribos ──────────────────────────────────────────────────
 export interface BoardEntry {
-  time:     string;   // "14:32"
-  train:    string;   // route_short_name o route_long_name
-  endpoint: string;   // destino (salidas) u origen (arribos)
-  station:  string;   // nombre de la parada
-  status:   'ontime' | 'delayed' | 'cancelled';
-  delay?:   string;   // "+3'" — solo si hay demora real-time
-  platform?: string;  // "7" — andén, si lo informa la API
-  tripId?:  string;   // trip_id GTFS — usado para overlay RT (DE)
+  time:        string;   // "14:32"
+  train:       string;   // route_short_name o route_long_name
+  endpoint:    string;   // destino (salidas) u origen (arribos)
+  station:     string;   // nombre de la parada
+  status:      'ontime' | 'delayed' | 'cancelled';
+  delay?:      string;   // "+3'" — solo si hay demora real-time
+  platform?:   string;  // "7" — andén, si lo informa la API
+  tripId?:     string;   // trip_id GTFS — usado para overlay RT (DE)
+  isTomorrow?: boolean;  // true si es el primer tren de mañana
 }
 
 // ── TfL board: live arrivals via api.tfl.gov.uk (no GTFS stop_times) ────────
@@ -925,13 +926,51 @@ async function getCountryBoardGTFS(
       ${stationFilter}
       GROUP BY ${timeCol}, dest_s.stop_name ORDER BY t ASC LIMIT ?
     `, params);
-    return rows.map((r) => ({
-      time:     formatBoardTime(r.t),
-      train:    r.train ?? '—',
-      endpoint: r.head  || '—',
-      station:  r.stop,
-      status:   'ontime' as const,
-      tripId:   r.trip_id,
+    if (rows.length > 0) {
+      return rows.map((r) => ({
+        time:     formatBoardTime(r.t),
+        train:    r.train ?? '—',
+        endpoint: r.head  || '—',
+        station:  r.stop,
+        status:   'ontime' as const,
+        tripId:   r.trip_id,
+      }));
+    }
+
+    // Sin trenes hoy — buscar primeros de mañana desde 00:00
+    const tomorrowParams: any[] = stationId
+      ? ['00:00:00', stationId, stationId, stationId, limit]
+      : ['00:00:00', limit];
+    const tomorrowRows = await conn.getAllAsync<{
+      t: string; train: string | null; head: string | null; stop: string; trip_id: string;
+    }>(`
+      SELECT ${timeCol} AS t,
+        COALESCE(r.route_short_name, r.route_long_name, '') AS train,
+        dest_s.stop_name AS head,
+        s.stop_name AS stop,
+        st.trip_id
+      FROM stop_times st
+      JOIN trips  t ON st.trip_id = t.trip_id
+      JOIN routes r ON t.route_id = r.route_id
+      JOIN stops  s ON st.stop_id = s.stop_id
+      JOIN stop_times dest_st ON dest_st.trip_id = st.trip_id
+        AND dest_st.stop_sequence = (
+          SELECT MAX(s2.stop_sequence) FROM stop_times s2 WHERE s2.trip_id = st.trip_id
+        )
+      JOIN stops dest_s ON dest_s.stop_id = dest_st.stop_id
+      WHERE TIME(${timeCol}) >= TIME(?) AND s.location_type IN (0, 1)
+      AND dest_s.stop_id != s.stop_id
+      ${stationFilter}
+      GROUP BY ${timeCol}, dest_s.stop_name ORDER BY t ASC LIMIT ?
+    `, tomorrowParams);
+    return tomorrowRows.map((r) => ({
+      time:       formatBoardTime(r.t),
+      train:      r.train ?? '—',
+      endpoint:   r.head  || '—',
+      station:    r.stop,
+      status:     'ontime' as const,
+      tripId:     r.trip_id,
+      isTomorrow: true,
     }));
   } catch { return []; }
 }

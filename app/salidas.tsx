@@ -143,9 +143,16 @@ function BoardRow({
       { backgroundColor: index % 2 === 0 ? colors.bg.card : colors.bg.elevated,
         borderColor: colors.border.subtle },
     ]}>
-      <Text style={[styles.boardTime, { color: colors.brand.primary }]} numberOfLines={1}>
-        {entry.time}
-      </Text>
+      <View style={{ alignItems: 'center' }}>
+        <Text style={[styles.boardTime, { color: colors.brand.primary }]} numberOfLines={1}>
+          {entry.time}
+        </Text>
+        {entry.isTomorrow && (
+          <Text style={{ fontSize: 9, fontWeight: '700', color: '#F59E0B', letterSpacing: 0.5 }}>
+            MAÑANA
+          </Text>
+        )}
+      </View>
       <View style={styles.boardInfo}>
         <Text style={[styles.boardTrain, { color: colors.text.primary }]} numberOfLines={1}>
           {entry.endpoint !== '—' ? entry.endpoint : entry.train}
@@ -421,7 +428,7 @@ export default function SalidasScreen() {
         seen.add(key);
         return true;
       });
-      return deduped.filter(e => timeToMinutes(e.time) >= nowMin - 1);
+      return deduped.filter(e => e.isTomorrow || timeToMinutes(e.time) >= nowMin - 1);
     });
   }, [selected.code]);
 
@@ -434,6 +441,8 @@ export default function SalidasScreen() {
       const key = e.tripId ?? `${e.time}|${e.endpoint}|${e.train}`;
       if (seen.has(key)) return false;
       seen.add(key);
+      // Los trenes de mañana siempre pasan (isTomorrow los marca el GTFS)
+      if (e.isTomorrow) return true;
       return timeToMinutes(e.time) >= nowMin - 1;
     });
   };
