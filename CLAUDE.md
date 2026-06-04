@@ -90,20 +90,41 @@ Salidas duplicadas por múltiples stop_times del mismo trip → resuelto con `LE
 
 > Actualizar esta sección al inicio de cada sesión con lo que se está trabajando.
 
-**Último estado conocido (2026-06-03) — sesión 2 completa:**
+**Último estado conocido (2026-06-04) — sesión 3 (monetización):**
 
-Fixes críticos de GTFS:
-- `TIME()` en comparaciones SQL — `'6:16:00' >= '22:15:00'` era TRUE por string, ahora correcto
-- `tomorrowGTFS` calculado desde `todayGTFS` string — evita error de timezone al buscar día siguiente
-- Cuando quedan pocos trenes hoy, completa con los primeros de mañana + separador "Mañana · fecha"
-- `TrainCountdown` usa `View` en vez de `ScrollView` interno — evitaba colapso de altura con ScrollView anidado
+Sistema afiliado multi-red implementado:
+- Proxy Railway `backend/src/routes/affiliate.ts` con soporte simultáneo Awin + TravelPayouts
+- `resolveAffiliateUrl()` con prioridad configurable y fallback automático
+- Variable `AFFILIATE_PREFERRED='awin'` (default) — cuando Awin apruebe, switch automático
+- Marker TravelPayouts `534570` activo en Railway (proyecto **intelligent-forgiveness**, servicio `voxa`)
 
-Split-screen layout:
-- Mapa animado: oculto por defecto → peek 38% al seleccionar tren → full 62% tras pago
-- Trenes en ScrollView arriba, "Otros Horarios" + "Experiencias Especiales" estáticos al fondo
-- Trenes escénicos (13) en `data/scenicTrains.ts` por país + sección Internacional
+Endpoints del proxy:
+- `/affiliate/redirect` — trenes Europa → Omio, Asia → Trip.com
+- `/affiliate/scenic` — trenes escénicos → Trainline (mejor inventario)
+- `/affiliate/klook` — City Cards y experiencias (2-5%)
+- `/affiliate/kiwitaxi` — transfers aeropuerto (9-11%)
+- `/affiliate/yesim` — eSIM internacional (18%)
+- `/affiliate/health` — estado de redes configuradas
 
-Pendiente:
+Frontend integraciones:
+- `services/affiliateEngine.ts` con `buildScenicTrainUrl`, `buildKlookUrl`, `buildKiwitaxiUrl`, `buildYesimUrl`
+- `components/PartnerCard.tsx` — componente reutilizable de upsell con gradiente
+- `data/partnerOffers.ts` — catálogo de ofertas por ciudad (Madrid, Barcelona, París, Roma, London, Berlin)
+- `app/index.tsx` muestra eSIM Yesim en pestaña Internacional
+- `app/split-screen.tsx` muestra City Card + Transfer según ciudad detectada
+
+Estado afiliados:
+- **Awin** — application received, esperando aprobación (3-5 días) — email `glosx@outlook.com`
+- **TravelPayouts/Glosx** — marker 534570 activo, Klook/Kiwitaxi/Yesim auto-conectados
+- **TravelPayouts/Mobile app** — requiere app publicada en Play Store para Omio
+- Cuando Awin apruebe, agregar 3 variables en Railway: `AWIN_PUBLISHER_ID`, `AWIN_TRAINLINE_MID`, `AWIN_OMIO_MID`
+
+Setup Railway CLI:
+- Logueado como `sebasmza@hotmail.com`
+- Proyecto activo del proxy: **intelligent-forgiveness** → service `voxa` → URL `voxa-production-dc15.up.railway.app`
+- Existe otro proyecto **powerful-consideration** (sin uso, glosx.app va a GitHub Pages)
+
+Próximos pasos:
+- Esperar email de Awin → configurar 3 variables Railway → switch automático a Awin
+- Publicar app en Google Play Internal Testing para destrabar Omio en TravelPayouts
 - Autocompletar "Ciudad de origen" en Internacional con ciudad GPS
-- Verificar flujo completo `buscar-viaje.tsx`
-- Revisar `stationTranslations`
