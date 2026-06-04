@@ -428,7 +428,7 @@ export default function SalidasScreen() {
         seen.add(key);
         return true;
       });
-      return deduped.filter(e => e.isTomorrow || timeToMinutes(e.time) >= nowMin - 1);
+      return deduped.filter(e => (e.isTomorrow && nowMin >= 23 * 60) || timeToMinutes(e.time) >= nowMin - 1);
     });
   }, [selected.code]);
 
@@ -441,8 +441,9 @@ export default function SalidasScreen() {
       const key = e.tripId ?? `${e.time}|${e.endpoint}|${e.train}`;
       if (seen.has(key)) return false;
       seen.add(key);
-      // Los trenes de mañana siempre pasan (isTomorrow los marca el GTFS)
-      if (e.isTomorrow) return true;
+      // isTomorrow: solo válido si aún es "tarde" (>= 22:00 hora local del país)
+      // Si ya es de día nuevo, tratar como hoy y aplicar filtro normal
+      if (e.isTomorrow && nowMin >= 23 * 60) return true;
       return timeToMinutes(e.time) >= nowMin - 1;
     });
   };
@@ -501,7 +502,13 @@ export default function SalidasScreen() {
     loadBoard(selected, mode);
     const fetchTimer = setInterval(() => loadBoard(selected, mode, true), 60_000);
     const pruneTimer = setInterval(prunePastTrains, 30_000);
-    return () => { clearInterval(fetchTimer); clearInterval(pruneTimer); };
+
+    // Recargar al pasar la medianoche local del país para convertir "mañana" en "hoy"
+    const nowMin = countryNowMinutes(selected.code);
+    const msToMidnight = ((24 * 60 - nowMin) * 60 + 30) * 1000;
+    const midnightTimer = setTimeout(() => loadBoard(selected, mode), msToMidnight);
+
+    return () => { clearInterval(fetchTimer); clearInterval(pruneTimer); clearTimeout(midnightTimer); };
   }, [selected, mode, loadBoard, prunePastTrains, gpsStatus]);
 
   // ── Descarga lazy DB para países grandes ────────────────────────────────────
