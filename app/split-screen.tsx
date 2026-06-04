@@ -59,6 +59,8 @@ import { translateStationQuery } from '../services/stationTranslations';
 import { buildTrainlineByName } from '../services/affiliateEngine';
 import { SCENIC_TRAINS, getScenicByCountry } from '../data/scenicTrains';
 import PartnerCard from '../components/PartnerCard';
+import AnimatedTrain from '../components/AnimatedTrain';
+import TrainSceneBg from '../components/TrainSceneBg';
 import { getCityOffers } from '../data/partnerOffers';
 import { optimizeRoute, calculateETA } from '../services/routeOptimizer';
 import { startPlatformMonitoring, stopPlatformMonitoring } from '../services/trainArrivalMonitor';
@@ -1021,7 +1023,8 @@ export default function SplitScreen() {
             </Pressable>
           </View>
 
-          <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.travelModalContent} showsVerticalScrollIndicator={false}>
+          <TrainSceneBg />
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={[styles.travelModalContent, { minHeight: 500 }]} showsVerticalScrollIndicator={false}>
 
             {/* Trenes escénicos */}
             {params.country && getScenicByCountry(params.country).length > 0 && (
@@ -1043,6 +1046,9 @@ export default function SplitScreen() {
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.scenicTitle, { color: colors.text.primary }]}>{train.name}</Text>
                       <Text style={[styles.scenicSub, { color: colors.text.muted }]}>{train.route} · {train.duration}</Text>
+                      {train.description && (
+                        <Text style={[styles.scenicDesc, { color: colors.text.secondary }]}>{train.description}</Text>
+                      )}
                     </View>
                     <View style={[styles.scenicBadge, { backgroundColor: train.colors[0] }]}>
                       <Text style={styles.scenicBadgeText}>Reservar</Text>
@@ -1356,6 +1362,7 @@ const styles = StyleSheet.create({
   },
   scenicTitle:      { fontSize: Typography.size.sm, fontWeight: Typography.weight.bold },
   scenicSub:        { fontSize: Typography.size.xs, marginTop: 2 },
+  scenicDesc:       { fontSize: 13, marginTop: 6, lineHeight: 19, opacity: 0.80 },
   scenicBadge: {
     paddingHorizontal: Spacing['3'],
     paddingVertical:   Spacing['1'],
