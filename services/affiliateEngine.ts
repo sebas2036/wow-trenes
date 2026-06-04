@@ -129,6 +129,9 @@ const SCENIC_PROXY     = `${AFFILIATE_BASE}/scenic`;
 const KLOOK_PROXY      = `${AFFILIATE_BASE}/klook`;
 const KIWITAXI_PROXY   = `${AFFILIATE_BASE}/kiwitaxi`;
 const YESIM_PROXY      = `${AFFILIATE_BASE}/yesim`;
+const TIQETS_PROXY     = `${AFFILIATE_BASE}/tiqets`;
+const STORAGE_PROXY    = `${AFFILIATE_BASE}/storage`;
+const INSURANCE_PROXY  = `${AFFILIATE_BASE}/insurance`;
 
 /**
  * buildKlookUrl — URL via proxy para Klook (City Cards, experiencias, atracciones).
@@ -162,6 +165,30 @@ export function buildYesimUrl(countryCode?: string): string {
   const params = new URLSearchParams();
   if (countryCode) params.set('country', countryCode);
   return `${YESIM_PROXY}?${params.toString()}`;
+}
+
+/**
+ * buildTiqetsUrl — Tickets de museos y atracciones (Sagrada Familia, Coliseo, Louvre...).
+ * Comisión 3.5-8%. Pre-aprobado en TravelPayouts.
+ */
+export function buildTiqetsUrl(): string {
+  return TIQETS_PROXY;
+}
+
+/**
+ * buildStorageUrl — Radical Storage, guardar equipaje en ciudades europeas.
+ * Comisión 8%. Pre-aprobado en TravelPayouts.
+ */
+export function buildStorageUrl(): string {
+  return STORAGE_PROXY;
+}
+
+/**
+ * buildInsuranceUrl — Seguro de viaje EKTA.
+ * Comisión 25%. Pre-aprobado en TravelPayouts.
+ */
+export function buildInsuranceUrl(): string {
+  return INSURANCE_PROXY;
 }
 
 /**

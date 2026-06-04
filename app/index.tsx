@@ -24,7 +24,7 @@ import { prefetchInBackground, onDownloadProgress } from '../services/dbDownload
 import { buildTrainlineByName, buildBestBookingUrl } from '../services/affiliateEngine';
 import { SCENIC_TRAINS } from '../data/scenicTrains';
 import PartnerCard from '../components/PartnerCard';
-import { getYesimOffer } from '../data/partnerOffers';
+import { getYesimOffer, getTiqetsOffer, getStorageOffer, getInsuranceOffer } from '../data/partnerOffers';
 import AffiliateWebView from '../components/AffiliateWebView';
 import { t } from '../services/i18n';
 import TranslatorSheet from '../components/TranslatorSheet';
@@ -692,7 +692,10 @@ export default function HomeScreen() {
 
             {/* ── Para tu viaje · partners ── */}
             <Text style={[styles.intlSectionLabel, { color: colors.text.muted, marginTop: 16 }]}>PARA TU VIAJE</Text>
+            <PartnerCard {...getInsuranceOffer()} />
             <PartnerCard {...getYesimOffer()} />
+            <PartnerCard {...getTiqetsOffer()} />
+            <PartnerCard {...getStorageOffer()} />
           </View>
         )}
 

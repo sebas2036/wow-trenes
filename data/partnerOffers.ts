@@ -4,7 +4,7 @@
  * Mapeo: ciudad detectada → productos relevantes (City Card, Transfer, eSIM).
  * Las comisiones son del programa, no aparecen en UI — solo internas.
  */
-import { buildKlookUrl, buildKiwitaxiUrl, buildYesimUrl } from '../services/affiliateEngine';
+import { buildKlookUrl, buildKiwitaxiUrl, buildYesimUrl, buildTiqetsUrl, buildStorageUrl, buildInsuranceUrl } from '../services/affiliateEngine';
 import type { PartnerCardProps } from '../components/PartnerCard';
 
 // Ofertas estándar por ciudad
@@ -20,12 +20,28 @@ const CITY_OFFERS: Record<string, PartnerCardProps[]> = {
       highlight: true,
     },
     {
+      icon: 'ticket-outline',
+      title: 'Museo del Prado · sin fila',
+      subtitle: 'Entrada prioritaria al Prado, Reina Sofía y más',
+      cta: 'Ver entradas',
+      url: buildTiqetsUrl(),
+      colors: ['#EC4899', '#BE185D'],
+    },
+    {
       icon: 'car-sport-outline',
       title: 'Transfer Barajas → centro',
       subtitle: 'Taxi privado desde el aeropuerto · desde €30',
       cta: 'Reservar',
       url: buildKiwitaxiUrl('Barajas Airport', 'Madrid'),
       colors: ['#F59E0B', '#D97706'],
+    },
+    {
+      icon: 'bag-handle-outline',
+      title: 'Guardar equipaje · Madrid',
+      subtitle: 'Custodia segura cerca de Atocha · desde €5',
+      cta: 'Buscar',
+      url: buildStorageUrl(),
+      colors: ['#0EA5E9', '#0369A1'],
     },
   ],
   BARCELONA: [
@@ -39,12 +55,28 @@ const CITY_OFFERS: Record<string, PartnerCardProps[]> = {
       highlight: true,
     },
     {
+      icon: 'ticket-outline',
+      title: 'Sagrada Familia · sin fila',
+      subtitle: 'Entrada prioritaria + Parc Güell, Casa Batlló',
+      cta: 'Ver entradas',
+      url: buildTiqetsUrl(),
+      colors: ['#EC4899', '#BE185D'],
+    },
+    {
       icon: 'car-sport-outline',
       title: 'Transfer El Prat → centro',
       subtitle: 'Taxi privado desde el aeropuerto · desde €35',
       cta: 'Reservar',
       url: buildKiwitaxiUrl('El Prat Airport', 'Barcelona'),
       colors: ['#F59E0B', '#D97706'],
+    },
+    {
+      icon: 'bag-handle-outline',
+      title: 'Guardar equipaje · Barcelona',
+      subtitle: 'Custodia segura cerca de Sants · desde €5',
+      cta: 'Buscar',
+      url: buildStorageUrl(),
+      colors: ['#0EA5E9', '#0369A1'],
     },
   ],
   PARIS: [
@@ -58,12 +90,28 @@ const CITY_OFFERS: Record<string, PartnerCardProps[]> = {
       highlight: true,
     },
     {
+      icon: 'ticket-outline',
+      title: 'Louvre · Torre Eiffel · sin fila',
+      subtitle: 'Entrada prioritaria a las atracciones de París',
+      cta: 'Ver entradas',
+      url: buildTiqetsUrl(),
+      colors: ['#EC4899', '#BE185D'],
+    },
+    {
       icon: 'car-sport-outline',
       title: 'Transfer CDG → centro',
       subtitle: 'Taxi privado desde el aeropuerto · desde €55',
       cta: 'Reservar',
       url: buildKiwitaxiUrl('Charles de Gaulle Airport', 'Paris'),
       colors: ['#F59E0B', '#D97706'],
+    },
+    {
+      icon: 'bag-handle-outline',
+      title: 'Guardar equipaje · París',
+      subtitle: 'Custodia segura cerca de Gare du Nord · desde €5',
+      cta: 'Buscar',
+      url: buildStorageUrl(),
+      colors: ['#0EA5E9', '#0369A1'],
     },
   ],
   ROMA: [
@@ -77,12 +125,28 @@ const CITY_OFFERS: Record<string, PartnerCardProps[]> = {
       highlight: true,
     },
     {
+      icon: 'ticket-outline',
+      title: 'Coliseo · Vaticano · sin fila',
+      subtitle: 'Entrada prioritaria a las atracciones de Roma',
+      cta: 'Ver entradas',
+      url: buildTiqetsUrl(),
+      colors: ['#EC4899', '#BE185D'],
+    },
+    {
       icon: 'car-sport-outline',
       title: 'Transfer Fiumicino → centro',
       subtitle: 'Taxi privado desde el aeropuerto · desde €45',
       cta: 'Reservar',
       url: buildKiwitaxiUrl('Fiumicino Airport', 'Roma'),
       colors: ['#F59E0B', '#D97706'],
+    },
+    {
+      icon: 'bag-handle-outline',
+      title: 'Guardar equipaje · Roma',
+      subtitle: 'Custodia segura cerca de Termini · desde €5',
+      cta: 'Buscar',
+      url: buildStorageUrl(),
+      colors: ['#0EA5E9', '#0369A1'],
     },
   ],
   LONDON: [
@@ -96,12 +160,28 @@ const CITY_OFFERS: Record<string, PartnerCardProps[]> = {
       highlight: true,
     },
     {
+      icon: 'ticket-outline',
+      title: 'Tower of London · sin fila',
+      subtitle: 'Entrada prioritaria a las atracciones de Londres',
+      cta: 'Ver entradas',
+      url: buildTiqetsUrl(),
+      colors: ['#EC4899', '#BE185D'],
+    },
+    {
       icon: 'car-sport-outline',
       title: 'Transfer Heathrow → centro',
       subtitle: 'Taxi privado desde el aeropuerto · desde £55',
       cta: 'Reservar',
       url: buildKiwitaxiUrl('Heathrow Airport', 'London'),
       colors: ['#F59E0B', '#D97706'],
+    },
+    {
+      icon: 'bag-handle-outline',
+      title: 'Guardar equipaje · Londres',
+      subtitle: "Custodia segura cerca de King's Cross · desde £5",
+      cta: 'Buscar',
+      url: buildStorageUrl(),
+      colors: ['#0EA5E9', '#0369A1'],
     },
   ],
   BERLIN: [
@@ -114,10 +194,27 @@ const CITY_OFFERS: Record<string, PartnerCardProps[]> = {
       colors: ['#7C3AED', '#5B21B6'],
       highlight: true,
     },
+    {
+      icon: 'ticket-outline',
+      title: 'Museo de Pérgamo · sin fila',
+      subtitle: 'Entrada prioritaria a museos de Berlín',
+      cta: 'Ver entradas',
+      url: buildTiqetsUrl(),
+      colors: ['#EC4899', '#BE185D'],
+    },
+    {
+      icon: 'bag-handle-outline',
+      title: 'Guardar equipaje · Berlín',
+      subtitle: 'Custodia segura cerca de Hauptbahnhof · desde €5',
+      cta: 'Buscar',
+      url: buildStorageUrl(),
+      colors: ['#0EA5E9', '#0369A1'],
+    },
   ],
 };
 
-// eSIM Yesim — universal, se muestra en pantalla internacional
+// ── Ofertas universales (aplican a cualquier ciudad) ──────────────────────────
+
 export function getYesimOffer(countryCode?: string): PartnerCardProps {
   return {
     icon: 'globe-outline',
@@ -126,6 +223,40 @@ export function getYesimOffer(countryCode?: string): PartnerCardProps {
     cta: 'Activar',
     url: buildYesimUrl(countryCode),
     colors: ['#10B981', '#059669'],
+    highlight: true,
+  };
+}
+
+export function getTiqetsOffer(): PartnerCardProps {
+  return {
+    icon: 'ticket-outline',
+    title: 'Entradas sin fila',
+    subtitle: 'Sagrada Familia, Coliseo, Louvre y 6.000+ atracciones',
+    cta: 'Ver entradas',
+    url: buildTiqetsUrl(),
+    colors: ['#EC4899', '#BE185D'],
+  };
+}
+
+export function getStorageOffer(): PartnerCardProps {
+  return {
+    icon: 'bag-handle-outline',
+    title: 'Guardar equipaje',
+    subtitle: '1.000+ puntos en ciudades europeas · desde €5',
+    cta: 'Buscar',
+    url: buildStorageUrl(),
+    colors: ['#0EA5E9', '#0369A1'],
+  };
+}
+
+export function getInsuranceOffer(): PartnerCardProps {
+  return {
+    icon: 'shield-checkmark-outline',
+    title: 'Seguro de viaje · EKTA',
+    subtitle: 'Cobertura médica, cancelaciones y equipaje · póliza instantánea',
+    cta: 'Asegurarme',
+    url: buildInsuranceUrl(),
+    colors: ['#EF4444', '#B91C1C'],
     highlight: true,
   };
 }
