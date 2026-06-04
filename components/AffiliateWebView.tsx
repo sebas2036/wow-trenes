@@ -30,21 +30,32 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
 import { Colors, Typography, Spacing, Radius, Gradients, Shadows } from '../theme';
-import { buildOmioUrl } from '../services/affiliateEngine';
+import { buildOmioUrl, buildScenicTrainUrl } from '../services/affiliateEngine';
+import { SCENIC_TRAINS } from '../data/scenicTrains';
 import type { TrainService } from '../types';
 
 // ── Detección de confirmación ─────────────────────────────────────────────
 // Trainline redirige a estas URLs tras una compra exitosa
 const SUCCESS_URL_PATTERNS = [
+  // Omio
   'omio.com/booking/confirmation',
   'omio.com/checkout/confirmation',
   'omio.com/orders/',
   'omio.com/booking-confirmation',
+  // Trainline (UK + EU)
   'trainline.com/booking/confirmation',
   'trainline.com/orders/',
+  'thetrainline.com/orders/',
+  'thetrainline.com/confirmation',
+  'trainline.eu/orders/',
+  // Trip.com
+  'trip.com/orders/confirm',
+  'trip.com/trains/orderConfirm',
+  // Genéricos
   '/booking-confirmation',
   '/purchase-confirmation',
   'order-confirmed',
+  'payment-success',
 ];
 
 function isSuccessUrl(url: string): boolean {
@@ -102,12 +113,13 @@ export default function AffiliateWebView({
     setLoading(true);
     setProgress(0);
 
-    // URL TravelPayouts → Omio con marker 734304 (comisión 6%)
-    const url = buildOmioUrl(
-      service.origin.name,
-      service.destination.name,
-      service.departureTime,
-    );
+    // Detectar si es un tren escénico → usa endpoint con prioridad Awin/Trainline
+    const isScenic = SCENIC_TRAINS.some(t => t.id === service.serviceId);
+
+    const url = isScenic
+      ? buildScenicTrainUrl(service.origin.name, service.destination.name, service.departureTime)
+      : buildOmioUrl(service.origin.name, service.destination.name, service.departureTime);
+
     setAffiliateUrl(url);
   }, [visible, service]);
 

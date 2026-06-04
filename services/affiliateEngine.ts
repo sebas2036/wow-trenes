@@ -120,8 +120,31 @@ export function buildTrainlineSearchUrl(
 
 // ── Proxy URL — el marker real vive en el servidor, nunca en el cliente ───────
 // En dev usa la URL local. En prod usa el servidor Railway de Voxa.
-const AFFILIATE_PROXY = process.env.EXPO_PUBLIC_AFFILIATE_PROXY
-  ?? 'https://voxa-production-dc15.up.railway.app/affiliate/redirect';
+const AFFILIATE_BASE = (process.env.EXPO_PUBLIC_AFFILIATE_PROXY
+  ?? 'https://voxa-production-dc15.up.railway.app/affiliate/redirect')
+  .replace(/\/redirect$/, ''); // permite endpoint base sin /redirect
+
+const AFFILIATE_PROXY = `${AFFILIATE_BASE}/redirect`;
+const SCENIC_PROXY    = `${AFFILIATE_BASE}/scenic`;
+
+/**
+ * buildScenicTrainUrl — Genera URL via proxy para tren escénico.
+ * El proxy elige automáticamente la mejor red afiliada (Awin → TravelPayouts).
+ * Cubre Glacier Express, Bernina, GoldenPass, TGV Lyria, Cinque Terre, etc.
+ */
+export function buildScenicTrainUrl(
+  originName: string,
+  destName:   string,
+  departure?: Date,
+): string {
+  const date = (departure ?? new Date()).toISOString().slice(0, 10);
+  const params = new URLSearchParams({
+    origin: originName,
+    dest:   destName,
+    date,
+  });
+  return `${SCENIC_PROXY}?${params.toString()}`;
+}
 
 /**
  * buildBestBookingUrl — Genera URL via proxy servidor.
