@@ -905,20 +905,26 @@ export default function SplitScreen() {
             </>
           )}
 
-          {/* ── Partners por ciudad — City Pass, Transfer ── */}
-          {selectedStation && (() => {
-            const cityOffers = getCityOffers(selectedStation.name);
-            if (cityOffers.length === 0) return null;
-            return (
-              <>
-                <Text style={[styles.scenicSectionLabel, { color: colors.text.muted }]}>PARA TU VIAJE</Text>
-                {cityOffers.map((offer, i) => (
-                  <PartnerCard key={`partner-${i}`} {...offer} />
-                ))}
-              </>
-            );
-          })()}
         </View>
+
+        {/* ── Partners por ciudad — scrolleable dentro del ScrollView ── */}
+        {selectedStation && (() => {
+          const cityOffers = getCityOffers(selectedStation.name);
+          if (cityOffers.length === 0) return null;
+          return (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 8, gap: 10, paddingBottom: 8 }}
+            >
+              {cityOffers.map((offer, i) => (
+                <View key={`partner-${i}`} style={{ width: 260 }}>
+                  <PartnerCard {...offer} />
+                </View>
+              ))}
+            </ScrollView>
+          );
+        })()}
       </View>
 
       {/* ── BOTTOM HALF: Mapa animado ── */}
