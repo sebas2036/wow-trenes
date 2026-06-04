@@ -124,8 +124,45 @@ const AFFILIATE_BASE = (process.env.EXPO_PUBLIC_AFFILIATE_PROXY
   ?? 'https://voxa-production-dc15.up.railway.app/affiliate/redirect')
   .replace(/\/redirect$/, ''); // permite endpoint base sin /redirect
 
-const AFFILIATE_PROXY = `${AFFILIATE_BASE}/redirect`;
-const SCENIC_PROXY    = `${AFFILIATE_BASE}/scenic`;
+const AFFILIATE_PROXY  = `${AFFILIATE_BASE}/redirect`;
+const SCENIC_PROXY     = `${AFFILIATE_BASE}/scenic`;
+const KLOOK_PROXY      = `${AFFILIATE_BASE}/klook`;
+const KIWITAXI_PROXY   = `${AFFILIATE_BASE}/kiwitaxi`;
+const YESIM_PROXY      = `${AFFILIATE_BASE}/yesim`;
+
+/**
+ * buildKlookUrl — URL via proxy para Klook (City Cards, experiencias, atracciones).
+ * Comisión 2-5%. Programas pre-aprobados en TravelPayouts Mobile app.
+ */
+export function buildKlookUrl(city?: string, product?: string): string {
+  const params = new URLSearchParams();
+  if (city)    params.set('city', city);
+  if (product) params.set('product', product);
+  return `${KLOOK_PROXY}?${params.toString()}`;
+}
+
+/**
+ * buildKiwitaxiUrl — URL via proxy para transfers aeropuerto-estación.
+ * Comisión 9-11%. Pre-aprobado en TravelPayouts.
+ */
+export function buildKiwitaxiUrl(from: string, to: string, date?: Date): string {
+  const params = new URLSearchParams({
+    from,
+    to,
+    date: (date ?? new Date()).toISOString().slice(0, 10),
+  });
+  return `${KIWITAXI_PROXY}?${params.toString()}`;
+}
+
+/**
+ * buildYesimUrl — URL via proxy para eSIM Yesim.
+ * Comisión 18%. Pre-aprobado en TravelPayouts.
+ */
+export function buildYesimUrl(countryCode?: string): string {
+  const params = new URLSearchParams();
+  if (countryCode) params.set('country', countryCode);
+  return `${YESIM_PROXY}?${params.toString()}`;
+}
 
 /**
  * buildScenicTrainUrl — Genera URL via proxy para tren escénico.

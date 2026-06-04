@@ -23,6 +23,8 @@ import { findNearestStation, setActiveCountry, detectCountryFromCoords } from '.
 import { prefetchInBackground, onDownloadProgress } from '../services/dbDownloadService';
 import { buildTrainlineByName, buildBestBookingUrl } from '../services/affiliateEngine';
 import { SCENIC_TRAINS } from '../data/scenicTrains';
+import PartnerCard from '../components/PartnerCard';
+import { getYesimOffer } from '../data/partnerOffers';
 import AffiliateWebView from '../components/AffiliateWebView';
 import { t } from '../services/i18n';
 import TranslatorSheet from '../components/TranslatorSheet';
@@ -687,6 +689,10 @@ export default function HomeScreen() {
                 </View>
               </Pressable>
             ))}
+
+            {/* ── Para tu viaje · partners ── */}
+            <Text style={[styles.intlSectionLabel, { color: colors.text.muted, marginTop: 16 }]}>PARA TU VIAJE</Text>
+            <PartnerCard {...getYesimOffer()} />
           </View>
         )}
 

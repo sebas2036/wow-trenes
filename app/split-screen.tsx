@@ -58,6 +58,8 @@ import { findNearestStation, getStationById, getFirstStation, getMainStation, se
 import { translateStationQuery } from '../services/stationTranslations';
 import { buildTrainlineByName } from '../services/affiliateEngine';
 import { SCENIC_TRAINS, getScenicByCountry } from '../data/scenicTrains';
+import PartnerCard from '../components/PartnerCard';
+import { getCityOffers } from '../data/partnerOffers';
 import { optimizeRoute, calculateETA } from '../services/routeOptimizer';
 import { startPlatformMonitoring, stopPlatformMonitoring } from '../services/trainArrivalMonitor';
 import { registerDestinationGeofence, refreshGeofences }  from '../tasks/geofenceTask';
@@ -902,6 +904,20 @@ export default function SplitScreen() {
               ))}
             </>
           )}
+
+          {/* ── Partners por ciudad — City Pass, Transfer ── */}
+          {selectedStation && (() => {
+            const cityOffers = getCityOffers(selectedStation.name);
+            if (cityOffers.length === 0) return null;
+            return (
+              <>
+                <Text style={[styles.scenicSectionLabel, { color: colors.text.muted }]}>PARA TU VIAJE</Text>
+                {cityOffers.map((offer, i) => (
+                  <PartnerCard key={`partner-${i}`} {...offer} />
+                ))}
+              </>
+            );
+          })()}
         </View>
       </View>
 
