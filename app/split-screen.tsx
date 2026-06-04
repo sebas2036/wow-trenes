@@ -359,6 +359,20 @@ export default function SplitScreen() {
   // Checkout — affiliate WebView (primary)
   const [affiliateVisible,  setAffiliateVisible]  = useState(false);
   const [scenicVisible,     setScenicVisible]     = useState<string | null>(null);
+  const [showTravelModal,   setShowTravelModal]   = useState(false);
+
+  // Pulso para el botón "PARA TU VIAJE"
+  const travelPulse = useRef(new RNAnimated.Value(1)).current;
+  useEffect(() => {
+    const anim = RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.timing(travelPulse, { toValue: 1.06, duration: 800, useNativeDriver: true }),
+        RNAnimated.timing(travelPulse, { toValue: 1,    duration: 800, useNativeDriver: true }),
+      ])
+    );
+    anim.start();
+    return () => anim.stop();
+  }, []);
 
   // Post-purchase success banner
   const [purchaseBookingRef, setPurchaseBookingRef] = useState<string | null>(null);
@@ -699,10 +713,8 @@ export default function SplitScreen() {
   return (
     <View style={[styles.root, { backgroundColor: colors.bg.base }]}>
 
-      {/* ── TOP HALF: Predictive Clock ── */}
-      <View style={[styles.topHalf, { backgroundColor: colors.bg.base }]}>
-        {/* Zona scrolleable — solo trenes */}
-        <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} bounces={false}>
+      {/* ── TOP HALF: todo scrolleable en un solo ScrollView ── */}
+      <ScrollView style={[styles.topHalf, { backgroundColor: colors.bg.base }]} showsVerticalScrollIndicator={false} bounces={false}>
 
         {/* Nav bar */}
         <View style={styles.topNav}>
@@ -850,81 +862,34 @@ export default function SplitScreen() {
           destStationName={destStation?.name}
         />
 
-        </ScrollView>
 
-        {/* Zona estática — siempre visible, no scrollea */}
-        <View>
-          {/* Divider — acceso a otros horarios */}
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <View style={styles.dividerActions}>
-              <Pressable
-                style={[styles.dividerPill, styles.dividerPillBuy]}
-                onPress={() => router.push({
-                  pathname: '/buscar-viaje',
-                  params: {
-                    originId:   selectedStation?.id   ?? '',
-                    originName: selectedStation?.name ?? '',
-                    country:    params.country ?? 'ES',
-                  },
-                })}
-              >
-                <Ionicons name="calendar-outline" size={13} color="#fff" />
-                <Text style={[styles.dividerPillText, { color: '#fff' }]}>{t('split_other_times')}</Text>
-              </Pressable>
-            </View>
-            <View style={styles.dividerLine} />
-          </View>
+      </ScrollView>
 
-          {/* ── Trenes escénicos ── */}
-          {params.country && getScenicByCountry(params.country).length > 0 && (
-            <>
-              <Text style={[styles.scenicSectionLabel, { color: colors.text.muted }]}>EXPERIENCIAS ESPECIALES</Text>
-              {getScenicByCountry(params.country).map((train) => (
-                <Pressable
-                  key={train.id}
-                  style={[styles.scenicCard, { backgroundColor: colors.bg.elevated, borderColor: train.colors[0] + '55' }]}
-                  onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setScenicVisible(train.id); }}
-                >
-                  <LinearGradient
-                    colors={train.colors}
-                    style={styles.scenicIconBadge}
-                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                  >
-                    <Ionicons name="train" size={16} color="#fff" />
-                  </LinearGradient>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.scenicTitle, { color: colors.text.primary }]}>{train.name}</Text>
-                    <Text style={[styles.scenicSub, { color: colors.text.muted }]}>{train.route} · {train.duration}</Text>
-                  </View>
-                  <View style={[styles.scenicBadge, { backgroundColor: train.colors[0] }]}>
-                    <Text style={styles.scenicBadgeText}>Reservar</Text>
-                  </View>
-                </Pressable>
-              ))}
-            </>
-          )}
-
-        </View>
-
-        {/* ── Partners por ciudad — scrolleable dentro del ScrollView ── */}
-        {selectedStation && (() => {
-          const cityOffers = getCityOffers(selectedStation.name);
-          if (cityOffers.length === 0) return null;
-          return (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 8, gap: 10, paddingBottom: 8 }}
-            >
-              {cityOffers.map((offer, i) => (
-                <View key={`partner-${i}`} style={{ width: 260 }}>
-                  <PartnerCard {...offer} />
-                </View>
-              ))}
-            </ScrollView>
-          );
-        })()}
+      {/* ── Barra flotante fija — siempre visible ── */}
+      <View style={styles.floatingBar}>
+        <Pressable
+          style={[styles.floatingBtn, styles.floatingBtnPrimary]}
+          onPress={() => router.push({
+            pathname: '/buscar-viaje',
+            params: {
+              originId:   selectedStation?.id   ?? '',
+              originName: selectedStation?.name ?? '',
+              country:    params.country ?? 'ES',
+            },
+          })}
+        >
+          <Ionicons name="calendar-outline" size={14} color="#fff" />
+          <Text style={[styles.floatingBtnText, { color: '#fff' }]}>{t('split_other_times')}</Text>
+        </Pressable>
+        <RNAnimated.View style={{ flex: 1, transform: [{ scale: travelPulse }] }}>
+          <Pressable
+            style={[styles.floatingBtn, styles.floatingBtnTravel, { flex: 0 }]}
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowTravelModal(true); }}
+          >
+            <Ionicons name="sparkles" size={14} color="#F59E0B" />
+            <Text style={[styles.floatingBtnText, { color: '#F59E0B' }]}>{params.country && getScenicByCountry(params.country).length > 0 ? 'EXPERIENCIAS' : 'DESCUBRE'}</Text>
+          </Pressable>
+        </RNAnimated.View>
       </View>
 
       {/* ── BOTTOM HALF: Mapa animado ── */}
@@ -1041,6 +1006,71 @@ export default function SplitScreen() {
           onDismiss={() => setPurchaseBookingRef(null)}
         />
       )}
+
+      {/* ── Modal PARA TU VIAJE — full screen ── */}
+      <Modal visible={showTravelModal} animationType="slide" transparent={false} onRequestClose={() => setShowTravelModal(false)}>
+        <View style={[styles.travelModalRoot, { backgroundColor: colors.bg.base }]}>
+          {/* Header */}
+          <View style={[styles.travelModalHeader, { borderBottomColor: colors.border.subtle }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Ionicons name="sparkles" size={18} color="#F59E0B" />
+              <Text style={[styles.travelModalTitle, { color: colors.text.primary }]}>{params.country && getScenicByCountry(params.country).length > 0 ? 'EXPERIENCIAS' : 'DESCUBRE'}</Text>
+            </View>
+            <Pressable onPress={() => setShowTravelModal(false)} hitSlop={12}>
+              <Ionicons name="close" size={22} color={colors.text.muted} />
+            </Pressable>
+          </View>
+
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.travelModalContent} showsVerticalScrollIndicator={false}>
+
+            {/* Trenes escénicos */}
+            {params.country && getScenicByCountry(params.country).length > 0 && (
+              <>
+                <Text style={[styles.travelModalSection, { color: colors.text.muted }]}>EXPERIENCIAS ESPECIALES</Text>
+                {getScenicByCountry(params.country).map((train) => (
+                  <Pressable
+                    key={train.id}
+                    style={[styles.scenicCard, { backgroundColor: colors.bg.elevated, borderColor: train.colors[0] + '55' }]}
+                    onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setShowTravelModal(false); setScenicVisible(train.id); }}
+                  >
+                    <LinearGradient
+                      colors={train.colors}
+                      style={styles.scenicIconBadge}
+                      start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                    >
+                      <Ionicons name="train" size={16} color="#fff" />
+                    </LinearGradient>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.scenicTitle, { color: colors.text.primary }]}>{train.name}</Text>
+                      <Text style={[styles.scenicSub, { color: colors.text.muted }]}>{train.route} · {train.duration}</Text>
+                    </View>
+                    <View style={[styles.scenicBadge, { backgroundColor: train.colors[0] }]}>
+                      <Text style={styles.scenicBadgeText}>Reservar</Text>
+                    </View>
+                  </Pressable>
+                ))}
+              </>
+            )}
+
+            {/* Partners por ciudad */}
+            {selectedStation && (() => {
+              const cityOffers = getCityOffers(selectedStation.name);
+              if (cityOffers.length === 0) return null;
+              return (
+                <>
+                  <Text style={[styles.travelModalSection, { color: colors.text.muted }]}>SERVICIOS</Text>
+                  {cityOffers.map((offer, i) => (
+                    <View key={`partner-modal-${i}`} style={{ marginBottom: 10 }}>
+                      <PartnerCard {...offer} />
+                    </View>
+                  ))}
+                </>
+              );
+            })()}
+
+          </ScrollView>
+        </View>
+      </Modal>
 
       {/* ── Modal picker de estación manual ── */}
       <Modal visible={showStationPicker} animationType="slide" transparent onRequestClose={() => setShowStationPicker(false)}>
@@ -1333,55 +1363,68 @@ const styles = StyleSheet.create({
   },
   scenicBadgeText:  { fontSize: Typography.size.xs, fontWeight: Typography.weight.bold, color: '#fff' },
 
-  divider: {
+  floatingBar: {
     flexDirection:     'row',
-    alignItems:        'center',
-    paddingHorizontal: Spacing['4'],
-    paddingVertical:   Spacing['2'],
-    gap:               Spacing['3'],
-    backgroundColor:   '#1C1C1E',
-    borderTopWidth:    1,
-    borderTopColor:    'rgba(167,139,250,0.20)',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(167,139,250,0.20)',
-  },
-  dividerLine: {
-    flex:            1,
-    height:          1,
-    backgroundColor: 'rgba(167,139,250,0.25)',
-  },
-  dividerActions: {
-    flexDirection: 'row',
-    alignItems:    'center',
-    gap:           0,
-  },
-  dividerPill: {
-    flexDirection:     'row',
-    alignItems:        'center',
-    gap:               5,
-    paddingVertical:   6,
+    gap:               10,
+    marginHorizontal:  12,
+    marginVertical:    8,
     paddingHorizontal: 12,
-    borderRadius:      20,
+    paddingVertical:   10,
+    backgroundColor:   '#111113',
+    borderRadius:      28,
     borderWidth:       1,
-    borderColor:       'rgba(167,139,250,0.45)',
-    backgroundColor:   'rgba(167,139,250,0.10)',
+    borderColor:       'rgba(167,139,250,0.18)',
   },
-  dividerPillBuy: {
-    marginLeft:      8,
+  floatingBtn: {
+    flex:              1,
+    flexDirection:     'row',
+    alignItems:        'center',
+    justifyContent:    'center',
+    gap:               6,
+    paddingVertical:   11,
+    borderRadius:      30,
+    borderWidth:       1,
+  },
+  floatingBtnPrimary: {
     backgroundColor: '#7C3AED',
     borderColor:     '#7C3AED',
   },
-  dividerSep: {
-    width:           1,
-    height:          16,
-    backgroundColor: 'rgba(167,139,250,0.20)',
-    marginHorizontal:4,
+  floatingBtnTravel: {
+    backgroundColor: 'rgba(245,158,11,0.12)',
+    borderColor:     'rgba(245,158,11,0.50)',
   },
-  dividerPillText: {
+  floatingBtnText: {
+    fontSize:      11,
+    fontWeight:    '700',
+    letterSpacing: 1.2,
+  },
+  travelModalRoot: {
+    flex: 1,
+  },
+  travelModalHeader: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    justifyContent:    'space-between',
+    paddingHorizontal: 16,
+    paddingVertical:   14,
+    borderBottomWidth: 1,
+  },
+  travelModalTitle: {
+    fontSize:      13,
+    fontWeight:    '700',
+    letterSpacing: 1.5,
+  },
+  travelModalContent: {
+    padding: 14,
+    paddingBottom: 40,
+  },
+  travelModalSection: {
     fontSize:      10,
     fontWeight:    '700',
-    color:         '#A78BFA',
     letterSpacing: 1.5,
+    marginTop:     12,
+    marginBottom:  8,
+    marginLeft:    2,
   },
 
   // WebView bar
