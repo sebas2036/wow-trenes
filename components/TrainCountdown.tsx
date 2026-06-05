@@ -333,12 +333,12 @@ function TrainCard({
 
             {/* Comprar billete — siempre visible */}
             <Pressable
-              style={[styles.buyChip, { backgroundColor: cfg.stripe }]}
+              style={[styles.buyChip, { backgroundColor: 'transparent', borderWidth: 1, borderColor: 'rgba(167,139,250,0.6)' }]}
               onPress={onBuy}
               accessibilityRole="button"
               accessibilityLabel="Comprar billete"
             >
-              <Text style={styles.buyChipText}>{t('split_buy')}</Text>
+              <Text style={[styles.buyChipText, { color: '#A78BFA' }]}>{t('split_buy')}</Text>
             </Pressable>
           </View>
 
