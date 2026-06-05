@@ -720,8 +720,8 @@ export default function HomeScreen() {
         onPress={handleGPS}
         disabled={gpsLoading}
       >
-        <View style={[styles.gpsPinWrap, { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.brand.primary }]}>
-          <Ionicons name="location" size={20} color={colors.brand.accent} />
+        <View style={[styles.gpsPinWrap, { backgroundColor: colors.brand.primary }]}>
+          <Ionicons name="location" size={20} color="#fff" />
         </View>
         <View style={styles.gpsBannerInfo}>
           <Text style={[styles.gpsBannerTitle, { color: colors.text.primary }]} numberOfLines={1}>
