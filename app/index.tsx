@@ -726,7 +726,7 @@ export default function HomeScreen() {
       <Pressable
         style={({ pressed }) => [
           styles.gpsBanner,
-          { backgroundColor: colors.bg.elevated, borderColor: 'rgba(124,58,237,0.4)' },
+          { backgroundColor: colors.bg.surface, borderColor: colors.border.subtle },
           pressed && { opacity: 0.88 },
         ]}
         onPress={handleGPS}
