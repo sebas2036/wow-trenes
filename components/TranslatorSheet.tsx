@@ -268,13 +268,13 @@ export default function TranslatorSheet({ visible, onClose }: TranslatorSheetPro
                 <Pressable
                   style={({ pressed }) => [
                     styles.cameraPrimary,
-                    { backgroundColor: colors.brand.primary },
+                    { backgroundColor: colors.bg.card, borderWidth: 1, borderColor: colors.brand.primary },
                     pressed && { opacity: 0.85 },
                   ]}
                   onPress={handleCameraCapture}
                 >
-                  <Ionicons name="camera" size={18} color="#fff" />
-                  <Text style={styles.cameraPrimaryText}>{t('translator_camera')}</Text>
+                  <Ionicons name="camera" size={18} color={colors.brand.accent} />
+                  <Text style={[styles.cameraPrimaryText, { color: colors.brand.accent }]}>{t('translator_camera')}</Text>
                 </Pressable>
 
                 <Pressable
@@ -422,7 +422,7 @@ export default function TranslatorSheet({ visible, onClose }: TranslatorSheetPro
           <Pressable
             style={({ pressed }) => [
               styles.translateBtn,
-              { backgroundColor: colors.brand.primary },
+              { backgroundColor: colors.bg.card, borderWidth: 1, borderColor: colors.brand.primary },
               pressed && { opacity: 0.85 },
               (!inputText.trim() && mode === 'text') && styles.translateBtnDisabled,
             ]}
@@ -430,9 +430,9 @@ export default function TranslatorSheet({ visible, onClose }: TranslatorSheetPro
             disabled={isLoading || (!inputText.trim() && mode === 'text')}
           >
             {isLoading ? (
-              <ActivityIndicator size="small" color="#fff" />
+              <ActivityIndicator size="small" color={colors.brand.accent} />
             ) : (
-              <Text style={styles.translateBtnText}>
+              <Text style={[styles.translateBtnText, { color: colors.brand.accent }]}>
                 {t('translator_btn')}
               </Text>
             )}
