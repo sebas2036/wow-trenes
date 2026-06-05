@@ -174,7 +174,7 @@ function CountryCard({
       >
         {/* Rim light — gradiente de luz desde arriba */}
         <LinearGradient
-          colors={['rgba(255,255,255,0.06)', 'rgba(255,255,255,0.00)']}
+          colors={['rgba(255,255,255,0.10)', 'rgba(255,255,255,0.00)']}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
           style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
@@ -251,7 +251,7 @@ function MetroCard({
         onPress={() => onPress(metro.code)}
       >
         <LinearGradient
-          colors={['rgba(255,255,255,0.06)', 'rgba(255,255,255,0.00)']}
+          colors={['rgba(255,255,255,0.10)', 'rgba(255,255,255,0.00)']}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
           style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
@@ -726,7 +726,7 @@ export default function HomeScreen() {
       <Pressable
         style={({ pressed }) => [
           styles.gpsBanner,
-          { backgroundColor: colors.bg.elevated, borderColor: colors.border.default },
+          { backgroundColor: colors.bg.elevated, borderColor: 'rgba(124,58,237,0.4)' },
           pressed && { opacity: 0.88 },
         ]}
         onPress={handleGPS}
