@@ -738,7 +738,7 @@ export default function HomeScreen() {
         >
           {gpsLoading
             ? <ActivityIndicator size="small" color={colors.brand.accent} />
-            : <Text style={[styles.gpsBtnText, { color: colors.brand.accent }]}>✦ {t('home_gps_btn')}</Text>
+            : <Text style={[styles.gpsBtnText, { color: '#fff' }]}>✦ {t('home_gps_btn')}</Text>
           }
         </Pressable>
       </Pressable>
