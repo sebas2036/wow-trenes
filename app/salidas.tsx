@@ -60,7 +60,7 @@ const DESTINATIONS = [
 
 // Países con selector de estación real-time
 const RT_STATION_COUNTRIES: Partial<Record<CountryCode, true>> = {
-  CH: true, IT: true, BE: true, FR: true, AT: true, PT: true, ES_BCN: true, ES_MAD: true, DE: true,
+  ES: true, CH: true, IT: true, BE: true, FR: true, AT: true, PT: true, NL: true, ES_BCN: true, ES_MAD: true, DE: true,
 };
 
 type BoardMode = 'salidas' | 'arribos';
