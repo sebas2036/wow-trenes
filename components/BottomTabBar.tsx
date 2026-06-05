@@ -68,7 +68,7 @@ export default function BottomTabBar({ active, onTranslatePress, onHomePress }: 
             accessibilityLabel={tab.label}
           >
             <Ionicons name={iconName} size={24} color={iconColor} />
-            <Text style={[styles.label, { color: iconColor }]}>{tab.label}</Text>
+            <Text style={[styles.label, { color: isActive ? '#fff' : colors.text.secondary }]}>{tab.label}</Text>
             {isActive && <View style={[styles.dot, { backgroundColor: colors.brand.accent }]} />}
           </Pressable>
         );
