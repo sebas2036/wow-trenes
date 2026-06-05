@@ -48,7 +48,7 @@ export default function BottomTabBar({ active, onTranslatePress, onHomePress }: 
 
   return (
     <View style={[styles.barWrap, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-      <View style={[styles.bar, { backgroundColor: colors.bg.elevated, borderColor: 'rgba(124,58,237,0.75)' }]}>
+      <View style={[styles.bar, { backgroundColor: colors.bg.tabBar, borderTopColor: 'rgba(124,58,237,0.75)' }]}>
       {TABS.map((tab) => {
         const isActive = tab.name === active;
         const iconName  = isActive ? tab.iconActive : tab.icon;
@@ -74,16 +74,12 @@ export default function BottomTabBar({ active, onTranslatePress, onHomePress }: 
 
 const styles = StyleSheet.create({
   barWrap: {
-    paddingHorizontal: 16,
-    backgroundColor:   'transparent',
+    backgroundColor: 'transparent',
   },
   bar: {
-    flexDirection:  'row',
-    borderRadius:   20,
-    borderWidth:    1,
-    paddingTop:     10,
-    paddingBottom:  10,
-    paddingHorizontal: 8,
+    flexDirection: 'row',
+    borderTopWidth: 1,
+    paddingTop: 10,
   },
   tab:   { flex: 1, alignItems: 'center', gap: 3 },
   label: { fontSize: 10, fontWeight: '500', letterSpacing: 0.1 },
