@@ -775,7 +775,7 @@ export default function SplitScreen() {
           <Animated.View
             entering={FadeIn.duration(300)}
             exiting={FadeOut.duration(200)}
-            style={[styles.destSearchWrap, { backgroundColor: colors.bg.surface, borderBottomColor: colors.border.subtle }]}
+            style={[styles.destSearchWrap, { backgroundColor: colors.bg.base }]}
           >
             <View style={styles.destSearchHeader}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -1262,9 +1262,7 @@ const styles = StyleSheet.create({
     paddingTop:        Spacing['1'],
     paddingBottom:     Spacing['2'],
     gap:               Spacing['1'],
-    backgroundColor:   '#1C1C1E',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.05)',
+    borderBottomWidth: 0,
   },
   destSearchHeader: {
     flexDirection:  'row',
