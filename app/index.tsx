@@ -160,7 +160,7 @@ function CountryCard({
   // En Android, elevation recorta hijos en borderRadius — wrapper separa sombra del contenido
   const shadowStyle = Platform.OS === 'ios'
     ? (isDark ? Shadows.cardDark : Shadows.card)
-    : { elevation: 2 };
+    : { elevation: 6, shadowColor: '#7C3AED' };
   return (
     <View style={[styles.cardShadow, shadowStyle, { backgroundColor: colors.bg.card, borderRadius: Radius.xl }]}>
       <Pressable
@@ -231,7 +231,7 @@ function MetroCard({
   const { colors, isDark } = useTheme();
   const shadowStyle = Platform.OS === 'ios'
     ? (isDark ? Shadows.cardDark : Shadows.card)
-    : { elevation: 2 };
+    : { elevation: 6, shadowColor: '#7C3AED' };
   return (
     <View style={[styles.cardShadow, shadowStyle, { backgroundColor: colors.bg.card, borderRadius: Radius.xl }]}>
       <Pressable
