@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
   bar: {
     flexDirection:  'row',
     borderRadius:   20,
-    borderWidth:    0.5,
+    borderWidth:    1,
     paddingTop:     10,
     paddingBottom:  10,
     paddingHorizontal: 8,
