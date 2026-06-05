@@ -58,7 +58,7 @@ export default function BottomTabBar({ active, onTranslatePress, onHomePress }: 
       {TABS.map((tab) => {
         const isActive = tab.name === active;
         const iconName  = isActive ? tab.iconActive : tab.icon;
-        const iconColor = isActive ? colors.brand.accent : colors.text.muted;
+        const iconColor = isActive ? colors.brand.accent : colors.text.secondary;
         return (
           <Pressable
             key={tab.name}
