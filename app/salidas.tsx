@@ -148,7 +148,7 @@ function BoardRow({
   return (
     <View style={[
       styles.boardRow,
-      { backgroundColor: colors.bg.card, borderColor: colors.border.subtle },
+      { backgroundColor: colors.bg.card, borderBottomColor: colors.border.default },
     ]}>
       <View style={{ alignItems: 'center' }}>
         <Text style={[styles.boardTime, { color: '#ffffff' }]} numberOfLines={1}>
@@ -929,8 +929,8 @@ const styles = StyleSheet.create({
   boardScroll: { flex: 1 },
   boardRow: {
     flexDirection: 'row', alignItems: 'center',
-    paddingVertical: 10, paddingHorizontal: 16,
-    borderBottomWidth: 0.5, gap: 10,
+    paddingVertical: 12, paddingHorizontal: 16,
+    borderBottomWidth: 1, gap: 10,
   },
   boardTime:    { fontSize: 20, fontWeight: '700', width: 62, letterSpacing: -0.5 },
   boardInfo:    { flex: 1, gap: 2 },
