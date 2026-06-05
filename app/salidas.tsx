@@ -162,7 +162,8 @@ function BoardRow({
       </View>
       <View style={styles.boardInfo}>
         <Text style={[styles.boardTrain, { color: colors.text.primary }]} numberOfLines={1}>
-          {entry.endpoint !== '—' ? entry.endpoint : entry.train}
+          {(entry.endpoint !== '—' ? entry.endpoint : entry.train)
+            .toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
         </Text>
         <Text style={[styles.boardStation, { color: colors.text.muted }]} numberOfLines={1}>
           {entry.train !== '—' ? entry.train + ' · ' : ''}{entry.station}
