@@ -998,6 +998,20 @@ export async function getCountryBoard(
   limit = 30,
   stationId?: string,
 ): Promise<BoardEntry[]> {
+  // Timeout de seguridad: nunca colgarse más de 10s
+  const result = await Promise.race([
+    _getCountryBoardInner(country, mode, limit, stationId),
+    new Promise<BoardEntry[]>(r => setTimeout(() => r([]), 10000)),
+  ]);
+  return result;
+}
+
+async function _getCountryBoardInner(
+  country: CountryCode,
+  mode: 'salidas' | 'arribos',
+  limit: number,
+  stationId?: string,
+): Promise<BoardEntry[]> {
   // Modo offline — saltar APIs real-time, usar solo GTFS local
   const online = await isOnline();
   if (!online) {

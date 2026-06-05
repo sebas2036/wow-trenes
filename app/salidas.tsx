@@ -7,7 +7,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView,
   ActivityIndicator, Modal, TextInput, FlatList,
-  KeyboardAvoidingView, Platform, Linking,
+  KeyboardAvoidingView, Platform, Linking, InteractionManager,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -28,7 +28,7 @@ import {
   setActiveTmbStop, getActiveTmbStopName, searchTmbStops,
   setActiveMadridStop, getActiveMadridStopName, searchMadridStops,
   setActiveGermanyStation, getActiveGermanyStationName, searchGermanyStations, type GermanyStation,
-  detectCountryFromCoords, findNearestStation,
+  detectCountryFromCoords, findNearestStation, searchStations,
 } from '../services/gtfsDatabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { t } from '../services/i18n';
@@ -68,18 +68,26 @@ type BoardMode = 'salidas' | 'arribos';
 // ── Helpers de estación por país ──────────────────────────────────────────────
 async function searchForCountry(code: CountryCode, query: string): Promise<{ id: string; name: string }[]> {
   if (!query.trim()) return [];
-  switch (code) {
-    case 'CH':     return (await searchSwissStations(query)).map(s => ({ id: s.id,     name: s.name }));
-    case 'IT':     return (await searchItalyStations(query)).map(s => ({ id: s.id,     name: s.name }));
-    case 'BE':     return (await searchBelgiumStations(query)).map(s => ({ id: s.id,   name: s.name }));
-    case 'FR':     return (await searchFranceStations(query)).map(s => ({ id: s.id,    name: s.name }));
-    case 'AT':     return (await searchAustriaStations(query)).map(s => ({ id: s.extId, name: s.name }));
-    case 'PT':     return (await searchPortugalStations(query)).map(s => ({ id: s.code, name: s.name }));
-    case 'ES_BCN': return searchTmbStops(query);
-    case 'ES_MAD': return searchMadridStops(query);
-    case 'DE':     return (await searchGermanyStations(query)).map(s => ({ id: s.locationId, name: s.name }));
-    default:       return [];
+  let results: { id: string; name: string }[] = [];
+  try {
+    switch (code) {
+      case 'CH':     results = (await searchSwissStations(query)).map(s => ({ id: s.id,     name: s.name })); break;
+      case 'IT':     results = (await searchItalyStations(query)).map(s => ({ id: s.id,     name: s.name })); break;
+      case 'BE':     results = (await searchBelgiumStations(query)).map(s => ({ id: s.id,   name: s.name })); break;
+      case 'FR':     results = (await searchFranceStations(query)).map(s => ({ id: s.id,    name: s.name })); break;
+      case 'AT':     results = (await searchAustriaStations(query)).map(s => ({ id: s.extId, name: s.name })); break;
+      case 'PT':     results = (await searchPortugalStations(query)).map(s => ({ id: s.code, name: s.name })); break;
+      case 'ES_BCN': results = searchTmbStops(query); break;
+      case 'ES_MAD': results = await searchMadridStops(query); break;
+      case 'DE':     results = (await searchGermanyStations(query)).map(s => ({ id: s.locationId, name: s.name })); break;
+    }
+  } catch { /* fallback abajo */ }
+  // Fallback a GTFS local si la API no devolvió nada
+  if (results.length === 0) {
+    const gtfs = await searchStations(query, 10, code);
+    results = gtfs.map(s => ({ id: s.id, name: s.name }));
   }
+  return results;
 }
 
 function setStationForCountry(code: CountryCode, id: string, name: string): void {
@@ -449,9 +457,10 @@ export default function SalidasScreen() {
   };
 
   const loadBoard = useCallback(async (
-    dest: typeof DESTINATIONS[0], m: BoardMode, silent = false,
+    dest: typeof DESTINATIONS[0], m: BoardMode, silent = false, overrideStationId?: string,
   ) => {
     const token = ++loadRef.current;
+    const stId = overrideStationId ?? currentStationId;
 
     // Stale-While-Revalidate: mostrar caché inmediatamente mientras se busca fresco
     if (!silent) {
@@ -480,7 +489,7 @@ export default function SalidasScreen() {
     }
 
     try {
-      const raw = await getCountryBoard(dest.code, m, 50, currentStationId);
+      const raw = await getCountryBoard(dest.code, m, 50, stId);
       if (token !== loadRef.current) return;
       const entries = dedupeAndFilter(raw, dest.code);
       setBoard(entries);
@@ -551,7 +560,10 @@ export default function SalidasScreen() {
     setGpsStationName(name);
     setCurrentStationId(id);
     setPickerOpen(false);
-    setTimeout(() => loadBoard(selected, mode), 100);
+    // Pasar el stationId directo para no depender del state que aún no actualizó
+    InteractionManager.runAfterInteractions(() => {
+      loadBoard(selected, mode, false, id);
+    });
   }, [selected, mode, loadBoard]);
 
   const handleBoardTap = useCallback(() => {
