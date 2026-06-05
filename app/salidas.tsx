@@ -178,14 +178,13 @@ function BoardRow({
           backgroundColor: entry.status === 'cancelled' ? '#FF453A'
             : entry.status === 'delayed' ? '#FF9F0A' : '#4ade80',
         }]} />
-        <Text style={[styles.statusText, {
-          color: entry.status === 'cancelled' ? '#FF453A'
-            : entry.status === 'delayed' ? '#FF9F0A' : '#4ade80',
-        }]}>
-          {entry.status === 'cancelled' ? 'Cancelado'
-            : entry.delay ? entry.delay
-            : 'En horario'}
-        </Text>
+        {(entry.status === 'cancelled' || entry.status === 'delayed' || entry.delay) && (
+          <Text style={[styles.statusText, {
+            color: entry.status === 'cancelled' ? '#FF453A' : '#FF9F0A',
+          }]}>
+            {entry.status === 'cancelled' ? 'Cancelado' : entry.delay}
+          </Text>
+        )}
       </View>
       {/* Botón Comprar */}
       <Pressable
@@ -762,7 +761,7 @@ export default function SalidasScreen() {
 
       {/* ── Board header ── */}
       <View style={styles.boardHeader}>
-        <Text style={[styles.boardLabel, { color: colors.text.muted }]}>
+        <Text style={[styles.boardLabel, { color: colors.text.secondary }]}>
           {mode === 'salidas' ? t('board_departures') : t('board_arrivals')} · {selected.name.toUpperCase()}
         </Text>
         <Pressable onPress={handleBoardTap} hitSlop={8}>
