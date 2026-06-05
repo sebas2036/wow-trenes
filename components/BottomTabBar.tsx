@@ -48,7 +48,7 @@ export default function BottomTabBar({ active, onTranslatePress, onHomePress }: 
 
   return (
     <View style={[styles.barWrap, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-      <View style={[styles.bar, { backgroundColor: colors.bg.elevated, borderColor: colors.border.subtle }]}>
+      <View style={[styles.bar, { backgroundColor: colors.bg.elevated, borderColor: 'rgba(124,58,237,0.35)' }]}>
       {TABS.map((tab) => {
         const isActive = tab.name === active;
         const iconName  = isActive ? tab.iconActive : tab.icon;
