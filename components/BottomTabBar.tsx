@@ -47,14 +47,8 @@ export default function BottomTabBar({ active, onTranslatePress, onHomePress }: 
   };
 
   return (
-    <View style={[
-      styles.bar,
-      {
-        backgroundColor: colors.bg.tabBar,
-        borderTopColor:  colors.border.subtle,
-        paddingBottom:   Math.max(insets.bottom, 8),
-      },
-    ]}>
+    <View style={[styles.barWrap, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+      <View style={[styles.bar, { backgroundColor: colors.bg.elevated, borderColor: colors.border.subtle }]}>
       {TABS.map((tab) => {
         const isActive = tab.name === active;
         const iconName  = isActive ? tab.iconActive : tab.icon;
@@ -73,15 +67,23 @@ export default function BottomTabBar({ active, onTranslatePress, onHomePress }: 
           </Pressable>
         );
       })}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  barWrap: {
+    paddingHorizontal: 16,
+    backgroundColor:   'transparent',
+  },
   bar: {
-    flexDirection: 'row',
-    borderTopWidth: 0.5,
-    paddingTop: 10,
+    flexDirection:  'row',
+    borderRadius:   32,
+    borderWidth:    0.5,
+    paddingTop:     10,
+    paddingBottom:  10,
+    paddingHorizontal: 8,
   },
   tab:   { flex: 1, alignItems: 'center', gap: 3 },
   label: { fontSize: 10, fontWeight: '500', letterSpacing: 0.1 },
