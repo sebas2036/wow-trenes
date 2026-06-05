@@ -466,8 +466,8 @@ const styles = StyleSheet.create({
     marginBottom:   Spacing['1'],
     gap:            8,
   },
-  dateSepLine:  { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.08)' },
-  dateSepLabel: { fontSize: 11, fontWeight: '600', color: Colors.text.muted, letterSpacing: 0.5 },
+  dateSepLine:  { flex: 1, height: 1, backgroundColor: 'rgba(167,139,250,0.25)' },
+  dateSepLabel: { fontSize: 12, fontWeight: '700', color: Colors.text.secondary, letterSpacing: 0.5 },
   endOfServiceCard: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     marginHorizontal: Spacing['3'], marginTop: Spacing['2'],
