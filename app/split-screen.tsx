@@ -771,36 +771,32 @@ export default function SplitScreen() {
           </View>
         )}
 
-        {/* ── Modal buscador "¿A dónde vas?" ── */}
-        <Modal
-          visible={showDestSearch}
-          animationType="slide"
-          presentationStyle="pageSheet"
-          onRequestClose={() => setShowDestSearch(false)}
-        >
-          <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg.base }}>
-            <View style={[styles.destSearchWrap, { backgroundColor: colors.bg.base, paddingTop: 16 }]}>
-              <View style={styles.destSearchHeader}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Ionicons name={isMetro ? 'subway-outline' : 'train-outline'} size={14} color={colors.text.primary} />
-                  <Text style={[styles.destSearchTitle, { color: colors.text.primary }]}>
-                    {isMetro ? params.metroCity : '¿A dónde vas?'}
-                  </Text>
-                </View>
-                <Pressable onPress={() => setShowDestSearch(false)} hitSlop={8}
-                  style={{ backgroundColor: colors.bg.elevated, borderRadius: 20, padding: 6 }}>
-                  <Ionicons name="close" size={16} color={colors.text.secondary} />
-                </Pressable>
+        {/* ── Buscador "¿A dónde vas?" — modo país y metro ── */}
+        {showDestSearch && (
+          <Animated.View
+            entering={FadeIn.duration(300)}
+            exiting={FadeOut.duration(200)}
+            style={[styles.destSearchWrap, { backgroundColor: colors.bg.base }]}
+          >
+            <View style={styles.destSearchHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Ionicons name={isMetro ? 'subway-outline' : 'train-outline'} size={14} color={colors.text.primary} />
+                <Text style={[styles.destSearchTitle, { color: colors.text.primary }]}>
+                  {isMetro ? params.metroCity : '¿A dónde vas?'}
+                </Text>
               </View>
-              <DestinationSearch
-                onStationFound={(s) => { handleDestinationFound(s); setShowDestSearch(false); }}
-                countryHint={countryHint}
-                placeholder={isMetro ? 'Escribe una calle o lugar…' : 'Ciudad o estación destino…'}
-                longDistance={!isMetro}
-              />
+              <Pressable onPress={() => setShowDestSearch(false)} hitSlop={8}>
+                <Ionicons name="close" size={16} color={colors.text.secondary} />
+              </Pressable>
             </View>
-          </SafeAreaView>
-        </Modal>
+            <DestinationSearch
+              onStationFound={handleDestinationFound}
+              countryHint={countryHint}
+              placeholder={isMetro ? 'Escribe una calle o lugar…' : 'Ciudad o estación destino…'}
+              longDistance={!isMetro}
+            />
+          </Animated.View>
+        )}
 
         {/* ── Botón para reabrir el buscador ── */}
         {!showDestSearch && (
