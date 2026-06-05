@@ -881,7 +881,7 @@ export default function SplitScreen() {
           })}
         >
           <Ionicons name="calendar-outline" size={14} color="#fff" />
-          <Text style={[styles.floatingBtnText, { color: '#fff' }]}>{t('split_other_times')}</Text>
+          <Text style={[styles.floatingBtnText, { color: '#A78BFA' }]}>{t('split_other_times')}</Text>
         </Pressable>
         <RNAnimated.View style={{ flex: 1, transform: [{ scale: travelPulse }] }}>
           <Pressable
@@ -1395,8 +1395,8 @@ const styles = StyleSheet.create({
     borderWidth:       1,
   },
   floatingBtnPrimary: {
-    backgroundColor: '#7C3AED',
-    borderColor:     '#7C3AED',
+    backgroundColor: '#0d0d0f',
+    borderColor:     'rgba(139,92,246,0.85)',
   },
   floatingBtnTravel: {
     backgroundColor: '#0d0d0f',

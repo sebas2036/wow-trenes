@@ -588,7 +588,7 @@ const styles = StyleSheet.create({
   depTime: {
     fontSize:      28,
     fontWeight:    '800',
-    color:         Colors.brand.glow,   // morado vibrante
+    color:         '#FFFFFF',
     letterSpacing: -1,
     lineHeight:    30,
     fontVariant:   ['tabular-nums'],
