@@ -1001,5 +1001,5 @@ const styles = StyleSheet.create({
     paddingVertical: 11, paddingHorizontal: 14,
     alignItems: 'center', justifyContent: 'center', flexShrink: 0,
   },
-  gpsBtnText: { fontSize: 12, fontWeight: '700', color: '#fff' },
+  gpsBtnText: { fontSize: 12, fontWeight: '700' },
 });
