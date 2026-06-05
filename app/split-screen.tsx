@@ -889,7 +889,7 @@ export default function SplitScreen() {
             onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowTravelModal(true); }}
           >
             <Ionicons name="sparkles" size={16} color="#FCD34D" />
-            <Text style={[styles.floatingBtnText, { color: '#FCD34D' }]}>{params.country && getScenicByCountry(params.country).length > 0 ? 'EXPERIENCIAS' : 'DESCUBRE'}</Text>
+            <Text style={[styles.floatingBtnText, { color: '#FCD34D' }]}>DESCUBRE</Text>
           </Pressable>
         </RNAnimated.View>
       </View>
@@ -1016,7 +1016,7 @@ export default function SplitScreen() {
           <View style={[styles.travelModalHeader, { borderBottomColor: colors.border.subtle }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Ionicons name="sparkles" size={18} color="#F59E0B" />
-              <Text style={[styles.travelModalTitle, { color: colors.text.primary }]}>{params.country && getScenicByCountry(params.country).length > 0 ? 'EXPERIENCIAS' : 'DESCUBRE'}</Text>
+              <Text style={[styles.travelModalTitle, { color: colors.text.primary }]}>DESCUBRE</Text>
             </View>
             <Pressable onPress={() => setShowTravelModal(false)} hitSlop={12}>
               <Ionicons name="close" size={22} color={colors.text.muted} />
