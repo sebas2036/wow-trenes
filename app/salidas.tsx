@@ -834,7 +834,7 @@ export default function SalidasScreen() {
         </View>
       ) : (
         <ScrollView style={styles.boardScroll} showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 16 }}>
+          contentContainerStyle={{ paddingBottom: 100 }}>
           {board.map((entry, i) => (
             <BoardRow
               key={i}
