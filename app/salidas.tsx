@@ -926,7 +926,7 @@ const styles = StyleSheet.create({
   boardLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 0.7 },
   boardMore:  { fontSize: 12, fontWeight: '600' },
 
-  boardScroll: { flex: 1 },
+  boardScroll: { flex: 1, marginHorizontal: 20, borderRadius: 20, overflow: 'hidden' },
   boardRow: {
     flexDirection: 'row', alignItems: 'center',
     paddingVertical: 12, paddingHorizontal: 16,
