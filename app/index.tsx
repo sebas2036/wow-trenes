@@ -508,34 +508,20 @@ export default function HomeScreen() {
             return (
               <Pressable
                 key={t.key}
-                style={[styles.segmentBtn, active && styles.segmentBtnActive]}
+                style={[
+                  styles.segmentBtn,
+                  active && [styles.segmentBtnActive, { backgroundColor: colors.brand.primary }],
+                ]}
                 onPress={() => { Haptics.selectionAsync(); setFilter(t.key); }}
               >
-                {/* Borde degradé violeta — solo en tab activo */}
-                {active && (
-                  <>
-                    <LinearGradient
-                      colors={['rgba(109,40,217,0.55)', 'rgba(167,139,250,1.00)', 'rgba(109,40,217,0.55)']}
-                      start={{ x: 0, y: 0.5 }}
-                      end={{ x: 1, y: 0.5 }}
-                      style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.sm }]}
-                      pointerEvents="none"
-                    />
-                    <View style={[StyleSheet.absoluteFillObject, {
-                      margin: 1.2,
-                      borderRadius: Radius.sm - 1,
-                      backgroundColor: colors.bg.card,
-                    }]} pointerEvents="none" />
-                  </>
-                )}
                 <Ionicons
                   name={active ? t.icon : t.iconOut}
                   size={15}
-                  color={active ? colors.brand.primary : colors.text.muted}
+                  color={active ? '#fff' : colors.text.muted}
                 />
                 <Text style={[
                   styles.segmentText,
-                  { color: active ? colors.text.primary : colors.text.secondary },
+                  { color: active ? '#fff' : colors.text.secondary },
                   active && { fontWeight: '700' },
                 ]}>
                   {t.label}
