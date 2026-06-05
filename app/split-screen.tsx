@@ -888,8 +888,8 @@ export default function SplitScreen() {
             style={[styles.floatingBtn, styles.floatingBtnTravel, { flex: 0 }]}
             onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowTravelModal(true); }}
           >
-            <Ionicons name="sparkles" size={14} color="#F59E0B" />
-            <Text style={[styles.floatingBtnText, { color: '#F59E0B' }]}>{params.country && getScenicByCountry(params.country).length > 0 ? 'EXPERIENCIAS' : 'DESCUBRE'}</Text>
+            <Ionicons name="sparkles" size={16} color="#FCD34D" />
+            <Text style={[styles.floatingBtnText, { color: '#FCD34D' }]}>{params.country && getScenicByCountry(params.country).length > 0 ? 'EXPERIENCIAS' : 'DESCUBRE'}</Text>
           </Pressable>
         </RNAnimated.View>
       </View>
@@ -1399,8 +1399,8 @@ const styles = StyleSheet.create({
     borderColor:     '#7C3AED',
   },
   floatingBtnTravel: {
-    backgroundColor: 'rgba(245,158,11,0.12)',
-    borderColor:     'rgba(245,158,11,0.50)',
+    backgroundColor: '#0d0d0f',
+    borderColor:     'rgba(245,158,11,0.85)',
   },
   floatingBtnText: {
     fontSize:      11,
