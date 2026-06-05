@@ -520,26 +520,32 @@ export default function TranslatorSheet({ visible, onClose }: TranslatorSheetPro
             </Text>
             <View style={styles.quickRow}>
               {[
-                { label: '🇯🇵 出発 → Salida',       text: '出発'   },
-                { label: '🇯🇵 のりば → Andén',      text: 'のりば' },
-                { label: '🇨🇳 站台 → Andén',         text: '站台'   },
-                { label: '🇨🇳 换乘 → Transbordo',    text: '换乘'   },
-                { label: '🇯🇵 改札口 → Torniquete',  text: '改札口' },
-                { label: '🇨🇳 安检 → Seguridad',     text: '安检'   },
+                { translation: 'Salida',     foreign: '出発',   lang: 'JA' },
+                { translation: 'Andén',      foreign: 'のりば', lang: 'JA' },
+                { translation: 'Andén',      foreign: '站台',   lang: 'ZH' },
+                { translation: 'Transbordo', foreign: '换乘',   lang: 'ZH' },
+                { translation: 'Torniquete', foreign: '改札口', lang: 'JA' },
+                { translation: 'Seguridad',  foreign: '安检',   lang: 'ZH' },
               ].map((phrase) => (
                 <Pressable
-                  key={phrase.text}
+                  key={phrase.foreign}
                   style={[styles.quickChip, {
                     backgroundColor: colors.bg.surface,
                     borderColor:     colors.border.subtle,
                   }]}
                   onPress={() => {
-                    setInputText(phrase.text);
+                    setInputText(phrase.foreign);
                     setMode('text');
                   }}
                 >
-                  <Text style={[styles.quickChipText, { color: colors.text.secondary }]}>
-                    {phrase.label}
+                  <Text style={[styles.quickChipLang, { color: colors.brand.accent }]}>
+                    {phrase.lang}
+                  </Text>
+                  <Text style={[styles.quickChipForeign, { color: colors.text.muted }]}>
+                    {phrase.foreign}
+                  </Text>
+                  <Text style={[styles.quickChipTranslation, { color: colors.text.primary }]}>
+                    {phrase.translation}
                   </Text>
                 </Pressable>
               ))}
@@ -739,8 +745,9 @@ const styles = StyleSheet.create({
     borderRadius:    Radius.lg,
     paddingVertical: Spacing['3'],
     alignItems:      'center',
-    minHeight:       52,
+    minHeight:       56,
     justifyContent:  'center',
+    marginTop:       Spacing['2'],
   },
   translateBtnDisabled: { opacity: 0.45 },
   translateBtnText: {
@@ -813,6 +820,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing['3'],
     borderRadius:      Radius.md,
     borderWidth:       0.5,
+    alignItems:        'center',
+    minWidth:          80,
   },
-  quickChipText: { fontSize: Typography.size.xs },
+  quickChipLang: {
+    fontSize:      8,
+    fontWeight:    '700',
+    letterSpacing: 0.5,
+    marginBottom:  1,
+  },
+  quickChipForeign: {
+    fontSize:   Typography.size.md,
+    fontWeight: '600',
+    lineHeight: 20,
+  },
+  quickChipTranslation: {
+    fontSize:   Typography.size.xs,
+    fontWeight: '400',
+    marginTop:  1,
+  },
 });
