@@ -870,7 +870,8 @@ const styles = StyleSheet.create({
   segmentedWrap: {
     flexDirection: 'row',
     marginHorizontal: 16,
-    marginBottom: 24,
+    marginTop: 8,
+    marginBottom: 28,
     borderRadius: Radius.md,
     padding: 3,
   },
@@ -898,7 +899,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.8,
     paddingHorizontal: 22,
-    marginBottom: 12,
+    marginBottom: 14,
   },
 
   // Fade hint al final del scroll
@@ -911,7 +912,7 @@ const styles = StyleSheet.create({
   },
 
   // Lista
-  list: { paddingHorizontal: 16, gap: 10 },
+  list: { paddingHorizontal: 16, gap: 14 },
 
   // Wrapper de sombra (separado del contenido para evitar recorte en Android)
   cardShadow: {
