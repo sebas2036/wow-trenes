@@ -179,6 +179,25 @@ function CountryCard({
         <View style={styles.cardInfo}>
           <Text style={[styles.cardName, { color: colors.text.primary }]}>{country.name}</Text>
           <Text style={[styles.cardSub, { color: colors.text.secondary }]}>{country.trainLabel}</Text>
+          {country.metroOptions && country.metroOptions.length > 0 && (
+            <View style={styles.metroRow}>
+              {country.metroOptions.slice(0, 2).map((m) => (
+                <Pressable
+                  key={m.code}
+                  style={({ pressed }) => [
+                    styles.metroPill,
+                    { backgroundColor: colors.bg.elevated, borderColor: colors.border.subtle },
+                    pressed && { opacity: 0.65 },
+                  ]}
+                  onPress={(e) => { e.stopPropagation?.(); onMetroPress(m.code, m.label); }}
+                >
+                  <Text style={[styles.metroPillText, { color: colors.brand.primary }]}>
+                    {m.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          )}
         </View>
 
         <Pressable
