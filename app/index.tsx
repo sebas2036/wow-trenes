@@ -172,6 +172,14 @@ function CountryCard({
         onPress={() => onPress(country)}
         accessibilityRole="button"
       >
+        {/* Rim light — gradiente de luz desde arriba */}
+        <LinearGradient
+          colors={['rgba(255,255,255,0.06)', 'rgba(255,255,255,0.00)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
+          pointerEvents="none"
+        />
         <View style={styles.cardFlag}>
           <FlagCircle countryCode={isoFromCode(country.code)} size="lg" />
         </View>
@@ -242,6 +250,13 @@ function MetroCard({
         ]}
         onPress={() => onPress(metro.code)}
       >
+        <LinearGradient
+          colors={['rgba(255,255,255,0.06)', 'rgba(255,255,255,0.00)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
+          pointerEvents="none"
+        />
         <View style={styles.cardFlag}>
           <FlagCircle countryCode={isoFromCode(metro.code)} size="lg" />
         </View>
