@@ -1041,7 +1041,7 @@ export default function SplitScreen() {
                       style={styles.scenicIconBadge}
                       start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                     >
-                      <Ionicons name="train" size={16} color="#fff" />
+                      <Ionicons name="train" size={22} color="#fff" />
                     </LinearGradient>
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.scenicTitle, { color: colors.text.primary }]}>{train.name}</Text>
@@ -1050,7 +1050,7 @@ export default function SplitScreen() {
                         <Text style={[styles.scenicDesc, { color: colors.text.secondary }]}>{train.description}</Text>
                       )}
                     </View>
-                    <View style={[styles.scenicBadge, { backgroundColor: train.colors[0] }]}>
+                    <View style={[styles.scenicBadge, { backgroundColor: '#7C3AED' }]}>
                       <Text style={styles.scenicBadgeText}>Reservar</Text>
                     </View>
                   </Pressable>
@@ -1357,18 +1357,20 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing['3'], marginTop: Spacing['2'], marginBottom: 2,
   },
   scenicIconBadge: {
-    width: 40, height: 40, borderRadius: 10,
+    width: 48, height: 48, borderRadius: 14,
     alignItems: 'center', justifyContent: 'center',
+    flexShrink: 0,
   },
   scenicTitle:      { fontSize: Typography.size.sm, fontWeight: Typography.weight.bold },
   scenicSub:        { fontSize: Typography.size.xs, marginTop: 2 },
   scenicDesc:       { fontSize: 13, marginTop: 6, lineHeight: 19, opacity: 0.80 },
   scenicBadge: {
     paddingHorizontal: Spacing['3'],
-    paddingVertical:   Spacing['1'],
+    paddingVertical:   Spacing['2'],
     borderRadius:      Radius.md,
+    alignSelf:         'center',
   },
-  scenicBadgeText:  { fontSize: Typography.size.xs, fontWeight: Typography.weight.bold, color: '#fff' },
+  scenicBadgeText:  { fontSize: Typography.size.xs, fontWeight: '700', color: '#fff' },
 
   floatingBar: {
     flexDirection:     'row',
