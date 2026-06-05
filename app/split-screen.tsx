@@ -325,7 +325,7 @@ export default function SplitScreen() {
   const [routePolyline,    setRoutePolyline]    = useState<Coordinates[]>([]);
   // Estación de llegada encontrada por búsqueda de dirección (modo metro)
   const [searchedDestWalk, setSearchedDestWalk] = useState<number>(0);
-  const [showDestSearch,   setShowDestSearch]   = useState(true); // visible en modo país y metro
+  const [showDestSearch,   setShowDestSearch]   = useState(false); // abre como modal al tocar el chip
 
   // ETAs para los 3 modos de transporte (minutos)
   const [etas, setEtas] = useState<Record<TransportMode, number | null>>({
@@ -770,32 +770,36 @@ export default function SplitScreen() {
           </View>
         )}
 
-        {/* ── Buscador "¿A dónde vas?" — modo país y metro ── */}
-        {showDestSearch && (
-          <Animated.View
-            entering={FadeIn.duration(300)}
-            exiting={FadeOut.duration(200)}
-            style={[styles.destSearchWrap, { backgroundColor: colors.bg.base }]}
-          >
-            <View style={styles.destSearchHeader}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Ionicons name={isMetro ? 'subway-outline' : 'train-outline'} size={14} color={colors.text.primary} />
-                <Text style={[styles.destSearchTitle, { color: colors.text.primary }]}>
-                  {isMetro ? params.metroCity : '¿A dónde vas?'}
-                </Text>
+        {/* ── Modal buscador "¿A dónde vas?" ── */}
+        <Modal
+          visible={showDestSearch}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setShowDestSearch(false)}
+        >
+          <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg.base }}>
+            <View style={[styles.destSearchWrap, { backgroundColor: colors.bg.base, paddingTop: 16 }]}>
+              <View style={styles.destSearchHeader}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Ionicons name={isMetro ? 'subway-outline' : 'train-outline'} size={14} color={colors.text.primary} />
+                  <Text style={[styles.destSearchTitle, { color: colors.text.primary }]}>
+                    {isMetro ? params.metroCity : '¿A dónde vas?'}
+                  </Text>
+                </View>
+                <Pressable onPress={() => setShowDestSearch(false)} hitSlop={8}
+                  style={{ backgroundColor: colors.bg.elevated, borderRadius: 20, padding: 6 }}>
+                  <Ionicons name="close" size={16} color={colors.text.secondary} />
+                </Pressable>
               </View>
-              <Pressable onPress={() => setShowDestSearch(false)} hitSlop={8}>
-                <Ionicons name="close" size={16} color={colors.text.secondary} />
-              </Pressable>
+              <DestinationSearch
+                onStationFound={(s) => { handleDestinationFound(s); setShowDestSearch(false); }}
+                countryHint={countryHint}
+                placeholder={isMetro ? 'Escribe una calle o lugar…' : 'Ciudad o estación destino…'}
+                longDistance={!isMetro}
+              />
             </View>
-            <DestinationSearch
-              onStationFound={handleDestinationFound}
-              countryHint={countryHint}
-              placeholder={isMetro ? 'Escribe una calle o lugar…' : 'Ciudad o estación destino…'}
-              longDistance={!isMetro}
-            />
-          </Animated.View>
-        )}
+          </SafeAreaView>
+        </Modal>
 
         {/* ── Botón para reabrir el buscador ── */}
         {!showDestSearch && (
@@ -804,7 +808,7 @@ export default function SplitScreen() {
               backgroundColor: destStation ? colors.bg.elevated : colors.bg.elevated,
               borderColor: destStation ? colors.brand.primary + '99' : colors.border.default,
             }]}
-            onPress={() => !destStation && setShowDestSearch(true)}
+            onPress={() => setShowDestSearch(true)}
           >
             <Ionicons
               name={destStation ? 'navigate' : 'search-outline'}
