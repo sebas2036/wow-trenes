@@ -48,14 +48,14 @@ const LAZY_COUNTRIES = new Set<CountryCode>(['FR', 'BE', 'AT']);
 // ── Países disponibles ────────────────────────────────────────────────────────
 const DESTINATIONS = [
   { code: 'ES'     as CountryCode, iso: 'es', name: 'España',       sub: 'AVE · Renfe'      },
-  { code: 'IT'     as CountryCode, iso: 'it', name: 'Italia',        sub: 'Frecciarossa'     },
-  { code: 'FR'     as CountryCode, iso: 'fr', name: 'Francia',       sub: 'TGV · SNCF'       },
-  { code: 'DE'     as CountryCode, iso: 'de', name: 'Alemania',      sub: 'ICE · DB'         },
-  { code: 'CH'     as CountryCode, iso: 'ch', name: 'Suiza',         sub: 'SBB'              },
-  { code: 'NL'     as CountryCode, iso: 'nl', name: 'Países Bajos',  sub: 'Intercity · NS'   },
+  { code: 'IT'     as CountryCode, iso: 'it', name: 'Italy',         sub: 'Frecciarossa'     },
+  { code: 'FR'     as CountryCode, iso: 'fr', name: 'France',        sub: 'TGV · SNCF'       },
+  { code: 'DE'     as CountryCode, iso: 'de', name: 'Germany',       sub: 'ICE · DB'         },
+  { code: 'CH'     as CountryCode, iso: 'ch', name: 'Switzerland',   sub: 'SBB'              },
+  { code: 'NL'     as CountryCode, iso: 'nl', name: 'Netherlands',   sub: 'Intercity · NS'   },
   { code: 'AT'     as CountryCode, iso: 'at', name: 'Austria',       sub: 'Railjet · ÖBB'    },
   { code: 'PT'     as CountryCode, iso: 'pt', name: 'Portugal',      sub: 'Alfa Pendular'    },
-  { code: 'BE'     as CountryCode, iso: 'be', name: 'Bélgica',       sub: 'IC · Thalys'      },
+  { code: 'BE'     as CountryCode, iso: 'be', name: 'Belgium',       sub: 'IC · Thalys'      },
 ];
 
 // Países con selector de estación real-time
