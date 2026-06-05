@@ -720,8 +720,8 @@ export default function HomeScreen() {
         onPress={handleGPS}
         disabled={gpsLoading}
       >
-        <View style={[styles.gpsPinWrap, { backgroundColor: colors.brand.primary }]}>
-          <Ionicons name="location" size={20} color="#fff" />
+        <View style={[styles.gpsPinWrap, { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.brand.primary }]}>
+          <Ionicons name="location" size={20} color={colors.brand.accent} />
         </View>
         <View style={styles.gpsBannerInfo}>
           <Text style={[styles.gpsBannerTitle, { color: colors.text.primary }]} numberOfLines={1}>
@@ -732,13 +732,13 @@ export default function HomeScreen() {
           </Text>
         </View>
         <Pressable
-          style={[styles.gpsBtn, { backgroundColor: colors.brand.primary, ...Shadows.glow }]}
+          style={[styles.gpsBtn, { backgroundColor: colors.bg.card, borderWidth: 1, borderColor: colors.brand.primary }]}
           onPress={handleGPS}
           disabled={gpsLoading}
         >
           {gpsLoading
-            ? <ActivityIndicator size="small" color="#fff" />
-            : <Text style={styles.gpsBtnText}>✦ {t('home_gps_btn')}</Text>
+            ? <ActivityIndicator size="small" color={colors.brand.accent} />
+            : <Text style={[styles.gpsBtnText, { color: colors.brand.accent }]}>✦ {t('home_gps_btn')}</Text>
           }
         </Pressable>
       </Pressable>
