@@ -484,9 +484,6 @@ export default function HomeScreen() {
               <Text style={[styles.logoTrenes, { color: colors.text.primary }]}> TRENES</Text>
               <SpeedLines />
             </View>
-            <Text style={[styles.logoSub, { color: colors.text.secondary }]}>
-              {t('home_tagline_main')}
-            </Text>
           </View>
           {/* Campana — anillo glow violeta siempre, badge rojo con número cuando llegan notifs */}
           <Pressable
