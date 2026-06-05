@@ -25,6 +25,7 @@ import {
   TextInput,
   ScrollView,
   ActivityIndicator,
+  SafeAreaView,
 } from 'react-native';
 import Constants from 'expo-constants';
 import { LinearGradient } from 'expo-linear-gradient';
