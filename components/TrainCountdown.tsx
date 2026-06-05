@@ -325,8 +325,8 @@ function TrainCard({
             </View>
 
             {/* Buffer countdown */}
-            <View style={[styles.bufferChip, { borderColor: cfg.stripe + '55' }]}>
-              <Text style={[styles.bufferText, { color: cfg.stripe }]}>
+            <View style={[styles.bufferChip, { borderColor: 'rgba(167,139,250,0.4)' }]}>
+              <Text style={[styles.bufferText, { color: '#A78BFA' }]}>
                 {fmtCountdown(msLeft)}
               </Text>
             </View>

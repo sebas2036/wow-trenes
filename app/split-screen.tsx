@@ -880,7 +880,7 @@ export default function SplitScreen() {
             },
           })}
         >
-          <Ionicons name="calendar-outline" size={14} color="#fff" />
+          <Ionicons name="time-outline" size={14} color="#A78BFA" />
           <Text style={[styles.floatingBtnText, { color: '#A78BFA' }]}>{t('split_other_times')}</Text>
         </Pressable>
         <RNAnimated.View style={{ flex: 1, transform: [{ scale: travelPulse }] }}>
@@ -1259,8 +1259,9 @@ const styles = StyleSheet.create({
   // Buscador de dirección (metro mode)
   destSearchWrap: {
     paddingHorizontal: Spacing['4'],
+    paddingTop:        Spacing['1'],
     paddingBottom:     Spacing['2'],
-    gap:               Spacing['2'],
+    gap:               Spacing['1'],
     backgroundColor:   '#1C1C1E',
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.05)',
