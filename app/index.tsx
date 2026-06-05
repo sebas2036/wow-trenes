@@ -186,12 +186,13 @@ function CountryCard({
                   key={m.code}
                   style={({ pressed }) => [
                     styles.metroPill,
-                    { backgroundColor: colors.bg.elevated, borderColor: colors.border.subtle },
+                    { backgroundColor: colors.brand.primary + '22' },
                     pressed && { opacity: 0.65 },
                   ]}
                   onPress={(e) => { e.stopPropagation?.(); onMetroPress(m.code, m.label); }}
                 >
-                  <Text style={[styles.metroPillText, { color: colors.brand.primary }]}>
+                  <Ionicons name="navigate" size={9} color={colors.brand.accent} />
+                  <Text style={[styles.metroPillText, { color: colors.brand.accent }]}>
                     {m.label}
                   </Text>
                 </Pressable>
@@ -926,8 +927,8 @@ const styles = StyleSheet.create({
 
   // Metro pills
   metroRow:     { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
-  metroPill:    { borderRadius: Radius.full, paddingVertical: 3, paddingHorizontal: 9, borderWidth: 0.5 },
-  metroPillText:{ fontSize: 11, fontWeight: '600' },
+  metroPill:    { borderRadius: Radius.sm, paddingVertical: 4, paddingHorizontal: 10, borderWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 4 },
+  metroPillText:{ fontSize: 11, fontWeight: '700' },
 
   // Favorito
   // Corazón — Ionicons vector, nunca se recorta
