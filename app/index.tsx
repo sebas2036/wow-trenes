@@ -162,7 +162,7 @@ function CountryCard({
     ? (isDark ? Shadows.cardDark : Shadows.card)
     : { elevation: 2 };
   return (
-    <View style={[styles.cardShadow, shadowStyle, { backgroundColor: colors.bg.card, borderRadius: Radius.lg }]}>
+    <View style={[styles.cardShadow, shadowStyle, { backgroundColor: colors.bg.card, borderRadius: Radius.xl }]}>
       <Pressable
         style={({ pressed }) => [
           styles.card,
@@ -233,7 +233,7 @@ function MetroCard({
     ? (isDark ? Shadows.cardDark : Shadows.card)
     : { elevation: 2 };
   return (
-    <View style={[styles.cardShadow, shadowStyle, { backgroundColor: colors.bg.card, borderRadius: Radius.lg }]}>
+    <View style={[styles.cardShadow, shadowStyle, { backgroundColor: colors.bg.card, borderRadius: Radius.xl }]}>
       <Pressable
         style={({ pressed }) => [
           styles.card,
@@ -916,14 +916,14 @@ const styles = StyleSheet.create({
 
   // Wrapper de sombra (separado del contenido para evitar recorte en Android)
   cardShadow: {
-    borderRadius: Radius.lg,
+    borderRadius: Radius.xl,
     marginBottom: 0, // gap lo maneja el list
   },
   // Card — sin strips, sin speed lines
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: Radius.lg,
+    borderRadius: Radius.xl,
     borderWidth: 0.5,
     paddingLeft: 12,
     paddingRight: 8,
