@@ -358,7 +358,7 @@ export default function TranslatorSheet({ visible, onClose }: TranslatorSheetPro
                       style={[
                         styles.langChip,
                         {
-                          backgroundColor: active ? colors.brand.primary : colors.bg.surface,
+                          backgroundColor: active ? colors.bg.card : colors.bg.surface,
                           borderColor:     active ? colors.brand.primary : colors.border.subtle,
                         },
                       ]}
@@ -366,7 +366,7 @@ export default function TranslatorSheet({ visible, onClose }: TranslatorSheetPro
                     >
                       <Text style={[
                         styles.langChipText,
-                        { color: active ? '#fff' : colors.text.secondary },
+                        { color: active ? colors.brand.accent : colors.text.secondary },
                         active && { fontWeight: '600' },
                       ]}>
                         {lang.label}

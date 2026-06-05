@@ -630,11 +630,11 @@ export default function HomeScreen() {
                 <Pressable
                   key={i}
                   style={[styles.intlDayChip,
-                    { backgroundColor: intlDate === i ? colors.brand.primary : colors.bg.elevated,
+                    { backgroundColor: intlDate === i ? colors.bg.card : colors.bg.elevated,
                       borderColor: intlDate === i ? colors.brand.primary : colors.border.subtle }]}
                   onPress={() => { Haptics.selectionAsync(); setIntlDate(i); }}
                 >
-                  <Text style={[styles.intlDayText, { color: intlDate === i ? '#fff' : colors.text.secondary }]}>{label}</Text>
+                  <Text style={[styles.intlDayText, { color: intlDate === i ? colors.brand.accent : colors.text.secondary }]}>{label}</Text>
                 </Pressable>
               ))}
             </View>
