@@ -186,7 +186,7 @@ function CountryCard({
                   key={m.code}
                   style={({ pressed }) => [
                     styles.metroPill,
-                    { backgroundColor: colors.brand.primary + '22' },
+                    { backgroundColor: colors.bg.elevated, borderWidth: 0.5, borderColor: colors.brand.primary + '66' },
                     pressed && { opacity: 0.65 },
                   ]}
                   onPress={(e) => { e.stopPropagation?.(); onMetroPress(m.code, m.label); }}
