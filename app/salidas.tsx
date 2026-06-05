@@ -686,14 +686,14 @@ export default function SalidasScreen() {
               key={t.key}
               style={[
                 styles.segBtn,
-                active && [styles.segBtnActive, { backgroundColor: colors.brand.primary }],
+                active && [styles.segBtnActive, { backgroundColor: 'rgba(124,58,237,0.18)' }],
               ]}
               onPress={() => { Haptics.selectionAsync(); setMode(t.key); }}
             >
               <Ionicons name={t.icon as any} size={15}
-                color={active ? '#fff' : colors.text.muted} />
+                color={active ? colors.brand.accent : colors.text.muted} />
               <Text style={[styles.segText,
-                { color: active ? '#fff' : colors.text.secondary },
+                { color: active ? colors.brand.accent : colors.text.secondary },
                 active && { fontWeight: '700' },
               ]}>
                 {t.label}

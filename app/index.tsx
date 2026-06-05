@@ -530,18 +530,18 @@ export default function HomeScreen() {
                 key={t.key}
                 style={[
                   styles.segmentBtn,
-                  active && [styles.segmentBtnActive, { backgroundColor: colors.brand.primary }],
+                  active && [styles.segmentBtnActive, { backgroundColor: 'rgba(124,58,237,0.18)' }],
                 ]}
                 onPress={() => { Haptics.selectionAsync(); setFilter(t.key); }}
               >
                 <Ionicons
                   name={active ? t.icon : t.iconOut}
                   size={15}
-                  color={active ? '#fff' : colors.text.muted}
+                  color={active ? colors.brand.accent : colors.text.muted}
                 />
                 <Text style={[
                   styles.segmentText,
-                  { color: active ? '#fff' : colors.text.secondary },
+                  { color: active ? colors.brand.accent : colors.text.secondary },
                   active && { fontWeight: '700' },
                 ]}>
                   {t.label}
