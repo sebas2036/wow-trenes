@@ -148,7 +148,7 @@ function BoardRow({
   return (
     <View style={[
       styles.boardRow,
-      { backgroundColor: colors.bg.card, borderBottomColor: colors.border.default },
+      { backgroundColor: colors.bg.card, borderBottomColor: colors.border.strong },
     ]}>
       <View style={{ alignItems: 'center' }}>
         <Text style={[styles.boardTime, { color: '#ffffff' }]} numberOfLines={1}>
