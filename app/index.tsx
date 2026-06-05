@@ -179,25 +179,6 @@ function CountryCard({
         <View style={styles.cardInfo}>
           <Text style={[styles.cardName, { color: colors.text.primary }]}>{country.name}</Text>
           <Text style={[styles.cardSub, { color: colors.text.secondary }]}>{country.trainLabel}</Text>
-          {country.metroOptions && country.metroOptions.length > 0 && (
-            <View style={styles.metroRow}>
-              {country.metroOptions.slice(0, 2).map((m) => (
-                <Pressable
-                  key={m.code}
-                  style={({ pressed }) => [
-                    styles.metroPill,
-                    { backgroundColor: colors.bg.elevated, borderColor: colors.border.subtle },
-                    pressed && { opacity: 0.65 },
-                  ]}
-                  onPress={(e) => { e.stopPropagation?.(); onMetroPress(m.code, m.label); }}
-                >
-                  <Text style={[styles.metroPillText, { color: colors.brand.primary }]}>
-                    {m.label}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          )}
         </View>
 
         <Pressable
@@ -207,7 +188,7 @@ function CountryCard({
         >
           <Ionicons
             name={isFav ? 'heart' : 'heart-outline'}
-            size={22}
+            size={18}
             color={isFav ? '#FF3B30' : colors.text.muted}
           />
         </Pressable>
@@ -933,10 +914,10 @@ const styles = StyleSheet.create({
     minHeight: 80,
   },
   cardFlag:  { marginRight: 14 },
-  cardInfo:  { flex: 1, gap: 2 },
-  cardName:  { fontSize: 16, fontWeight: '600', letterSpacing: -0.2 },
-  cardSub:   { fontSize: 13 },
-  cardArrow: { fontSize: 22, paddingHorizontal: 10, fontWeight: '300' },
+  cardInfo:  { flex: 1, gap: 3 },
+  cardName:  { fontSize: 17, fontWeight: '700', letterSpacing: -0.3 },
+  cardSub:   { fontSize: 12 },
+  cardArrow: { fontSize: 20, paddingHorizontal: 8, fontWeight: '300' },
 
   // Metro pills
   metroRow:     { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
