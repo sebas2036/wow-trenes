@@ -569,7 +569,7 @@ export default function HomeScreen() {
         {/* ── Sección Trenes ── */}
         {filter === 'trenes' && (
           <>
-            <Text style={[styles.sectionLabel, { color: colors.text.muted }]}>{t('home_countries_title')}</Text>
+            <Text style={[styles.sectionLabel, { color: colors.text.secondary }]}>{t('home_countries_title')}</Text>
             <FlatList
               data={sortedCountries}
               keyExtractor={(c) => c.code}
