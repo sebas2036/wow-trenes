@@ -178,13 +178,14 @@ function BoardRow({
           backgroundColor: entry.status === 'cancelled' ? '#FF453A'
             : entry.status === 'delayed' ? '#FF9F0A' : '#4ade80',
         }]} />
-        {(entry.status === 'cancelled' || entry.status === 'delayed' || entry.delay) && (
-          <Text style={[styles.statusText, {
-            color: entry.status === 'cancelled' ? '#FF453A' : '#FF9F0A',
-          }]}>
-            {entry.status === 'cancelled' ? 'Cancelado' : entry.delay}
-          </Text>
-        )}
+        <Text style={[styles.statusText, {
+          color: entry.status === 'cancelled' ? '#FF453A'
+            : entry.status === 'delayed' ? '#FF9F0A' : '#4ade80',
+        }]}>
+          {entry.status === 'cancelled' ? 'Cancelado'
+            : entry.delay ? entry.delay
+            : 'En horario'}
+        </Text>
       </View>
       {/* Botón Comprar */}
       <Pressable
