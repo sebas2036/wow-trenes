@@ -152,7 +152,7 @@ function BoardRow({
         borderColor: colors.border.subtle },
     ]}>
       <View style={{ alignItems: 'center' }}>
-        <Text style={[styles.boardTime, { color: colors.brand.primary }]} numberOfLines={1}>
+        <Text style={[styles.boardTime, { color: '#ffffff' }]} numberOfLines={1}>
           {entry.time}
         </Text>
         {entry.isTomorrow && (
@@ -171,16 +171,16 @@ function BoardRow({
         </Text>
       </View>
       <View style={[styles.statusPill, {
-        backgroundColor: entry.status === 'cancelled' ? '#FF453A30'
-          : entry.status === 'delayed' ? '#FF9F0A20' : '#30D15820',
+        backgroundColor: entry.status === 'cancelled' ? '#FF453A20'
+          : entry.status === 'delayed' ? '#FF9F0A15' : '#22c55e15',
       }]}>
         <View style={[styles.statusDot, {
           backgroundColor: entry.status === 'cancelled' ? '#FF453A'
-            : entry.status === 'delayed' ? '#FF9F0A' : '#30D158',
+            : entry.status === 'delayed' ? '#FF9F0A' : '#4ade80',
         }]} />
         <Text style={[styles.statusText, {
           color: entry.status === 'cancelled' ? '#FF453A'
-            : entry.status === 'delayed' ? '#FF9F0A' : '#30D158',
+            : entry.status === 'delayed' ? '#FF9F0A' : '#4ade80',
         }]}>
           {entry.status === 'cancelled' ? 'Cancelado'
             : entry.delay ? entry.delay
@@ -946,12 +946,14 @@ const styles = StyleSheet.create({
 
   // Botón comprar
   buyBtn: {
-    backgroundColor: '#7C3AED',
+    backgroundColor: 'transparent',
     paddingVertical: 7, paddingHorizontal: 12,
     borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(139,92,246,0.7)',
   },
   buyBtnText: {
-    fontSize: 11, fontWeight: '700', color: '#fff',
+    fontSize: 11, fontWeight: '700', color: '#A78BFA',
   },
 
   center: {
