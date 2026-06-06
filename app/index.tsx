@@ -27,6 +27,8 @@ import PartnerCard from '../components/PartnerCard';
 import { getYesimOffer, getTiqetsOffer, getStorageOffer, getInsuranceOffer } from '../data/partnerOffers';
 import AffiliateWebView from '../components/AffiliateWebView';
 import { t } from '../services/i18n';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ONBOARDING_KEY } from './onboarding';
 import TranslatorSheet from '../components/TranslatorSheet';
 import DownloadProgressBar from '../components/DownloadProgressBar';
 import BottomTabBar from '../components/BottomTabBar';
@@ -328,6 +330,13 @@ export default function HomeScreen() {
   const [notifVisible,  setNotifVisible]  = useState(false);
   const { unreadCount, addNotification }  = useNotifications();
   const prevUnread = React.useRef(unreadCount);
+
+  // ── Onboarding: primer arranque ──────────────────────────────────────────
+  useEffect(() => {
+    AsyncStorage.getItem(ONBOARDING_KEY).then((done) => {
+      if (!done) router.replace('/onboarding');
+    });
+  }, []);
 
   // Vibrar cuando llega una notificación nueva
   useEffect(() => {

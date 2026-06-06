@@ -49,6 +49,7 @@ function AppStack() {
         <Stack.Screen name="buscar-viaje" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
         <Stack.Screen name="split-screen" options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="ticket"       options={{ animation: 'fade', presentation: 'modal' }} />
+        <Stack.Screen name="onboarding"   options={{ animation: 'fade', gestureEnabled: false }} />
       </Stack>
     </GestureHandlerRootView>
   );

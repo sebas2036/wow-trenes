@@ -140,6 +140,16 @@ const translations = {
     split_internat:      'Internat.',
     split_trains_tab:    'Trenes',
     split_metro_tab:     'Metro',
+    // Onboarding
+    ob_skip:    'Saltar',
+    ob_next:    'Siguiente',
+    ob_start:   'Empezar',
+    ob1_title:  'Tu tren, tu mundo',
+    ob1_sub:    'Buscá trenes en Europa y el mundo. Rápido, fácil y sin registro.',
+    ob2_title:  'Rutas Escénicas',
+    ob2_sub:    'Glacier Express, Bernina, GoldenPass... Experiencias únicas sobre rieles.',
+    ob3_title:  '100% Privado',
+    ob3_sub:    'Sin cuenta. Sin contraseña. Tus datos no salen de tu teléfono.',
   },
 
   en: {
@@ -249,6 +259,16 @@ const translations = {
     split_internat:      'Internat.',
     split_trains_tab:    'Trains',
     split_metro_tab:     'Metro',
+    // Onboarding
+    ob_skip:    'Skip',
+    ob_next:    'Next',
+    ob_start:   'Get Started',
+    ob1_title:  'Your train, your world',
+    ob1_sub:    'Search trains across Europe and beyond. Fast, easy, no sign-up needed.',
+    ob2_title:  'Scenic Routes',
+    ob2_sub:    'Glacier Express, Bernina, GoldenPass... Unique experiences on the rails.',
+    ob3_title:  '100% Private',
+    ob3_sub:    'No account. No password. Your data never leaves your phone.',
   },
 
   pt: {
@@ -358,6 +378,16 @@ const translations = {
     split_internat:      'Internat.',
     split_trains_tab:    'Trens',
     split_metro_tab:     'Metrô',
+    // Onboarding
+    ob_skip:    'Pular',
+    ob_next:    'Próximo',
+    ob_start:   'Começar',
+    ob1_title:  'Seu trem, seu mundo',
+    ob1_sub:    'Pesquise trens na Europa e além. Rápido, fácil e sem cadastro.',
+    ob2_title:  'Rotas Panorâmicas',
+    ob2_sub:    'Glacier Express, Bernina, GoldenPass... Experiências únicas nos trilhos.',
+    ob3_title:  '100% Privado',
+    ob3_sub:    'Sem conta. Sem senha. Seus dados ficam só no seu telefone.',
   },
 
   ja: {
@@ -467,6 +497,16 @@ const translations = {
     split_internat:      '国際',
     split_trains_tab:    '電車',
     split_metro_tab:     '地下鉄',
+    // Onboarding
+    ob_skip:    'スキップ',
+    ob_next:    '次へ',
+    ob_start:   '始める',
+    ob1_title:  'あなたの列車、あなたの世界',
+    ob1_sub:    'ヨーロッパと世界中の電車を検索。登録不要で簡単・便利。',
+    ob2_title:  '絶景列車',
+    ob2_sub:    'グレッシャー・エクスプレス、ベルニナ... レールの上の特別な体験。',
+    ob3_title:  '完全プライベート',
+    ob3_sub:    'アカウント不要。パスワード不要。データはすべてあなたの端末に。',
   },
 
   zh: {
@@ -576,6 +616,16 @@ const translations = {
     split_internat:      '国际',
     split_trains_tab:    '列车',
     split_metro_tab:     '地铁',
+    // Onboarding
+    ob_skip:    '跳过',
+    ob_next:    '下一步',
+    ob_start:   '开始',
+    ob1_title:  '你的列车，你的世界',
+    ob1_sub:    '搜索欧洲及全球火车。快捷便利，无需注册。',
+    ob2_title:  '风景列车',
+    ob2_sub:    '冰川快车、伯尔尼纳... 铁路上的独特体验。',
+    ob3_title:  '100% 隐私保护',
+    ob3_sub:    '无需账户，无需密码。你的数据只留在你的手机上。',
   },
 
   ko: {
@@ -685,6 +735,16 @@ const translations = {
     split_internat:      '국제',
     split_trains_tab:    '기차',
     split_metro_tab:     '지하철',
+    // Onboarding
+    ob_skip:    '건너뛰기',
+    ob_next:    '다음',
+    ob_start:   '시작하기',
+    ob1_title:  '나의 기차, 나의 세계',
+    ob1_sub:    '유럽과 전 세계 기차를 검색하세요. 빠르고 간편하며 가입 불필요.',
+    ob2_title:  '경관 열차',
+    ob2_sub:    '글레이셔 익스프레스, 베르니나... 레일 위의 특별한 경험.',
+    ob3_title:  '100% 프라이버시',
+    ob3_sub:    '계정 없음. 비밀번호 없음. 데이터는 기기 안에만 저장됩니다.',
   },
 
   fr: {
@@ -794,6 +854,16 @@ const translations = {
     split_internat:      'Internat.',
     split_trains_tab:    'Trains',
     split_metro_tab:     'Métro',
+    // Onboarding
+    ob_skip:    'Passer',
+    ob_next:    'Suivant',
+    ob_start:   'Commencer',
+    ob1_title:  'Ton train, ton monde',
+    ob1_sub:    'Recherche des trains en Europe et dans le monde. Rapide, simple, sans inscription.',
+    ob2_title:  'Trains Panoramiques',
+    ob2_sub:    'Glacier Express, Bernina, GoldenPass... Des expériences uniques sur les rails.',
+    ob3_title:  '100% Privé',
+    ob3_sub:    'Sans compte. Sans mot de passe. Tes données restent sur ton téléphone.',
   },
 
   de: {
@@ -903,6 +973,16 @@ const translations = {
     split_internat:      'Internat.',
     split_trains_tab:    'Züge',
     split_metro_tab:     'U-Bahn',
+    // Onboarding
+    ob_skip:    'Überspringen',
+    ob_next:    'Weiter',
+    ob_start:   'Loslegen',
+    ob1_title:  'Dein Zug, deine Welt',
+    ob1_sub:    'Züge in Europa und weltweit suchen. Schnell, einfach und ohne Registrierung.',
+    ob2_title:  'Panoramazüge',
+    ob2_sub:    'Glacier Express, Bernina, GoldenPass... Einzigartige Erlebnisse auf der Schiene.',
+    ob3_title:  '100% Privat',
+    ob3_sub:    'Kein Konto. Kein Passwort. Deine Daten bleiben auf deinem Gerät.',
   },
 
   it: {
@@ -1012,6 +1092,16 @@ const translations = {
     split_internat:      'Internat.',
     split_trains_tab:    'Treni',
     split_metro_tab:     'Metro',
+    // Onboarding
+    ob_skip:    'Salta',
+    ob_next:    'Avanti',
+    ob_start:   'Inizia',
+    ob1_title:  'Il tuo treno, il tuo mondo',
+    ob1_sub:    'Cerca treni in Europa e nel mondo. Veloce, semplice, senza registrazione.',
+    ob2_title:  'Treni Panoramici',
+    ob2_sub:    'Glacier Express, Bernina, GoldenPass... Esperienze uniche sui binari.',
+    ob3_title:  '100% Privato',
+    ob3_sub:    'Nessun account. Nessuna password. I tuoi dati restano sul telefono.',
   },
 
   ar: {
@@ -1121,6 +1211,16 @@ const translations = {
     split_internat:      'دولي',
     split_trains_tab:    'قطارات',
     split_metro_tab:     'مترو',
+    // Onboarding
+    ob_skip:    'تخطي',
+    ob_next:    'التالي',
+    ob_start:   'ابدأ',
+    ob1_title:  'قطارك، عالمك',
+    ob1_sub:    'ابحث عن قطارات في أوروبا والعالم. سريع وسهل بدون تسجيل.',
+    ob2_title:  'القطارات الجمالية',
+    ob2_sub:    'غلاسيير إكسبريس، بيرنينا... تجارب فريدة على القضبان.',
+    ob3_title:  '١٠٠٪ خصوصية',
+    ob3_sub:    'بدون حساب. بدون كلمة مرور. بياناتك تبقى في هاتفك فقط.',
   },
 } as const;
 
