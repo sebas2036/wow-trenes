@@ -493,10 +493,10 @@ export default function HomeScreen() {
         {/* ── Logo + Bell ── */}
         <View style={styles.header}>
           <View>
-            {/* Logo — WoW italic + TRENES espaciado + speed lines */}
+            {/* Logo — WoW italic + TRAIN espaciado + speed lines */}
             <View style={styles.logoRow}>
               <Text style={[styles.logoWow, { color: colors.brand.primary }]}>WoW</Text>
-              <Text style={[styles.logoTrenes, { color: colors.text.primary }]}> TRENES</Text>
+              <Text style={[styles.logoTrenes, { color: colors.text.primary }]}> TRAIN</Text>
               <SpeedLines />
             </View>
           </View>
@@ -860,7 +860,7 @@ const styles = StyleSheet.create({
     color:      '#fff',
   },
 
-  // Logo — fila con WoW italic + TRENES espaciado + speed lines
+  // Logo — fila con WoW italic + TRAIN espaciado + speed lines
   logoRow: {
     flexDirection: 'row',
     alignItems:    'center',
