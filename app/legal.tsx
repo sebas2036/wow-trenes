@@ -222,7 +222,7 @@ export default function LegalScreen() {
         {/* Footer */}
         <View style={styles.footer}>
           <Text style={[styles.footerText, { color: colors.text.muted }]}>
-            <Text style={{ color: colors.brand.glow }}>WoW </Text>TRENES · v1.0.0
+            <Text style={{ color: colors.brand.glow }}>WoW </Text>TRAIN · v1.0.0
           </Text>
           <Text style={[styles.footerSub, { color: colors.text.muted }]}>Glosx@outlook.com</Text>
         </View>

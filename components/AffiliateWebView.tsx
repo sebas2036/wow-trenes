@@ -176,7 +176,7 @@ export default function AffiliateWebView({
           {/* Branding + security badge */}
           <View style={styles.topCenter}>
             <Text style={styles.brandLabel}>
-              <Text style={{ color: Colors.brand.glow }}>WoW</Text> TRENES
+              <Text style={{ color: Colors.brand.glow }}>WoW</Text> TRAIN
             </Text>
             <View style={styles.secureBadge}>
               <Text style={styles.secureIcon}>🔒</Text>

@@ -202,7 +202,7 @@ export default function AjustesScreen() {
         {/* ── Branding ── */}
         <View style={styles.brand}>
           <Text style={[styles.brandLogo, { color: colors.text.primary }]}>
-            <Text style={{ color: colors.brand.primary }}>WoW </Text>TRENES
+            <Text style={{ color: colors.brand.primary }}>WoW </Text>TRAIN
           </Text>
           <Text style={[styles.brandSub, { color: colors.text.muted }]}>
             Hecho para viajeros del mundo
