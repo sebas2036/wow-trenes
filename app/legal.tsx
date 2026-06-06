@@ -1,5 +1,5 @@
 /**
- * WoW TRENES — Pantalla Legal
+ * WoW Train — Pantalla Legal
  * FAQ · Términos y Condiciones · Privacidad · Seguridad
  * Cumple requisitos de Apple App Store y Google Play Store.
  */
@@ -22,16 +22,16 @@ const CONTENT: Record<string, { title: string; sections: { heading: string; body
     title: 'Preguntas Frecuentes',
     sections: [
       {
-        heading: '¿Qué es WoW TRENES?',
-        body: 'WoW TRENES es una app de viajes en tren que te permite explorar horarios, encontrar estaciones cercanas y comprar billetes de tren en más de 13 países de Europa y América. Funciona sin crear una cuenta.',
+        heading: '¿Qué es WoW Train?',
+        body: 'WoW Train es una app de viajes en tren que te permite explorar horarios, encontrar estaciones cercanas y comprar billetes de tren en más de 13 países de Europa y América. Funciona sin crear una cuenta.',
       },
       {
         heading: '¿Necesito registrarme?',
-        body: 'No. WoW TRENES no requiere cuenta de usuario ni contraseña. La app funciona de forma completamente anónima. Tus favoritos y billetes se guardan solo en tu teléfono.',
+        body: 'No. WoW Train no requiere cuenta de usuario ni contraseña. La app funciona de forma completamente anónima. Tus favoritos y billetes se guardan solo en tu teléfono.',
       },
       {
         heading: '¿Cómo compro un billete?',
-        body: 'Seleccioná el país o ciudad, elegí tu tren y tocá "Comprar". Serás redirigido a Trainline o Rail Europe, operadores certificados que gestionan el pago de forma segura. WoW TRENES nunca toca ni procesa tu tarjeta.',
+        body: 'Seleccioná el país o ciudad, elegí tu tren y tocá "Comprar". Serás redirigido a Trainline o Rail Europe, operadores certificados que gestionan el pago de forma segura. WoW Train nunca toca ni procesa tu tarjeta.',
       },
       {
         heading: '¿Los datos de horarios son en tiempo real?',
@@ -43,7 +43,7 @@ const CONTENT: Record<string, { title: string; sections: { heading: string; body
       },
       {
         heading: '¿La app es gratuita?',
-        body: 'Sí, la app es gratuita. WoW TRENES es un afiliado tecnológico de Trainline y Rail Europe. Podemos cobrar una comisión sobre los billetes vendidos, sin costo adicional para el usuario.',
+        body: 'Sí, la app es gratuita. WoW Train es un afiliado tecnológico de Trainline y Rail Europe. Podemos cobrar una comisión sobre los billetes vendidos, sin costo adicional para el usuario.',
       },
       {
         heading: '¿Dónde se guardan mis billetes?',
@@ -65,27 +65,27 @@ const CONTENT: Record<string, { title: string; sections: { heading: string; body
     sections: [
       {
         heading: '1. Aceptación',
-        body: 'Al descargar o usar WoW TRENES ("la App") aceptás estos Términos y Condiciones. Si no estás de acuerdo, no uses la App.',
+        body: 'Al descargar o usar WoW Train ("la App") aceptás estos Términos y Condiciones. Si no estás de acuerdo, no uses la App.',
       },
       {
         heading: '2. Descripción del servicio',
-        body: 'WoW TRENES es una aplicación de información ferroviaria y plataforma de afiliación tecnológica. Facilita el acceso a horarios GTFS públicos y redirige a operadores certificados (Trainline, Rail Europe) para la compra de billetes.',
+        body: 'WoW Train es una aplicación de información ferroviaria y plataforma de afiliación tecnológica. Facilita el acceso a horarios GTFS públicos y redirige a operadores certificados (Trainline, Rail Europe) para la compra de billetes.',
       },
       {
         heading: '3. Relación de afiliación',
-        body: 'WoW TRENES actúa exclusivamente como "Front-End Afiliado Tecnológico". Trainline Ltd. y Rail Europe SAS actúan como Merchant of Record (MoR) en todas las transacciones. WoW TRENES no es parte de ningún contrato de transporte ni de compraventa de billetes.',
+        body: 'WoW Train actúa exclusivamente como "Front-End Afiliado Tecnológico". Trainline Ltd. y Rail Europe SAS actúan como Merchant of Record (MoR) en todas las transacciones. WoW Train no es parte de ningún contrato de transporte ni de compraventa de billetes.',
       },
       {
         heading: '4. Exactitud de la información',
-        body: 'Los horarios se basan en datos GTFS oficiales. WoW TRENES no garantiza la exactitud en tiempo real de horarios, precios ni disponibilidad de plazas. Los datos pueden diferir de los publicados por los operadores ferroviarios.',
+        body: 'Los horarios se basan en datos GTFS oficiales. WoW Train no garantiza la exactitud en tiempo real de horarios, precios ni disponibilidad de plazas. Los datos pueden diferir de los publicados por los operadores ferroviarios.',
       },
       {
         heading: '5. Limitación de responsabilidad',
-        body: 'WoW TRENES no es responsable por pérdidas, daños o gastos derivados del uso de la App, incluyendo trenes perdidos, cambios de horario o problemas con los billetes adquiridos a través de terceros.',
+        body: 'WoW Train no es responsable por pérdidas, daños o gastos derivados del uso de la App, incluyendo trenes perdidos, cambios de horario o problemas con los billetes adquiridos a través de terceros.',
       },
       {
         heading: '6. Propiedad intelectual',
-        body: 'Todo el contenido, diseño y código de WoW TRENES son propiedad de sus desarrolladores. Los datos GTFS son propiedad de los respectivos operadores ferroviarios y se usan bajo licencias públicas.',
+        body: 'Todo el contenido, diseño y código de WoW Train son propiedad de sus desarrolladores. Los datos GTFS son propiedad de los respectivos operadores ferroviarios y se usan bajo licencias públicas.',
       },
       {
         heading: '7. Cambios en los términos',
@@ -103,7 +103,7 @@ const CONTENT: Record<string, { title: string; sections: { heading: string; body
     sections: [
       {
         heading: 'Resumen',
-        body: 'WoW TRENES no recoge, almacena ni comparte datos personales en servidores propios. No hay cuentas de usuario. No hay seguimiento publicitario. No hay perfiles en la nube.',
+        body: 'WoW Train no recoge, almacena ni comparte datos personales en servidores propios. No hay cuentas de usuario. No hay seguimiento publicitario. No hay perfiles en la nube.',
       },
       {
         heading: 'Datos que NO recopilamos',
@@ -119,7 +119,7 @@ const CONTENT: Record<string, { title: string; sections: { heading: string; body
       },
       {
         heading: 'Pagos',
-        body: 'Los pagos se procesan íntegramente por Trainline Ltd. o Rail Europe SAS (Merchant of Record). WoW TRENES nunca recibe, toca ni almacena datos de tarjeta de crédito o débito. Cumplimiento PCI-DSS delegado completamente al MoR.',
+        body: 'Los pagos se procesan íntegramente por Trainline Ltd. o Rail Europe SAS (Merchant of Record). WoW Train nunca recibe, toca ni almacena datos de tarjeta de crédito o débito. Cumplimiento PCI-DSS delegado completamente al MoR.',
       },
       {
         heading: 'Datos del pasajero en checkout',
@@ -149,7 +149,7 @@ const CONTENT: Record<string, { title: string; sections: { heading: string; body
     sections: [
       {
         heading: 'Sin cuentas de usuario',
-        body: 'WoW TRENES está diseñado bajo el principio de "privacy by design" (RGPD Art. 25). No existe registro, login ni perfil. No hay contraseñas que hackear ni bases de datos de usuarios que comprometer.',
+        body: 'WoW Train está diseñado bajo el principio de "privacy by design" (RGPD Art. 25). No existe registro, login ni perfil. No hay contraseñas que hackear ni bases de datos de usuarios que comprometer.',
       },
       {
         heading: 'Almacenamiento seguro de billetes',
@@ -157,7 +157,7 @@ const CONTENT: Record<string, { title: string; sections: { heading: string; body
       },
       {
         heading: 'Pagos PCI-DSS',
-        body: 'Toda la gestión de pagos recae en Trainline Ltd. o Rail Europe SAS, ambos certificados bajo el estándar PCI-DSS. WoW TRENES es un intermediario de interfaz exclusivamente y nunca recibe datos de pago.',
+        body: 'Toda la gestión de pagos recae en Trainline Ltd. o Rail Europe SAS, ambos certificados bajo el estándar PCI-DSS. WoW Train es un intermediario de interfaz exclusivamente y nunca recibe datos de pago.',
       },
       {
         heading: 'Sin tracking ni analytics',
@@ -173,7 +173,7 @@ const CONTENT: Record<string, { title: string; sections: { heading: string; body
       },
       {
         heading: 'Código abierto y auditable',
-        body: 'WoW TRENES está construido con tecnología de código abierto: React Native (Meta), Expo SDK (Expo Inc.) y SQLite. El código puede auditarse para verificar el cumplimiento de estas políticas.',
+        body: 'WoW Train está construido con tecnología de código abierto: React Native (Meta), Expo SDK (Expo Inc.) y SQLite. El código puede auditarse para verificar el cumplimiento de estas políticas.',
       },
       {
         heading: 'Eliminación de datos',

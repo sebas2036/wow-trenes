@@ -1,5 +1,5 @@
 /**
- * WoW TRENES — Bottom Tab Bar
+ * WoW Train — Bottom Tab Bar
  * Íconos vectoriales Ionicons. Tema claro/oscuro automático.
  */
 import React from 'react';

@@ -1,4 +1,4 @@
-# WoW TRENES — Setup & Install Guide
+# WoW Train — Setup & Install Guide
 
 ## 1. Prerequisites
 - Node.js ≥ 20
@@ -9,7 +9,7 @@
 ## 2. Install dependencies
 
 ```bash
-cd "WoW TRENES"
+cd "WoW Train"
 npm install
 ```
 

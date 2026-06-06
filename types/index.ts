@@ -1,5 +1,5 @@
 /**
- * WoW TRENES — Global TypeScript Types
+ * WoW Train — Global TypeScript Types
  * RGPD compliant: no user accounts, no personal data in cloud
  */
 

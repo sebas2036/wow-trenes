@@ -1,5 +1,5 @@
 /**
- * WoW TRENES — Tablero (Asistente de viaje personal)
+ * WoW Train — Tablero (Asistente de viaje personal)
  * GPS automático → detecta país y estación → carga horarios sin acción del usuario.
  * Si GPS no cubre la zona, selector manual de país/estación.
  */

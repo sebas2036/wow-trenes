@@ -1,5 +1,5 @@
 /**
- * WoW TRENES — Ajustes
+ * WoW Train — Ajustes
  * Diseño iOS Settings: íconos cuadrados con color + Ionicons blanco. Sin emoji.
  */
 import React, { useState } from 'react';
@@ -194,7 +194,7 @@ export default function AjustesScreen() {
           <Row
             iconName="bug-outline" iconBg="#FF453A"
             label="Reportar un problema" colors={colors}
-            onPress={() => Linking.openURL('mailto:Glosx@outlook.com?subject=WoW TRENES - Bug')}
+            onPress={() => Linking.openURL('mailto:Glosx@outlook.com?subject=WoW Train - Bug')}
             isLast
           />
         </View>

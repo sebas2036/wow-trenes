@@ -1,5 +1,5 @@
 /**
- * WoW TRENES — ThemeContext
+ * WoW Train — ThemeContext
  * Detecta automáticamente el modo del sistema (claro/oscuro)
  * y provee los colores correctos a toda la app.
  */

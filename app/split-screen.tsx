@@ -1,5 +1,5 @@
 /**
- * WoW TRENES — Split-Screen 50/50 (STEP 2 + Tourist v2)
+ * WoW Train — Split-Screen 50/50 (STEP 2 + Tourist v2)
  *
  * UPPER 50%: Reloj Predictivo de Pánico — próximos 3 trenes + buffer coloreado
  * LOWER 50%: Mapa Multimodal en tiempo real con chips de modo

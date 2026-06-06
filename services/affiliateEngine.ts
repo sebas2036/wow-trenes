@@ -2,7 +2,7 @@
  * affiliateEngine — Monetización PCI-DSS Compliant (STEP 4)
  *
  * ARQUITECTURA DE COMISIÓN:
- *   • WoW TRENES opera como "Front-End Afiliado Tecnológico".
+ *   • WoW Train opera como "Front-End Afiliado Tecnológico".
  *   • El Merchant of Record es siempre el distribuidor (Trainline / Rail Europe).
  *   • Inyectamos un Affiliate ID en CADA petición de compra, client-side.
  *   • Red afiliada: Partnerize (p11p) o Impact Radius — 2%-5% por billete.
@@ -58,7 +58,7 @@ export async function buildAffiliateUrl(
 /**
  * Constructs the booking request payload with affiliate metadata injected.
  * This payload is sent client-side to the distributor API.
- * WoW TRENES backend NEVER receives this payload — it goes direct to distributor.
+ * WoW Train backend NEVER receives this payload — it goes direct to distributor.
  */
 export async function buildBookingPayload(
   service:   TrainService,

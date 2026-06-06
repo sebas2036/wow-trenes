@@ -1,16 +1,16 @@
-# WoW TRENES — Google Play Console (Android)
+# WoW Train — Google Play Console (Android)
 # Pegar estos textos en Play Console → tu app → Store listing
 
 ---
 
 ## TITLE (50 chars max)
-WoW TRENES: Trenes Europa Sin Cuenta
+WoW Train: Trenes Europa Sin Cuenta
 
 ## SHORT DESCRIPTION (80 chars max)
 GPS detecta tu estación. Compra en 3 toques. QR offline. Sin contraseña.
 
 ## FULL DESCRIPTION (4000 chars max)
-WoW TRENES es la app de viajes en tren más rápida de Europa. Sin registrarte, sin crear cuenta — solo abre la app, y el GPS detecta automáticamente en qué país estás y qué trenes salen desde tu estación más cercana.
+WoW Train es la app de viajes en tren más rápida de Europa. Sin registrarte, sin crear cuenta — solo abre la app, y el GPS detecta automáticamente en qué país estás y qué trenes salen desde tu estación más cercana.
 
 🚄 COMPRA EN 3 TOQUES
 Elige el tren → selecciona clase → paga con Google Pay. Tu QR aparece al instante, guardado offline en el teléfono. Sin señal en el andén, sin problema.
@@ -37,13 +37,13 @@ Ferrocarriles soportados: SBB · SNCF · DB · Renfe · Trenitalia · NS · ÖBB
 • Sin cuenta de usuario
 • Sin contraseña que recordar
 • Los billetes se guardan solo en tu teléfono
-• El pago lo gestiona Trainline (Merchant of Record) — WoW TRENES nunca ve tu tarjeta
+• El pago lo gestiona Trainline (Merchant of Record) — WoW Train nunca ve tu tarjeta
 • Cumple RGPD Art. 5 — mínimo de datos
 
 📅 PLANIFICADOR DE DÍA
 Dile a la app a dónde vas y te sugiere el mejor tren para cada punto de interés — museos, restaurantes, hoteles — calculado desde tu ubicación en tiempo real.
 
-Descarga WoW TRENES y viaja por Europa como un local. Tu tren. Tu momento.
+Descarga WoW Train y viaja por Europa como un local. Tu tren. Tu momento.
 
 ---
 
@@ -83,7 +83,7 @@ https://wowtrenes.app
 - Purpose: App functionality
 
 **Financial info (tarjeta de crédito):**
-- NOT collected by WoW TRENES (procesado por Trainline externamente)
+- NOT collected by WoW Train (procesado por Trainline externamente)
 
 **App activity:**
 - NOT collected
@@ -94,7 +94,7 @@ https://wowtrenes.app
 ---
 
 ## WHAT'S NEW — v1.0
-Primera versión de WoW TRENES.
+Primera versión de WoW Train.
 • GPS detecta tu país y estación más cercana automáticamente
 • Compra con Google Pay en 3 toques — QR guardado offline
 • Geofencing: el QR se abre solo al entrar a la estación
@@ -115,5 +115,5 @@ Primera versión de WoW TRENES.
 
 ## FEATURE GRAPHIC (1024×500 — obligatorio)
 Fondo degradado violeta → negro (#7C3AED → #09090B)
-Logo "WoW TRENES" centrado en blanco
+Logo "WoW Train" centrado en blanco
 Tagline: "Tu tren. Tu momento." en lavanda (#C4B5FD)

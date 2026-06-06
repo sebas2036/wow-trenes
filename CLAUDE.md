@@ -1,4 +1,4 @@
-# WoW TRENES — Contexto para Claude
+# WoW Train — Contexto para Claude
 
 ## Qué es este proyecto
 

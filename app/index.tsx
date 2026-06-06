@@ -1,5 +1,5 @@
 /**
- * WoW TRENES — Home Screen
+ * WoW Train — Home Screen
  * Diseño minimalista Apple / Dieter Rams
  * "Less, but better."
  */

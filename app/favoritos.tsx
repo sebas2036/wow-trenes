@@ -1,5 +1,5 @@
 /**
- * WoW TRENES — Favoritos
+ * WoW Train — Favoritos
  * Mismo lenguaje visual que Home: FlagCircle neumórfico, Ionicons, sin emoji.
  */
 import React, { useState, useEffect, useCallback } from 'react';

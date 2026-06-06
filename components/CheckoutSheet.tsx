@@ -336,7 +336,7 @@ export default function CheckoutSheet({ service, visible, onClose }: CheckoutShe
 
         {/* PCI-DSS disclaimer */}
         <Text style={styles.pciNote}>
-          Pago procesado por Trainline (Merchant of Record). WoW TRENES no almacena datos bancarios. Certificado PCI-DSS.
+          Pago procesado por Trainline (Merchant of Record). WoW Train no almacena datos bancarios. Certificado PCI-DSS.
         </Text>
 
         <View style={{ height: 40 }} />

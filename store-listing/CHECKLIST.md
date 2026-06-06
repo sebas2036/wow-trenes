@@ -1,4 +1,4 @@
-# WoW TRENES — Checklist de publicación
+# WoW Train — Checklist de publicación
 
 ## ANTES DE PUBLICAR
 
@@ -19,7 +19,7 @@ npm run build:all                 # build de producción
 ### iOS — App Store Connect
 1. Crear app en https://appstoreconnect.apple.com
    - Bundle ID: `com.wowtrenes.app`
-   - Name: `WoW TRENES`
+   - Name: `WoW Train`
    - Primary Language: Spanish
 2. Pegar contenido de `store-listing/app-store-ios.md`
 3. Subir capturas de pantalla (6.7" + 6.1" + iPad si aplica)
@@ -59,7 +59,7 @@ npm run build:all                 # build de producción
 ## POLÍTICA DE PRIVACIDAD (mínimo necesario)
 
 ```
-WoW TRENES no recopila ni almacena datos personales en servidores propios.
+WoW Train no recopila ni almacena datos personales en servidores propios.
 
 DATOS DE UBICACIÓN: Tu ubicación GPS se usa únicamente en el dispositivo
 para detectar la estación más cercana y activar alertas de geofencing.
@@ -69,7 +69,7 @@ BILLETES: Los billetes QR se almacenan localmente en el dispositivo
 mediante cifrado estándar del sistema operativo (SecureStore).
 
 PAGOS: Los pagos son procesados por Trainline Ltd como Merchant of Record.
-WoW TRENES no recibe ni almacena datos de tarjeta de crédito.
+WoW Train no recibe ni almacena datos de tarjeta de crédito.
 
 ANÁLISIS: No usamos herramientas de analítica de terceros.
 

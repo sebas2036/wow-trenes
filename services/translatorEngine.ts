@@ -1,5 +1,5 @@
 /**
- * translatorEngine — Motor de traducción para WoW TRENES
+ * translatorEngine — Motor de traducción para WoW Train
  *
  * ESTRATEGIA (capas en orden de prioridad):
  *   1. OFFLINE bundle — 800+ frases ferroviarias (0ms, 0 red, siempre)

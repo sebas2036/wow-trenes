@@ -10,7 +10,7 @@
  * IDIOMAS: es · en · pt · fr · de · it · ja · zh · ko · ar
  *
  * FILOSOFÍA:
- *   El turista japonés que abre WoW TRENES en Italia ve TODO en japonés:
+ *   El turista japonés que abre WoW Train en Italia ve TODO en japonés:
  *   nombres de botones, alertas de geofence, mensajes de error, POIs.
  *   Sin configuración. Automático desde el primer segundo.
  */
@@ -67,7 +67,7 @@ const translations = {
     purchase_hint:       'Recibirás el QR de Trainline por email. La app te avisará cuando llegues.',
     // Checkout
     checkout_secure:     'Pago seguro · Trainline',
-    checkout_compliance: 'Pago procesado por Trainline · WoW TRENES no almacena datos bancarios',
+    checkout_compliance: 'Pago procesado por Trainline · WoW Train no almacena datos bancarios',
     // Status
     status_safe:         'A tiempo',
     status_warn:         'Apurate',
@@ -182,7 +182,7 @@ const translations = {
     purchase_sub:        '{dest} · Ref: {ref}',
     purchase_hint:       "You'll receive the QR from Trainline by email. We'll alert you on arrival.",
     checkout_secure:     'Secure payment · Trainline',
-    checkout_compliance: 'Payment by Trainline · WoW TRENES never stores card data',
+    checkout_compliance: 'Payment by Trainline · WoW Train never stores card data',
     status_safe:         'On time',
     status_warn:         'Hurry up',
     status_danger:       'Urgent!',
@@ -291,7 +291,7 @@ const translations = {
     purchase_sub:        '{dest} · Ref: {ref}',
     purchase_hint:       'Você receberá o QR da Trainline por email.',
     checkout_secure:     'Pagamento seguro · Trainline',
-    checkout_compliance: 'Pagamento pela Trainline · WoW TRENES não armazena dados bancários',
+    checkout_compliance: 'Pagamento pela Trainline · WoW Train não armazena dados bancários',
     status_safe:         'No horário',
     status_warn:         'Apresse-se',
     status_danger:       'Urgente!',
@@ -400,7 +400,7 @@ const translations = {
     purchase_sub:        '{dest} · 予約番号: {ref}',
     purchase_hint:       'TrainlineからQRコードがメールで届きます。到着時にお知らせします。',
     checkout_secure:     'セキュア決済 · Trainline',
-    checkout_compliance: 'Trainlineが決済 · WoW TRENESは銀行情報を保存しません',
+    checkout_compliance: 'Trainlineが決済 · WoW Trainは銀行情報を保存しません',
     status_safe:         '定刻',
     status_warn:         '急いで',
     status_danger:       '緊急！',
@@ -509,7 +509,7 @@ const translations = {
     purchase_sub:        '{dest} · 订单号: {ref}',
     purchase_hint:       '您将通过邮件收到Trainline的二维码，到站时我们会提醒您。',
     checkout_secure:     '安全支付 · Trainline',
-    checkout_compliance: 'Trainline处理支付 · WoW TRENES不存储银行信息',
+    checkout_compliance: 'Trainline处理支付 · WoW Train不存储银行信息',
     status_safe:         '准时',
     status_warn:         '请抓紧',
     status_danger:       '紧急！',
@@ -618,7 +618,7 @@ const translations = {
     purchase_sub:        '{dest} · 예약번호: {ref}',
     purchase_hint:       'Trainline에서 QR을 이메일로 보내드립니다.',
     checkout_secure:     '안전한 결제 · Trainline',
-    checkout_compliance: 'Trainline이 결제 처리 · WoW TRENES는 카드 정보를 저장하지 않습니다',
+    checkout_compliance: 'Trainline이 결제 처리 · WoW Train는 카드 정보를 저장하지 않습니다',
     status_safe:         '정시',
     status_warn:         '서두르세요',
     status_danger:       '긴급!',
@@ -727,7 +727,7 @@ const translations = {
     purchase_sub:        '{dest} · Réf : {ref}',
     purchase_hint:       'Vous recevrez le QR de Trainline par email.',
     checkout_secure:     'Paiement sécurisé · Trainline',
-    checkout_compliance: 'Paiement par Trainline · WoW TRENES ne stocke aucune donnée bancaire',
+    checkout_compliance: 'Paiement par Trainline · WoW Train ne stocke aucune donnée bancaire',
     status_safe:         'À l\'heure',
     status_warn:         'Dépêchez-vous',
     status_danger:       'Urgent !',
@@ -836,7 +836,7 @@ const translations = {
     purchase_sub:        '{dest} · Ref.: {ref}',
     purchase_hint:       'Sie erhalten den QR von Trainline per E-Mail.',
     checkout_secure:     'Sichere Zahlung · Trainline',
-    checkout_compliance: 'Zahlung über Trainline · WoW TRENES speichert keine Bankdaten',
+    checkout_compliance: 'Zahlung über Trainline · WoW Train speichert keine Bankdaten',
     status_safe:         'Pünktlich',
     status_warn:         'Beeilen Sie sich',
     status_danger:       'Dringend!',
@@ -945,7 +945,7 @@ const translations = {
     purchase_sub:        '{dest} · Rif: {ref}',
     purchase_hint:       'Riceverai il QR da Trainline via email.',
     checkout_secure:     'Pagamento sicuro · Trainline',
-    checkout_compliance: 'Pagamento tramite Trainline · WoW TRENES non memorizza dati bancari',
+    checkout_compliance: 'Pagamento tramite Trainline · WoW Train non memorizza dati bancari',
     status_safe:         'In orario',
     status_warn:         'Sbrigati',
     status_danger:       'Urgente!',
@@ -1054,7 +1054,7 @@ const translations = {
     purchase_sub:        '{dest} · المرجع: {ref}',
     purchase_hint:       'ستستلم رمز QR من Trainline بالبريد الإلكتروني.',
     checkout_secure:     'دفع آمن · Trainline',
-    checkout_compliance: 'الدفع عبر Trainline · WoW TRENES لا يحفظ البيانات المصرفية',
+    checkout_compliance: 'الدفع عبر Trainline · WoW Train لا يحفظ البيانات المصرفية',
     status_safe:         'في الموعد',
     status_warn:         'أسرع',
     status_danger:       'عاجل!',

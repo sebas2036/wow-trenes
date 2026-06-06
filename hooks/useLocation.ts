@@ -58,7 +58,7 @@ export function useLocation(): UseLocationReturn {
     if (finalStatus !== 'granted') {
       setLocationState({
         status: 'denied',
-        reason: 'WoW TRENES necesita tu ubicación para mostrarte estaciones cercanas.',
+        reason: 'WoW Train necesita tu ubicación para mostrarte estaciones cercanas.',
       });
       return null;
     }

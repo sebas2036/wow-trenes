@@ -1,4 +1,4 @@
-# WoW TRENES — Guía de Build y Publicación
+# WoW Train — Guía de Build y Publicación
 
 ## Requisitos previos
 
@@ -11,7 +11,7 @@
 ## Paso 1 — Login en EAS
 
 ```bash
-cd "/Users/sebastianjasinsky/Documents/Claude/Projects/WoW TRENES"
+cd "/Users/sebastianjasinsky/Documents/Claude/Projects/WoW Train"
 npx eas login
 ```
 

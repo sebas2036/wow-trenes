@@ -1,7 +1,7 @@
 /**
  * AffiliateWebView — Checkout vía Trainline (lanzamiento rápido)
  *
- * MODELO: WoW TRENES como "Front-End Afiliado Tecnológico"
+ * MODELO: WoW Train como "Front-End Afiliado Tecnológico"
  *   • Abre Trainline.com dentro de la app (WebView interno = sin salir)
  *   • URL precargada con origen, destino, fecha y nuestro affiliate tag
  *   • Trainline = Merchant of Record → ellos cobran, emiten QR, manejan PCI-DSS
@@ -253,7 +253,7 @@ export default function AffiliateWebView({
         {/* ── Bottom compliance bar ── */}
         <View style={styles.complianceBar}>
           <Text style={styles.complianceText}>
-            Pago procesado por Omio · WoW TRENES no almacena datos bancarios
+            Pago procesado por Omio · WoW Train no almacena datos bancarios
           </Text>
         </View>
 

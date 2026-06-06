@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "WoW TRENES",
+    "name": "WoW Train",
     "slug": "wow-trenes",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -20,9 +20,9 @@
       "bundleIdentifier": "com.wowtrenes.app",
       "buildNumber": "1",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "WoW TRENES usa tu ubicación para mostrarte estaciones cercanas y calcular el tiempo de llegada al tren.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "WoW TRENES usa tu ubicación en segundo plano para alertarte cuando te acercas a la estación y mostrarte tu QR automáticamente.",
-        "NSLocationAlwaysUsageDescription": "WoW TRENES usa tu ubicación en segundo plano para el sistema de geocercas de estaciones.",
+        "NSLocationWhenInUseUsageDescription": "WoW Train usa tu ubicación para mostrarte estaciones cercanas y calcular el tiempo de llegada al tren.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "WoW Train usa tu ubicación en segundo plano para alertarte cuando te acercas a la estación y mostrarte tu QR automáticamente.",
+        "NSLocationAlwaysUsageDescription": "WoW Train usa tu ubicación en segundo plano para el sistema de geocercas de estaciones.",
         "UIBackgroundModes": [
           "location",
           "fetch",
@@ -71,7 +71,7 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "WoW TRENES necesita tu ubicación para geocercas de estaciones.",
+          "locationAlwaysAndWhenInUsePermission": "WoW Train necesita tu ubicación para geocercas de estaciones.",
           "isAndroidBackgroundLocationEnabled": true,
           "isAndroidForegroundServiceEnabled": true
         }

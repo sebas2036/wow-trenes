@@ -1,5 +1,5 @@
 /**
- * WoW TRENES — Ticket Screen
+ * WoW Train — Ticket Screen
  * Lista todos los billetes guardados offline.
  * Integra useGeofenceTrigger para mostrar QR automáticamente en Ring-2.
  */

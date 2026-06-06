@@ -1,5 +1,5 @@
 /**
- * WoW TRENES — Root Layout
+ * WoW Train — Root Layout
  * Expo Router v4 · Tema claro/oscuro automático · GestureHandler provider
  */
 import { useEffect } from 'react';

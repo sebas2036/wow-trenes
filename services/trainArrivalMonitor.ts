@@ -1,7 +1,7 @@
 /**
  * trainArrivalMonitor — "Tu tren llega al andén en N minutos"
  *
- * LA feature más diferenciadora de WoW TRENES.
+ * LA feature más diferenciadora de WoW Train.
  * Ninguna app de trenes para turistas tiene esto.
  *
  * CÓMO FUNCIONA:

@@ -1,5 +1,5 @@
 /**
- * WoW TRENES — Design System
+ * WoW Train — Design System
  * Soporta modo oscuro y claro automático según configuración del sistema.
  */
 

@@ -1,16 +1,16 @@
-# WoW TRENES — App Store Connect (iOS)
+# WoW Train — App Store Connect (iOS)
 # Pegar estos textos en App Store Connect → tu app → Version Information
 
 ---
 
 ## NAME (30 chars max)
-WoW TRENES
+WoW Train
 
 ## SUBTITLE (30 chars max)
 Tu tren europeo, sin estrés
 
 ## DESCRIPTION (4000 chars max)
-WoW TRENES es la app de viajes en tren más rápida de Europa. Abre la app, el GPS detecta en qué país estás, y en segundos ves los próximos trenes desde tu estación más cercana.
+WoW Train es la app de viajes en tren más rápida de Europa. Abre la app, el GPS detecta en qué país estás, y en segundos ves los próximos trenes desde tu estación más cercana.
 
 **Compra en 3 toques**
 Sin crear cuenta. Sin recordar contraseñas. Elige el tren, selecciona clase, paga con Apple Pay — tu QR aparece directamente en el teléfono, guardado offline para cuando no tengas señal.
@@ -29,7 +29,7 @@ Ferrocarriles soportados: SBB, SNCF, DB, Renfe, Trenitalia, NS, ÖBB, National R
 ¿Un cartel en japonés? ¿Una pantalla en alemán? Toma una foto y la app lo traduce al instante — sin salir de la aplicación.
 
 **Privacidad por diseño**
-Sin cuenta. Sin contraseña. Los billetes se guardan en tu teléfono, no en servidores. El pago lo gestiona Trainline como Merchant of Record — WoW TRENES nunca ve tu tarjeta.
+Sin cuenta. Sin contraseña. Los billetes se guardan en tu teléfono, no en servidores. El pago lo gestiona Trainline como Merchant of Record — WoW Train nunca ve tu tarjeta.
 
 **Planificador de día**
 Dile a la app a dónde vas y te sugiere el mejor tren para cada punto de interés: museos, restaurantes, hoteles — calculado desde tu ubicación actual.
@@ -81,7 +81,7 @@ Primera versión.
 **Notes for reviewer:**
 La app usa GPS para detectar la estación más cercana. En el simulador, la ubicación simulada puede no coincidir con estaciones reales — esto es normal. Para probar la funcionalidad completa, usar un dispositivo físico en Europa.
 
-La compra de billetes abre un WebView a Trainline.com (Merchant of Record) — WoW TRENES no procesa pagos directamente. Esto cumple con las guías de Apple para apps de afiliados de viajes.
+La compra de billetes abre un WebView a Trainline.com (Merchant of Record) — WoW Train no procesa pagos directamente. Esto cumple con las guías de Apple para apps de afiliados de viajes.
 
 Los billetes QR se generan localmente y se almacenan en SecureStore del dispositivo — no se envían a servidores externos.
 
