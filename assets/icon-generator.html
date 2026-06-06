@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>WoW Train — Icon WT</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #080810;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 48px;
+      padding: 60px 40px;
+      font-family: -apple-system, sans-serif;
+    }
+    .previews { display: flex; align-items: flex-end; gap: 40px; }
+    .preview-item { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .label { color: rgba(255,255,255,0.3); font-size: 11px; letter-spacing: 2px; text-transform: uppercase; }
+    button { padding: 14px 48px; background: #7C3AED; color: #fff; border: none; border-radius: 50px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    button:hover { background: #6D28D9; }
+  </style>
+</head>
+<body>
+
+  <div class="previews">
+
+    <!-- ── 512px ── -->
+    <div class="preview-item">
+      <div class="label">512px — Store</div>
+      <svg id="iconFinal" width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%"   stop-color="#0e0e20"/>
+            <stop offset="100%" stop-color="#111128"/>
+          </linearGradient>
+          <linearGradient id="wGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%"   stop-color="#C4B5FD"/>
+            <stop offset="100%" stop-color="#7C3AED"/>
+          </linearGradient>
+          <linearGradient id="tBar" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%"   stop-color="#A78BFA"/>
+            <stop offset="50%"  stop-color="#8B5CF6"/>
+            <stop offset="100%" stop-color="#A78BFA"/>
+          </linearGradient>
+          <radialGradient id="glow" cx="50%" cy="48%" r="45%">
+            <stop offset="0%"   stop-color="#7C3AED" stop-opacity="0.25"/>
+            <stop offset="100%" stop-color="#7C3AED" stop-opacity="0"/>
+          </radialGradient>
+          <clipPath id="clip">
+            <rect width="512" height="512" rx="112" ry="112"/>
+          </clipPath>
+        </defs>
+
+        <g clip-path="url(#clip)">
+
+          <!-- Fondo -->
+          <rect width="512" height="512" fill="url(#bg)"/>
+          <ellipse cx="256" cy="245" rx="240" ry="180" fill="url(#glow)"/>
+
+          <!-- ══════════════════════════════════════════════════
+               W + T MONOGRAM
+               La W es la base, la T la cruza horizontalmente
+               ══════════════════════════════════════════════════ -->
+
+          <!-- ── W — forma geométrica bold ── -->
+          <!-- Pierna izquierda de la W -->
+          <polygon points="72,120 120,120 172,340 124,340" fill="url(#wGrad)"/>
+          <!-- Valle izquierdo (baja al centro) -->
+          <polygon points="120,120 168,120 256,310 172,340" fill="url(#wGrad)" opacity="0.92"/>
+          <!-- Valle derecho (sube del centro) -->
+          <polygon points="344,120 392,120 340,340 256,310" fill="url(#wGrad)" opacity="0.92"/>
+          <!-- Pierna derecha de la W -->
+          <polygon points="392,120 440,120 388,340 340,340" fill="url(#wGrad)"/>
+
+          <!-- ── T — barra horizontal que cruza la W ── -->
+          <!-- Barra horizontal -->
+          <rect x="52" y="235" width="408" height="28" rx="14" fill="url(#tBar)"/>
+
+          <!-- Palo vertical de la T — baja desde la barra -->
+          <rect x="240" y="245" width="32" height="130" rx="4" fill="url(#tBar)" opacity="0.85"/>
+
+          <!-- ── Highlight en la barra — efecto de luz ── -->
+          <rect x="52" y="235" width="408" height="12" rx="8" fill="rgba(255,255,255,0.12)"/>
+
+          <!-- ── Texto "WOW TRAIN" debajo ── -->
+          <text
+            x="256" y="430"
+            text-anchor="middle"
+            font-family="'Helvetica Neue','Arial',sans-serif"
+            font-size="40"
+            font-weight="800"
+            letter-spacing="8"
+            fill="rgba(255,255,255,0.85)"
+          >WOW TRAIN</text>
+
+          <!-- Línea sutil debajo del texto -->
+          <rect x="140" y="445" width="232" height="1.5" rx="1" fill="#7C3AED" opacity="0.3"/>
+
+        </g>
+      </svg>
+    </div>
+
+    <!-- ── 120px ── -->
+    <div class="preview-item">
+      <div class="label">120px</div>
+      <svg width="120" height="120" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" style="border-radius:26px">
+        <defs>
+          <linearGradient id="bg2" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#0e0e20"/>
+            <stop offset="100%" stop-color="#111128"/>
+          </linearGradient>
+          <linearGradient id="w2" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#C4B5FD"/>
+            <stop offset="100%" stop-color="#7C3AED"/>
+          </linearGradient>
+          <linearGradient id="t2" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#A78BFA"/>
+            <stop offset="50%" stop-color="#8B5CF6"/>
+            <stop offset="100%" stop-color="#A78BFA"/>
+          </linearGradient>
+        </defs>
+        <rect width="512" height="512" fill="url(#bg2)"/>
+        <!-- W -->
+        <polygon points="72,120 120,120 172,340 124,340" fill="url(#w2)"/>
+        <polygon points="120,120 168,120 256,310 172,340" fill="url(#w2)" opacity="0.92"/>
+        <polygon points="344,120 392,120 340,340 256,310" fill="url(#w2)" opacity="0.92"/>
+        <polygon points="392,120 440,120 388,340 340,340" fill="url(#w2)"/>
+        <!-- T bar -->
+        <rect x="52" y="235" width="408" height="28" rx="14" fill="url(#t2)"/>
+        <rect x="240" y="245" width="32" height="130" rx="4" fill="url(#t2)" opacity="0.85"/>
+        <!-- Text -->
+        <text x="256" y="430" text-anchor="middle" font-family="'Helvetica Neue','Arial',sans-serif" font-size="40" font-weight="800" letter-spacing="8" fill="rgba(255,255,255,0.85)">WOW TRAIN</text>
+      </svg>
+    </div>
+
+    <!-- ── 48px (solo símbolo, sin texto) ── -->
+    <div class="preview-item">
+      <div class="label">48px</div>
+      <svg width="48" height="48" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" style="border-radius:10px">
+        <defs>
+          <linearGradient id="bg4" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#0e0e20"/>
+            <stop offset="100%" stop-color="#111128"/>
+          </linearGradient>
+          <linearGradient id="w4" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#C4B5FD"/>
+            <stop offset="100%" stop-color="#7C3AED"/>
+          </linearGradient>
+          <linearGradient id="t4" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#A78BFA"/>
+            <stop offset="100%" stop-color="#A78BFA"/>
+          </linearGradient>
+        </defs>
+        <rect width="512" height="512" fill="url(#bg4)"/>
+        <polygon points="72,120 120,120 172,340 124,340" fill="url(#w4)"/>
+        <polygon points="120,120 168,120 256,310 172,340" fill="url(#w4)" opacity="0.92"/>
+        <polygon points="344,120 392,120 340,340 256,310" fill="url(#w4)" opacity="0.92"/>
+        <polygon points="392,120 440,120 388,340 340,340" fill="url(#w4)"/>
+        <rect x="52" y="235" width="408" height="28" rx="14" fill="url(#t4)"/>
+        <rect x="240" y="245" width="32" height="130" rx="4" fill="url(#t4)" opacity="0.85"/>
+      </svg>
+    </div>
+
+  </div>
+
+  <button onclick="download()">Descargar PNG 512×512</button>
+  <div style="color:rgba(255,255,255,0.15);font-size:11px;letter-spacing:1px;margin-top:8px">WoW TRAIN · WT MONOGRAM v1</div>
+
+  <script>
+    function download() {
+      const svg = document.getElementById('iconFinal');
+      const canvas = document.createElement('canvas');
+      canvas.width = 512; canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+      const data = new XMLSerializer().serializeToString(svg);
+      const blob = new Blob([data], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0, 512, 512);
+        URL.revokeObjectURL(url);
+        const a = document.createElement('a');
+        a.download = 'wow-train-icon-512.png';
+        a.href = canvas.toDataURL('image/png');
+        a.click();
+      };
+      img.src = url;
+    }
+  </script>
+
+</body>
+</html>
