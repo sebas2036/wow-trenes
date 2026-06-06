@@ -145,11 +145,11 @@ const translations = {
     ob_next:    'Siguiente',
     ob_start:   'Empezar',
     ob1_title:  'Tu tren, tu mundo',
-    ob1_sub:    'Buscá trenes en Europa y el mundo. Rápido, fácil y sin registro.',
+    ob1_sub:    'Buscá y comprá tu billete de tren en Europa. Horarios en tiempo real y todo lo que necesitás para viajar — en un solo lugar.',
     ob2_title:  'Rutas Escénicas',
-    ob2_sub:    'Glacier Express, Bernina, GoldenPass... Experiencias únicas sobre rieles.',
+    ob2_sub:    'Los paisajes más espectaculares de Europa se ven desde un tren. Rutas que la mayoría no sabe que existen.',
     ob3_title:  '100% Privado',
-    ob3_sub:    'Sin cuenta. Sin contraseña. Tus datos no salen de tu teléfono.',
+    ob3_sub:    'Nada de formularios, nada de contraseñas. Abrís la app y ya estás listo. Sin cuenta, sin rastreo.',
   },
 
   en: {
@@ -264,11 +264,11 @@ const translations = {
     ob_next:    'Next',
     ob_start:   'Get Started',
     ob1_title:  'Your train, your world',
-    ob1_sub:    'Search trains across Europe and beyond. Fast, easy, no sign-up needed.',
+    ob1_sub:    'Search and book train tickets across Europe. Real-time schedules and everything you need to travel — all in one place.',
     ob2_title:  'Scenic Routes',
-    ob2_sub:    'Glacier Express, Bernina, GoldenPass... Unique experiences on the rails.',
+    ob2_sub:    "Europe's most spectacular landscapes are seen from a train. Routes most people don't even know exist.",
     ob3_title:  '100% Private',
-    ob3_sub:    'No account. No password. Your data never leaves your phone.',
+    ob3_sub:    'No forms, no passwords. Open the app and you\'re ready to go. No account, no tracking.',
   },
 
   pt: {
@@ -383,11 +383,11 @@ const translations = {
     ob_next:    'Próximo',
     ob_start:   'Começar',
     ob1_title:  'Seu trem, seu mundo',
-    ob1_sub:    'Pesquise trens na Europa e além. Rápido, fácil e sem cadastro.',
+    ob1_sub:    'Pesquise e compre sua passagem de trem na Europa. Horários em tempo real e tudo para viajar — em um só lugar.',
     ob2_title:  'Rotas Panorâmicas',
-    ob2_sub:    'Glacier Express, Bernina, GoldenPass... Experiências únicas nos trilhos.',
+    ob2_sub:    'As paisagens mais espetaculares da Europa se veem de um trem. Rotas que a maioria não sabe que existem.',
     ob3_title:  '100% Privado',
-    ob3_sub:    'Sem conta. Sem senha. Seus dados ficam só no seu telefone.',
+    ob3_sub:    'Sem formulários, sem senhas. Abra o app e já está pronto. Sem conta, sem rastreamento.',
   },
 
   ja: {
@@ -502,11 +502,11 @@ const translations = {
     ob_next:    '次へ',
     ob_start:   '始める',
     ob1_title:  'あなたの列車、あなたの世界',
-    ob1_sub:    'ヨーロッパと世界中の電車を検索。登録不要で簡単・便利。',
+    ob1_sub:    'ヨーロッパの列車チケットを検索・購入。リアルタイム時刻表と旅に必要なすべてが一つのアプリに。',
     ob2_title:  '絶景列車',
-    ob2_sub:    'グレッシャー・エクスプレス、ベルニナ... レールの上の特別な体験。',
+    ob2_sub:    'ヨーロッパ最高の絶景は列車から見える。ほとんどの人が知らない特別なルートを発見しよう。',
     ob3_title:  '完全プライベート',
-    ob3_sub:    'アカウント不要。パスワード不要。データはすべてあなたの端末に。',
+    ob3_sub:    'フォームも、パスワードも不要。アプリを開けばすぐ使える。アカウントなし、追跡なし。',
   },
 
   zh: {
@@ -621,11 +621,11 @@ const translations = {
     ob_next:    '下一步',
     ob_start:   '开始',
     ob1_title:  '你的列车，你的世界',
-    ob1_sub:    '搜索欧洲及全球火车。快捷便利，无需注册。',
+    ob1_sub:    '搜索并预订欧洲火车票。实时时刻表和所有旅行所需，尽在一处。',
     ob2_title:  '风景列车',
-    ob2_sub:    '冰川快车、伯尔尼纳... 铁路上的独特体验。',
+    ob2_sub:    '欧洲最壮观的风景从火车上欣赏。大多数人不知道的绝美路线等你发现。',
     ob3_title:  '100% 隐私保护',
-    ob3_sub:    '无需账户，无需密码。你的数据只留在你的手机上。',
+    ob3_sub:    '无需填表，无需密码。打开即用，没有账户，没有追踪。',
   },
 
   ko: {
@@ -740,11 +740,11 @@ const translations = {
     ob_next:    '다음',
     ob_start:   '시작하기',
     ob1_title:  '나의 기차, 나의 세계',
-    ob1_sub:    '유럽과 전 세계 기차를 검색하세요. 빠르고 간편하며 가입 불필요.',
+    ob1_sub:    '유럽 기차표를 검색하고 예매하세요. 실시간 시간표와 여행에 필요한 모든 것이 한 곳에.',
     ob2_title:  '경관 열차',
-    ob2_sub:    '글레이셔 익스프레스, 베르니나... 레일 위의 특별한 경험.',
+    ob2_sub:    '유럽 최고의 절경은 기차에서 보인다. 대부분 모르는 특별한 루트를 발견하세요.',
     ob3_title:  '100% 프라이버시',
-    ob3_sub:    '계정 없음. 비밀번호 없음. 데이터는 기기 안에만 저장됩니다.',
+    ob3_sub:    '양식도, 비밀번호도 필요 없어요. 앱을 열면 바로 시작. 계정 없음, 추적 없음.',
   },
 
   fr: {
@@ -859,11 +859,11 @@ const translations = {
     ob_next:    'Suivant',
     ob_start:   'Commencer',
     ob1_title:  'Ton train, ton monde',
-    ob1_sub:    'Recherche des trains en Europe et dans le monde. Rapide, simple, sans inscription.',
+    ob1_sub:    'Cherche et achète ton billet de train en Europe. Horaires en temps réel et tout ce qu\'il faut pour voyager — en un seul endroit.',
     ob2_title:  'Trains Panoramiques',
-    ob2_sub:    'Glacier Express, Bernina, GoldenPass... Des expériences uniques sur les rails.',
+    ob2_sub:    'Les paysages les plus spectaculaires d\'Europe se découvrent depuis un train. Des routes que la plupart des gens ne connaissent pas.',
     ob3_title:  '100% Privé',
-    ob3_sub:    'Sans compte. Sans mot de passe. Tes données restent sur ton téléphone.',
+    ob3_sub:    'Pas de formulaires, pas de mots de passe. Ouvre l\'app et c\'est parti. Sans compte, sans traçage.',
   },
 
   de: {
@@ -978,11 +978,11 @@ const translations = {
     ob_next:    'Weiter',
     ob_start:   'Loslegen',
     ob1_title:  'Dein Zug, deine Welt',
-    ob1_sub:    'Züge in Europa und weltweit suchen. Schnell, einfach und ohne Registrierung.',
+    ob1_sub:    'Zugtickets in Europa suchen und buchen. Echtzeit-Fahrpläne und alles für deine Reise — an einem Ort.',
     ob2_title:  'Panoramazüge',
-    ob2_sub:    'Glacier Express, Bernina, GoldenPass... Einzigartige Erlebnisse auf der Schiene.',
+    ob2_sub:    'Europas spektakulärste Landschaften erlebt man am besten aus dem Zug. Strecken, die die meisten nicht kennen.',
     ob3_title:  '100% Privat',
-    ob3_sub:    'Kein Konto. Kein Passwort. Deine Daten bleiben auf deinem Gerät.',
+    ob3_sub:    'Kein Formular, kein Passwort. App öffnen und loslegen. Kein Konto, keine Verfolgung.',
   },
 
   it: {
@@ -1097,11 +1097,11 @@ const translations = {
     ob_next:    'Avanti',
     ob_start:   'Inizia',
     ob1_title:  'Il tuo treno, il tuo mondo',
-    ob1_sub:    'Cerca treni in Europa e nel mondo. Veloce, semplice, senza registrazione.',
+    ob1_sub:    'Cerca e acquista il tuo biglietto del treno in Europa. Orari in tempo reale e tutto ciò che serve per viaggiare — in un unico posto.',
     ob2_title:  'Treni Panoramici',
-    ob2_sub:    'Glacier Express, Bernina, GoldenPass... Esperienze uniche sui binari.',
+    ob2_sub:    'I paesaggi più spettacolari d\'Europa si vedono dal treno. Percorsi che la maggior parte delle persone non conosce.',
     ob3_title:  '100% Privato',
-    ob3_sub:    'Nessun account. Nessuna password. I tuoi dati restano sul telefono.',
+    ob3_sub:    'Niente moduli, niente password. Apri l\'app e sei pronto. Senza account, senza tracciamento.',
   },
 
   ar: {
