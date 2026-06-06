@@ -6,13 +6,14 @@
 import React, { useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable, FlatList,
-  Dimensions, Animated,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Svg, { Path, Circle, Rect, Line, Polyline, G } from 'react-native-svg';
 
 import { useTheme } from '../context/ThemeContext';
 import { t } from '../services/i18n';
@@ -20,24 +21,86 @@ import { t } from '../services/i18n';
 const { width: W } = Dimensions.get('window');
 export const ONBOARDING_KEY = '@wow_onboarding_done';
 
+// ── SVG Icons ─────────────────────────────────────────────────────────────────
+
+function IconTrain({ color }: { color: string }) {
+  return (
+    <Svg width={72} height={72} viewBox="0 0 24 24" fill="none">
+      {/* Cuerpo del tren */}
+      <Rect x="3" y="4" width="18" height="13" rx="3" stroke={color} strokeWidth="1.5" />
+      {/* Ventanas */}
+      <Rect x="5.5" y="7" width="4" height="3.5" rx="1" stroke={color} strokeWidth="1.3" />
+      <Rect x="14.5" y="7" width="4" height="3.5" rx="1" stroke={color} strokeWidth="1.3" />
+      {/* Línea central */}
+      <Line x1="3" y1="13" x2="21" y2="13" stroke={color} strokeWidth="1.3" />
+      {/* Ruedas */}
+      <Circle cx="7.5" cy="19" r="2" stroke={color} strokeWidth="1.5" />
+      <Circle cx="16.5" cy="19" r="2" stroke={color} strokeWidth="1.5" />
+      {/* Eje */}
+      <Line x1="9.5" y1="17" x2="14.5" y2="17" stroke={color} strokeWidth="1.3" />
+      {/* Vías */}
+      <Line x1="1" y1="22" x2="23" y2="22" stroke={color} strokeWidth="1.3" strokeDasharray="2 2" />
+    </Svg>
+  );
+}
+
+function IconScenic({ color }: { color: string }) {
+  return (
+    <Svg width={72} height={72} viewBox="0 0 24 24" fill="none">
+      {/* Montaña izquierda */}
+      <Path d="M2 20 L8 8 L14 20" stroke={color} strokeWidth="1.5" strokeLinejoin="round" />
+      {/* Montaña derecha (más alta) */}
+      <Path d="M10 20 L17 5 L24 20" stroke={color} strokeWidth="1.5" strokeLinejoin="round" />
+      {/* Nieve pico */}
+      <Path d="M14.5 9 L17 5 L19.5 9" stroke={color} strokeWidth="1.3" strokeLinejoin="round" />
+      {/* Vías en primer plano */}
+      <Line x1="0" y1="21.5" x2="24" y2="21.5" stroke={color} strokeWidth="1.5" />
+      <Line x1="3" y1="20" x2="3" y2="23" stroke={color} strokeWidth="1.3" />
+      <Line x1="8" y1="20" x2="8" y2="23" stroke={color} strokeWidth="1.3" />
+      <Line x1="13" y1="20" x2="13" y2="23" stroke={color} strokeWidth="1.3" />
+      <Line x1="18" y1="20" x2="18" y2="23" stroke={color} strokeWidth="1.3" />
+      {/* Sol */}
+      <Circle cx="5" cy="6" r="2" stroke={color} strokeWidth="1.3" />
+      <Line x1="5" y1="2.5" x2="5" y2="3.5" stroke={color} strokeWidth="1.2" />
+      <Line x1="5" y1="8.5" x2="5" y2="9.5" stroke={color} strokeWidth="1.2" />
+      <Line x1="1.5" y1="6" x2="2.5" y2="6" stroke={color} strokeWidth="1.2" />
+      <Line x1="7.5" y1="6" x2="8.5" y2="6" stroke={color} strokeWidth="1.2" />
+    </Svg>
+  );
+}
+
+function IconPrivacy({ color }: { color: string }) {
+  return (
+    <Svg width={72} height={72} viewBox="0 0 24 24" fill="none">
+      {/* Escudo */}
+      <Path
+        d="M12 2 L20 5.5 L20 12 C20 16.4 16.4 20.4 12 22 C7.6 20.4 4 16.4 4 12 L4 5.5 Z"
+        stroke={color} strokeWidth="1.5" strokeLinejoin="round"
+      />
+      {/* Check */}
+      <Polyline
+        points="8,12 11,15 16,9"
+        stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
 // ── Datos de slides ───────────────────────────────────────────────────────────
 function getSlides() {
   return [
     {
       id: '1',
-      icon:     '🚆',
       gradient: ['#1a1a2e', '#16213e', '#0f3460'] as const,
       accent:   '#6C63FF',
     },
     {
       id: '2',
-      icon:     '🏔️',
       gradient: ['#1a2a1a', '#1e3a1e', '#0f4a2a'] as const,
       accent:   '#34D399',
     },
     {
       id: '3',
-      icon:     '🔒',
       gradient: ['#1a1a2e', '#2a1a3e', '#1a0f40'] as const,
       accent:   '#A78BFA',
     },
@@ -82,11 +145,12 @@ function Slide({
       colors={[...item.gradient]}
       style={styles.slide}
     >
-      {/* Icono grande */}
+      {/* Icono SVG */}
       <View style={styles.iconWrap}>
-        <Text style={styles.icon}>{item.icon}</Text>
-        {/* Glow ring */}
         <View style={[styles.iconGlow, { borderColor: item.accent + '40' }]} />
+        {item.id === '1' && <IconTrain  color={item.accent} />}
+        {item.id === '2' && <IconScenic color={item.accent} />}
+        {item.id === '3' && <IconPrivacy color={item.accent} />}
       </View>
 
       {/* Accent line */}
@@ -209,10 +273,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 32,
-  },
-  icon: {
-    fontSize: 80,
-    lineHeight: 96,
   },
   iconGlow: {
     position:     'absolute',
