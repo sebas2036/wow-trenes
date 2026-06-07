@@ -11,6 +11,7 @@ import {
   Pressable,
   StyleSheet,
   Platform,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -48,7 +49,10 @@ export default function TicketScreen() {
   );
 
   return (
-    <SafeAreaView style={[styles.root, { backgroundColor: colors.bg.base }]} edges={['top', 'bottom']}>
+    <View style={styles.rootWrap}>
+      <Image source={require('../assets/images/bg-hero.png')} style={[StyleSheet.absoluteFillObject, { top: -280, bottom: 280 }]} resizeMode="cover" />
+      <LinearGradient colors={['rgba(10,8,30,0.35)', 'rgba(14,14,46,0.60)', 'rgba(14,14,46,0.80)']} style={StyleSheet.absoluteFillObject} pointerEvents="none" />
+    <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
 
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: colors.border.subtle }]}>
@@ -94,6 +98,7 @@ export default function TicketScreen() {
         />
       )}
     </SafeAreaView>
+    </View>
   );
 }
 
@@ -170,7 +175,8 @@ function TicketCard({
 
 // ─── STYLES ─────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  root: { flex: 1 },
+  rootWrap: { flex: 1 },
+  root: { flex: 1, backgroundColor: 'transparent' },
 
   header: {
     paddingHorizontal: Spacing['5'],

@@ -4,16 +4,18 @@
  */
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, TextInput,
+  View, Text, StyleSheet, Pressable, TextInput, Image,
   FlatList, ActivityIndicator, Linking, Platform,
-  KeyboardAvoidingView, SafeAreaView, ScrollView,
+  KeyboardAvoidingView, ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 
-import { Colors, Typography, Spacing, Radius } from '../theme';
+import { Colors, Typography, Spacing, Radius, Gradients } from '../theme';
 import { t } from '../services/i18n';
 import { searchStations, searchTrips, getPopularDestinations, setActiveCountry, detectCountryFromCoords, searchFranceStations, searchFranceJourneys, type TripResult, type FranceJourney } from '../services/gtfsDatabase';
 import { buildBestBookingUrl } from '../services/affiliateEngine';
@@ -248,7 +250,10 @@ export default function BuscarViaje() {
   const showSuggestions = activeField !== null && suggestions.length > 0;
 
   return (
-    <SafeAreaView style={styles.root}>
+    <View style={styles.rootGradient}>
+      <Image source={require('../assets/images/bg-hero.png')} style={[StyleSheet.absoluteFillObject, { top: -280, bottom: 280 }]} resizeMode="cover" />
+      <LinearGradient colors={['rgba(10,8,30,0.35)', 'rgba(14,14,46,0.60)', 'rgba(14,14,46,0.80)']} style={StyleSheet.absoluteFillObject} pointerEvents="none" />
+    <SafeAreaView style={styles.root} edges={['top']}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
 
         {/* Header */}
@@ -489,30 +494,34 @@ export default function BuscarViaje() {
 
       </KeyboardAvoidingView>
     </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.bg.base },
+  rootGradient: { flex: 1 },
+  root: { flex: 1, backgroundColor: 'transparent' },
 
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: Spacing['4'],
     paddingTop: Spacing['4'],
     paddingBottom: Spacing['3'],
-    borderBottomWidth: 1, borderBottomColor: Colors.border.subtle,
+    borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.08)',
   },
   backBtn: {
-    width: 36, height: 36, alignItems: 'center', justifyContent: 'center',
-    borderRadius: Radius.full, backgroundColor: Colors.bg.elevated,
+    width: 38, height: 38, alignItems: 'center', justifyContent: 'center',
+    borderRadius: Radius.full,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
   },
-  headerTitle: { fontSize: Typography.size.base, fontWeight: Typography.weight.bold, color: Colors.text.primary },
+  headerTitle: { fontSize: Typography.size.md, fontWeight: '800', color: Colors.text.primary, letterSpacing: -0.3 },
 
   form: {
     margin: Spacing['4'],
-    backgroundColor: Colors.bg.elevated,
-    borderRadius: Radius.lg,
-    borderWidth: 1, borderColor: Colors.border.subtle,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    borderRadius: Radius.xl,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
     padding: Spacing['3'],
   },
   stationRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing['3'], paddingVertical: 4 },
@@ -532,9 +541,9 @@ const styles = StyleSheet.create({
   dropdown: {
     marginHorizontal: Spacing['4'],
     marginTop: -Spacing['2'],
-    backgroundColor: Colors.bg.surface,
-    borderRadius: Radius.md,
-    borderWidth: 1, borderColor: Colors.border.subtle,
+    backgroundColor: '#1A1050',
+    borderRadius: Radius.lg,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
     overflow: 'hidden',
     zIndex: 100,
   },
@@ -547,21 +556,23 @@ const styles = StyleSheet.create({
 
   dayRow: { flexDirection: 'row', gap: Spacing['2'], paddingHorizontal: Spacing['4'], marginBottom: Spacing['2'] },
   dayBtn: {
-    flex: 1, paddingVertical: 8, alignItems: 'center',
-    borderRadius: Radius.md, backgroundColor: Colors.bg.elevated,
-    borderWidth: 1, borderColor: Colors.border.subtle,
+    flex: 1, paddingVertical: 9, alignItems: 'center',
+    borderRadius: Radius.lg,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
   },
-  dayBtnActive: { backgroundColor: Colors.brand.primary + '22', borderColor: Colors.brand.primary },
+  dayBtnActive: { backgroundColor: 'rgba(139,92,246,0.25)', borderColor: '#8B5CF6' },
   dayBtnText: { fontSize: Typography.size.xs, fontWeight: Typography.weight.semibold, color: Colors.text.secondary },
   dayBtnTextActive: { color: Colors.brand.glow },
 
   searchBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing['2'],
-    backgroundColor: Colors.brand.primary,
-    borderRadius: Radius.md, paddingVertical: 13,
+    backgroundColor: '#8B5CF6',
+    borderRadius: Radius.xl, paddingVertical: 15,
     marginHorizontal: Spacing['4'], marginBottom: Spacing['3'],
+    shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.40, shadowRadius: 16, elevation: 8,
   },
-  searchBtnText: { fontSize: Typography.size.sm, fontWeight: Typography.weight.bold, color: '#fff' },
+  searchBtnText: { fontSize: Typography.size.base, fontWeight: '800', color: '#fff', letterSpacing: 0.3 },
 
   list: { paddingHorizontal: Spacing['4'], paddingBottom: Spacing['8'], paddingTop: Spacing['2'], gap: Spacing['3'] },
   listHeader: {
@@ -571,10 +582,12 @@ const styles = StyleSheet.create({
   listHeaderText: { fontSize: 11, color: Colors.text.muted, flex: 1, lineHeight: 16 },
 
   card: {
-    backgroundColor: Colors.bg.elevated, borderRadius: Radius.lg,
-    borderWidth: 1, borderColor: Colors.border.subtle,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    borderRadius: Radius.xl,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.13)',
     padding: Spacing['4'], gap: Spacing['3'],
     overflow: 'hidden',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 24,
   },
 
   // Fila top: badge tren + directo + más rápido
@@ -594,8 +607,8 @@ const styles = StyleSheet.create({
   // Horarios
   timeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   timeBlock: { flex: 1 },
-  timeVal: { fontSize: 24, fontWeight: '800', color: Colors.text.primary, fontVariant: ['tabular-nums'], letterSpacing: -0.5 },
-  timeLabel: { fontSize: 11, color: Colors.text.muted, marginTop: 2 },
+  timeVal: { fontSize: 28, fontWeight: '900', color: '#FFFFFF', fontVariant: ['tabular-nums'], letterSpacing: -1 },
+  timeLabel: { fontSize: 11, color: Colors.text.muted, marginTop: 2, fontWeight: '300' },
 
   // Duración central
   durationBlock: { alignItems: 'center', paddingHorizontal: Spacing['2'], gap: 4 },
@@ -610,17 +623,18 @@ const styles = StyleSheet.create({
     borderTopWidth: 1, borderTopColor: Colors.border.subtle,
     paddingTop: Spacing['3'], marginTop: -Spacing['1'],
   },
-  priceEstimate: { fontSize: Typography.size.base, fontWeight: '800', color: Colors.brand.glow },
-  buyHint: { fontSize: Typography.size.xs, color: Colors.text.muted },
+  priceEstimate: { fontSize: 22, fontWeight: '900', color: '#C4B5FD', letterSpacing: -0.5 },
+  buyHint: { fontSize: Typography.size.xs, color: Colors.text.muted, fontWeight: '300' },
 
   popularWrap: { paddingHorizontal: Spacing['4'], marginBottom: Spacing['2'] },
   popularTitle: { fontSize: 10, fontWeight: '700', color: Colors.text.muted, letterSpacing: 1.2, marginBottom: Spacing['2'] },
   popularGrid: { gap: Spacing['2'] },
   popularChip: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing['2'],
-    backgroundColor: Colors.bg.elevated, borderRadius: Radius.md,
-    borderWidth: 1, borderColor: Colors.border.subtle,
-    paddingVertical: 10, paddingHorizontal: Spacing['3'],
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    borderRadius: Radius.lg,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.13)',
+    paddingVertical: 12, paddingHorizontal: Spacing['3'],
   },
   popularName: { fontSize: Typography.size.sm, fontWeight: '600', color: Colors.text.primary },
   popularDur:  { fontSize: 11, color: Colors.text.muted, marginTop: 1 },

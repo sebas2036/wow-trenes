@@ -4,7 +4,7 @@
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, ScrollView, Platform,
+  View, Text, StyleSheet, Pressable, ScrollView, Platform, Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,6 +12,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 
+import { LinearGradient } from 'expo-linear-gradient';
 import { Radius, Shadows } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 import { setActiveCountry } from '../services/gtfsDatabase';
@@ -136,7 +137,10 @@ export default function FavoritosScreen() {
   const favCountries = ALL_COUNTRIES.filter((c) => favs.includes(c.code));
 
   return (
-    <SafeAreaView style={[styles.root, { backgroundColor: colors.bg.base }]} edges={['top']}>
+    <View style={styles.rootWrap}>
+      <Image source={require('../assets/images/bg-hero.png')} style={[StyleSheet.absoluteFillObject, { top: -280, bottom: 280 }]} resizeMode="cover" />
+      <LinearGradient colors={['rgba(10,8,30,0.35)', 'rgba(14,14,46,0.60)', 'rgba(14,14,46,0.80)']} style={StyleSheet.absoluteFillObject} pointerEvents="none" />
+    <SafeAreaView style={styles.root} edges={['top']}>
 
       <View style={styles.header}>
         <Text style={[styles.title,    { color: colors.text.primary   }]}>Favoritos</Text>
@@ -183,11 +187,13 @@ export default function FavoritosScreen() {
       <BottomTabBar active="inicio" onTranslatePress={() => setTranslator(true)} />
       <TranslatorSheet visible={translator} onClose={() => setTranslator(false)} />
     </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root:     { flex: 1 },
+  rootWrap: { flex: 1 },
+  root:     { flex: 1, backgroundColor: 'transparent' },
   header:   { paddingHorizontal: 22, paddingTop: 20, paddingBottom: 14 },
   title:    { fontSize: 30, fontWeight: '800', letterSpacing: -0.3 },
   subtitle: { fontSize: 13, marginTop: 4 },

@@ -5,12 +5,13 @@
  */
 import React from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, Pressable,
+  View, Text, StyleSheet, ScrollView, Pressable, Image,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
+import { LinearGradient } from 'expo-linear-gradient';
 import { Radius } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 
@@ -192,7 +193,10 @@ export default function LegalScreen() {
   const content = CONTENT[page ?? 'faq'] ?? CONTENT.faq;
 
   return (
-    <SafeAreaView style={[styles.root, { backgroundColor: colors.bg.base }]} edges={['top']}>
+    <View style={styles.rootWrap}>
+      <Image source={require('../assets/images/bg-hero.png')} style={[StyleSheet.absoluteFillObject, { top: -280, bottom: 280 }]} resizeMode="cover" />
+      <LinearGradient colors={['rgba(10,8,30,0.35)', 'rgba(14,14,46,0.60)', 'rgba(14,14,46,0.80)']} style={StyleSheet.absoluteFillObject} pointerEvents="none" />
+    <SafeAreaView style={styles.root} edges={['top']}>
 
       {/* Header con back */}
       <View style={styles.header}>
@@ -228,12 +232,14 @@ export default function LegalScreen() {
         </View>
       </ScrollView>
     </SafeAreaView>
+    </View>
   );
 }
 
 // ── Estilos ──────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  root:   { flex: 1 },
+  rootWrap: { flex: 1 },
+  root:   { flex: 1, backgroundColor: 'transparent' },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 48, paddingTop: 8 },
 
