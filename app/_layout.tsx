@@ -38,15 +38,9 @@ function AppStack() {
       <StatusBar style="light" backgroundColor="#0E0E2E" translucent />
       <Stack
         screenOptions={{
-          headerShown:              false,
-          // Transparent: cada pantalla dibuja su propio fondo (bg-hero + gradiente)
-          // El GestureHandlerRootView con #0E0E2E garantiza que nunca se vea blanco en Android
-          contentStyle:             { backgroundColor: 'transparent' },
-          // Transición nativa de cada plataforma (iOS: spring push / Android: slide)
-          animation:                'default',
-          animationDuration:        250,
-          // Deslizar desde cualquier punto de la pantalla para volver (iOS)
-          fullScreenGestureEnabled: true,
+          headerShown:  false,
+          contentStyle: { backgroundColor: '#0E0E2E' },
+          animation:    'none',
         }}
       >
         <Stack.Screen name="index" />
@@ -54,11 +48,10 @@ function AppStack() {
         <Stack.Screen name="favoritos" />
         <Stack.Screen name="ajustes" />
         <Stack.Screen name="legal" />
-        {/* Pantallas modal: suben desde abajo */}
-        <Stack.Screen name="buscar-viaje" options={{ headerShown: false, animation: 'slide_from_bottom', fullScreenGestureEnabled: false }} />
-        <Stack.Screen name="split-screen" options={{ animation: 'slide_from_bottom', fullScreenGestureEnabled: false }} />
-        <Stack.Screen name="ticket"       options={{ animation: 'fade', presentation: 'modal' }} />
-        <Stack.Screen name="onboarding"   options={{ animation: 'fade', gestureEnabled: false, fullScreenGestureEnabled: false }} />
+        <Stack.Screen name="buscar-viaje" />
+        <Stack.Screen name="split-screen" />
+        <Stack.Screen name="ticket" />
+        <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
       </Stack>
     </GestureHandlerRootView>
   );
