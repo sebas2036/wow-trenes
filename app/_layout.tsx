@@ -35,10 +35,13 @@ function AppStack() {
       <StatusBar style={isDark ? 'light' : 'dark'} backgroundColor={colors.bg.base} />
       <Stack
         screenOptions={{
-          headerShown:       false,
-          contentStyle:      { backgroundColor: 'transparent' },
-          animation:         'slide_from_right',
-          animationDuration: 280,
+          headerShown:              false,
+          contentStyle:             { backgroundColor: 'transparent' },
+          // Transición nativa de cada plataforma (iOS: spring push / Android: slide)
+          animation:                'default',
+          animationDuration:        300,
+          // Deslizar desde cualquier punto de la pantalla para volver (iOS)
+          fullScreenGestureEnabled: true,
         }}
       >
         <Stack.Screen name="index" />
@@ -46,10 +49,11 @@ function AppStack() {
         <Stack.Screen name="favoritos" />
         <Stack.Screen name="ajustes" />
         <Stack.Screen name="legal" />
-        <Stack.Screen name="buscar-viaje" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
-        <Stack.Screen name="split-screen" options={{ animation: 'slide_from_bottom' }} />
+        {/* Pantallas modal: suben desde abajo */}
+        <Stack.Screen name="buscar-viaje" options={{ headerShown: false, animation: 'slide_from_bottom', fullScreenGestureEnabled: false }} />
+        <Stack.Screen name="split-screen" options={{ animation: 'slide_from_bottom', fullScreenGestureEnabled: false }} />
         <Stack.Screen name="ticket"       options={{ animation: 'fade', presentation: 'modal' }} />
-        <Stack.Screen name="onboarding"   options={{ animation: 'fade', gestureEnabled: false }} />
+        <Stack.Screen name="onboarding"   options={{ animation: 'fade', gestureEnabled: false, fullScreenGestureEnabled: false }} />
       </Stack>
     </GestureHandlerRootView>
   );

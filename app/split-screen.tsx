@@ -40,6 +40,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, {
   FadeIn,
   FadeOut,
+  FadeInDown,
   useSharedValue,
   useAnimatedStyle,
   withTiming,
@@ -71,6 +72,7 @@ import { storeTicket }                from '../services/ticketStorage';
 import { getPlaceName }              from '../services/geocodingService';
 
 import DestinationSearch from '../components/DestinationSearch';
+import FlagCircle from '../components/FlagCircle';
 
 import type {
   TransportMode,
@@ -731,7 +733,15 @@ export default function SplitScreen() {
       <ScrollView style={styles.topHalf} showsVerticalScrollIndicator={false} bounces={false}>
 
         {/* Nav bar */}
-        <View style={styles.topNav}>
+        <Animated.View entering={FadeInDown.duration(350).springify()} style={styles.topNav}>
+          {/* Bandera del país (shared element con Home) */}
+          <Animated.View
+            sharedTransitionTag={`flag-${params.country ?? 'ES'}`}
+            style={styles.navFlag}
+          >
+            <FlagCircle countryCode={(params.country ?? 'ES').split('_')[0].toLowerCase()} size="sm" />
+          </Animated.View>
+
           <Pressable
             onPress={handleBack}
             style={styles.backBtn}
@@ -758,7 +768,7 @@ export default function SplitScreen() {
           <Pressable onPress={refresh} style={styles.refreshBtn} accessibilityLabel="Actualizar horarios">
             <Text style={styles.refreshText}>↻</Text>
           </Pressable>
-        </View>
+        </Animated.View>
 
         {/* ── Banner: dónde estás → distancia a estación ── */}
         {(placeName || distToStation !== null) && (
@@ -1211,6 +1221,13 @@ const styles = StyleSheet.create({
     paddingTop:       Platform.select({ ios: 52, android: 36 }),
     paddingBottom:    Spacing['2'],
     gap:              Spacing['3'],
+  },
+  navFlag: {
+    // Pequeño badge de bandera en el nav — target del shared element transition
+    width:  30,
+    height: 30,
+    borderRadius: 15,
+    overflow: 'hidden',
   },
   backBtn: {
     paddingVertical:   Spacing['2'],

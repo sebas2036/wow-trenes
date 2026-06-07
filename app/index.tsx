@@ -6,6 +6,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import Animated, {
   useSharedValue, useAnimatedStyle, withSpring,
+  FadeInDown, FadeIn,
 } from 'react-native-reanimated';
 import {
   View, Text, StyleSheet, Pressable, ScrollView,
@@ -190,9 +191,9 @@ function CountryCard({
           style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
           pointerEvents="none"
         />
-        <View style={styles.cardFlag}>
+        <Animated.View sharedTransitionTag={`flag-${country.code}`} style={styles.cardFlag}>
           <FlagCircle countryCode={isoFromCode(country.code)} size="lg" />
-        </View>
+        </Animated.View>
 
         <View style={styles.cardInfo}>
           <Text style={[styles.cardName, { color: '#FFFFFF' }]}>{country.name}</Text>
@@ -272,9 +273,9 @@ function MetroCard({
           style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
           pointerEvents="none"
         />
-        <View style={styles.cardFlag}>
+        <Animated.View sharedTransitionTag={`flag-${metro.code}`} style={styles.cardFlag}>
           <FlagCircle countryCode={isoFromCode(metro.code)} size="lg" />
-        </View>
+        </Animated.View>
         <View style={styles.cardInfo}>
           <Text style={[styles.cardName, { color: '#FFFFFF' }]}>{metro.cityKey ? t(metro.cityKey as any) : metro.city}</Text>
           <Text style={[styles.cardSub,  { color: 'rgba(255,255,255,0.75)' }]}>{metro.lines}</Text>
@@ -650,7 +651,7 @@ export default function HomeScreen() {
 
         {/* ── Sección Trenes ── */}
         {filter === 'trenes' && (
-          <>
+          <Animated.View entering={FadeInDown.duration(320).springify()}>
             <Text style={[styles.sectionLabel, { color: '#fff' }]}>{t('home_countries_title')}</Text>
             <FlatList
               data={sortedCountries}
@@ -669,14 +670,14 @@ export default function HomeScreen() {
                 />
               )}
             />
-          </>
+          </Animated.View>
         )}
 
         {/* ── Sección Metro ── */}
 
         {/* ── Internacional ── */}
         {filter === 'internacional' && (
-          <View style={styles.intlWrap}>
+          <Animated.View entering={FadeInDown.duration(320).springify()} style={styles.intlWrap}>
             <Text style={[styles.intlTitle, { color: colors.text.primary }]}>{t('intl_title')}</Text>
             <Text style={[styles.intlSub,   { color: 'rgba(255,255,255,0.80)' }]}>{t('intl_sub')}</Text>
 
@@ -780,7 +781,7 @@ export default function HomeScreen() {
             <PartnerCard {...getYesimOffer()} />
             <PartnerCard {...getTiqetsOffer()} />
             <PartnerCard {...getStorageOffer()} />
-          </View>
+          </Animated.View>
         )}
 
         <View style={{ height: 12 }} />
@@ -795,6 +796,7 @@ export default function HomeScreen() {
       />
 
       {/* ── GPS Banner — estilo original mejorado ── */}
+      <Animated.View entering={FadeIn.duration(600).delay(200)}>
       <Pressable
         style={({ pressed }) => [
           styles.gpsBanner,
@@ -832,6 +834,7 @@ export default function HomeScreen() {
           }
         </Pressable>
       </Pressable>
+      </Animated.View>
 
       <BottomTabBar active="inicio" onTranslatePress={() => setTranslator(true)} onHomePress={() => setFilter('trenes')} />
       <TranslatorSheet visible={translator} onClose={() => setTranslator(false)} />
