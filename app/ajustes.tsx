@@ -55,7 +55,7 @@ function Row({
         disabled={!onPress && !isSwitch}
       >
         <SettingsIcon name={iconName} bg={iconBg} />
-        <Text style={[styles.rowLabel, { color: colors.text.primary }]}>{label}</Text>
+        <Text style={styles.rowLabel}>{label}</Text>
         {isSwitch ? (
           <Switch
             value={switchValue}
@@ -64,9 +64,9 @@ function Row({
             thumbColor="#fff"
           />
         ) : value ? (
-          <Text style={[styles.rowValue, { color: colors.text.muted }]}>{value}</Text>
+          <Text style={styles.rowValue}>{value}</Text>
         ) : onPress ? (
-          <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
+          <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.65)" />
         ) : null}
       </Pressable>
       {!isLast && <View style={styles.divider} />}
@@ -261,9 +261,9 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
 
-  divider:  { height: 0.5, marginLeft: 62, backgroundColor: 'rgba(255,255,255,0.08)' },
-  rowLabel: { flex: 1, fontSize: 15, fontWeight: '500', color: '#fff' },
-  rowValue: { fontSize: 13, fontWeight: '300', color: 'rgba(226,232,240,0.50)' },
+  divider:  { height: 0.5, marginLeft: 62, backgroundColor: 'rgba(255,255,255,0.18)' },
+  rowLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: '#ffffff' },
+  rowValue: { fontSize: 13, fontWeight: '500', color: 'rgba(255,255,255,0.80)' },
 
   brand:     { alignItems: 'center', paddingVertical: 40, gap: 8 },
   brandLogo: { fontSize: 24, fontWeight: '900', letterSpacing: -0.5, color: '#fff' },
