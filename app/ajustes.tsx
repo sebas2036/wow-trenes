@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.xl,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.13)',
-    backgroundColor: 'rgba(255,255,255,0.07)',
+    backgroundColor: 'rgba(14,14,46,0.52)',
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
