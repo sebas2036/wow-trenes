@@ -638,15 +638,15 @@ export default function HomeScreen() {
         {/* ── Internacional ── */}
         {filter === 'internacional' && (
           <View style={styles.intlWrap}>
-            <Text style={[styles.intlTitle, { color: colors.text.primary }]}>Viaje internacional</Text>
-            <Text style={[styles.intlSub,   { color: 'rgba(255,255,255,0.80)' }]}>Trenes entre países · Trainline</Text>
+            <Text style={[styles.intlTitle, { color: colors.text.primary }]}>{t('intl_title')}</Text>
+            <Text style={[styles.intlSub,   { color: 'rgba(255,255,255,0.80)' }]}>{t('intl_sub')}</Text>
 
             {/* Origen */}
             <View style={[styles.intlField, { backgroundColor: 'rgba(14,14,46,0.45)', borderColor: 'rgba(255,255,255,0.18)' }]}>
               <Ionicons name="ellipse" size={10} color={colors.brand.primary} />
               <TextInput
                 style={[styles.intlInput, { color: '#fff' }]}
-                placeholder="Ciudad de origen"
+                placeholder={t('intl_origin')}
                 placeholderTextColor="rgba(255,255,255,0.55)"
                 value={intlOrigin}
                 onChangeText={setIntlOrigin}
@@ -659,7 +659,7 @@ export default function HomeScreen() {
               <Ionicons name="ellipse" size={10} color="#30D158" />
               <TextInput
                 style={[styles.intlInput, { color: '#fff' }]}
-                placeholder="Ciudad de destino"
+                placeholder={t('intl_dest')}
                 placeholderTextColor="rgba(255,255,255,0.55)"
                 value={intlDest}
                 onChangeText={setIntlDest}
@@ -669,7 +669,7 @@ export default function HomeScreen() {
 
             {/* Fecha */}
             <View style={styles.intlDayRow}>
-              {['Hoy', 'Mañana', 'Pasado'].map((label, i) => (
+              {[t('search_today'), t('search_tomorrow'), t('search_after')].map((label, i) => (
                 <Pressable
                   key={i}
                   style={[styles.intlDayChip,
@@ -701,16 +701,16 @@ export default function HomeScreen() {
             >
               <Ionicons name="search" size={16} color={intlOrigin && intlDest ? '#fff' : 'rgba(255,255,255,0.75)'} />
               <Text style={[styles.intlBtnText, { color: intlOrigin && intlDest ? '#fff' : 'rgba(255,255,255,0.75)' }]}>
-                Buscar en Trainline
+                {t('intl_search')}
               </Text>
             </Pressable>
 
             <Text style={[styles.intlHint, { color: 'rgba(255,255,255,0.75)' }]}>
-              Compará precios y operadores internacionales
+              {t('intl_hint')}
             </Text>
 
             {/* ── Trenes escénicos destacados ── */}
-            <Text style={[styles.intlSectionLabel, { color: '#fff' }]}>TRENES ESCÉNICOS · EXPERIENCIAS ÚNICAS</Text>
+            <Text style={[styles.intlSectionLabel, { color: '#fff' }]}>{t('intl_scenic')}</Text>
             {(showAllScenic ? SCENIC_TRAINS : SCENIC_TRAINS.slice(0, 3)).map((train) => (
               <Pressable
                 key={train.id}
@@ -732,7 +732,7 @@ export default function HomeScreen() {
                   <Text style={[styles.scenicIntlRoute, { color: 'rgba(255,255,255,0.80)' }]}>{train.route} · {train.duration}</Text>
                 </View>
                 <View style={[styles.scenicIntlReservar, { backgroundColor: train.colors[0] }]}>
-                  <Text style={styles.scenicIntlReservarText}>Reservar</Text>
+                  <Text style={styles.scenicIntlReservarText}>{t('intl_book')}</Text>
                 </View>
               </Pressable>
             ))}
