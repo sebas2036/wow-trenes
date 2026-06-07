@@ -26,6 +26,7 @@ import {
   ScrollView,
   ActivityIndicator,
   SafeAreaView,
+  Image,
 } from 'react-native';
 import Constants from 'expo-constants';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -45,7 +46,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 
-import { Colors, Typography, Spacing, Radius, Shadows } from '../theme';
+import { Colors, Typography, Spacing, Radius, Shadows, Gradients } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import TrainCountdown    from '../components/TrainCountdown';
@@ -714,10 +715,20 @@ export default function SplitScreen() {
   const destLabel = params.destName ?? destStation?.name ?? null;
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.bg.base }]}>
+    <View style={styles.root}>
+      <Image
+        source={require('../assets/images/bg-hero.png')}
+        style={[StyleSheet.absoluteFillObject, { top: -280, bottom: 280 }]}
+        resizeMode="cover"
+      />
+      <LinearGradient
+        colors={['rgba(10,8,30,0.20)', 'rgba(14,14,46,0.55)', 'rgba(14,14,46,0.75)']}
+        style={StyleSheet.absoluteFillObject}
+        pointerEvents="none"
+      />
 
       {/* ── TOP HALF: todo scrolleable en un solo ScrollView ── */}
-      <ScrollView style={[styles.topHalf, { backgroundColor: colors.bg.base }]} showsVerticalScrollIndicator={false} bounces={false}>
+      <ScrollView style={styles.topHalf} showsVerticalScrollIndicator={false} bounces={false}>
 
         {/* Nav bar */}
         <View style={styles.topNav}>
@@ -732,7 +743,7 @@ export default function SplitScreen() {
 
           {/* Origin station pill — muestra estación actual, tappeable para cambiar */}
           <Pressable
-            style={[styles.stationPill, { backgroundColor: colors.bg.elevated, borderColor: colors.brand.primary + '66' }]}
+            style={[styles.stationPill, { backgroundColor: 'rgba(14,14,46,0.45)', borderColor: 'rgba(139,92,246,0.65)' }]}
             onPress={() => { setStationQuery(''); setStationSuggestions([]); setShowStationPicker(true); }}
             accessibilityLabel="Cambiar estación"
             accessibilityHint="Toca para buscar otra estación"
@@ -751,7 +762,7 @@ export default function SplitScreen() {
 
         {/* ── Banner: dónde estás → distancia a estación ── */}
         {(placeName || distToStation !== null) && (
-          <View style={[styles.locationBanner, { backgroundColor: colors.bg.surface, borderBottomColor: colors.border.subtle }]}>
+          <View style={[styles.locationBanner, { backgroundColor: 'rgba(255,255,255,0.05)', borderBottomColor: 'rgba(255,255,255,0.08)' }]}>
             <Ionicons name="navigate-circle-outline" size={14} color={colors.brand.primary} />
             <View style={styles.locationBannerText}>
               {placeName && (
@@ -760,7 +771,7 @@ export default function SplitScreen() {
                 </Text>
               )}
               {distToStation !== null && selectedStation && (
-                <Text style={[styles.locationDist, { color: colors.text.muted }]} numberOfLines={1}>
+                <Text style={[styles.locationDist, { color: 'rgba(255,255,255,0.80)' }]} numberOfLines={1}>
                   {distToStation < 1000
                     ? `${distToStation}m de ${selectedStation.name}`
                     : `${(distToStation / 1000).toFixed(1)}km de ${selectedStation.name}`}
@@ -776,7 +787,7 @@ export default function SplitScreen() {
           <Animated.View
             entering={FadeIn.duration(300)}
             exiting={FadeOut.duration(200)}
-            style={[styles.destSearchWrap, { backgroundColor: colors.bg.base }]}
+            style={[styles.destSearchWrap, { backgroundColor: 'transparent' }]}
           >
             <View style={styles.destSearchHeader}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -802,8 +813,8 @@ export default function SplitScreen() {
         {!showDestSearch && (
           <Pressable
             style={[styles.reopenSearchBtn, {
-              backgroundColor: destStation ? colors.bg.elevated : colors.bg.elevated,
-              borderColor: destStation ? colors.brand.primary + '99' : colors.border.default,
+              backgroundColor: 'rgba(255,255,255,0.07)',
+              borderColor: destStation ? 'rgba(139,92,246,0.80)' : 'rgba(255,255,255,0.13)',
             }]}
             onPress={() => setShowDestSearch(true)}
           >
@@ -813,7 +824,7 @@ export default function SplitScreen() {
               color={destStation ? colors.brand.primary : colors.text.secondary}
             />
             <Text style={[styles.reopenSearchText, {
-              color: destStation ? colors.text.primary : colors.text.secondary,
+              color: destStation ? '#FFFFFF' : 'rgba(255,255,255,0.80)',
               flex: 1,
             }]} numberOfLines={1}>
               {destStation
@@ -1012,9 +1023,9 @@ export default function SplitScreen() {
 
       {/* ── Modal PARA TU VIAJE — full screen ── */}
       <Modal visible={showTravelModal} animationType="slide" transparent={false} onRequestClose={() => setShowTravelModal(false)}>
-        <View style={[styles.travelModalRoot, { backgroundColor: colors.bg.base }]}>
+        <LinearGradient colors={[...Gradients.screenBg]} style={styles.travelModalRoot}>
           {/* Header */}
-          <View style={[styles.travelModalHeader, { borderBottomColor: colors.border.subtle }]}>
+          <View style={[styles.travelModalHeader, { borderBottomColor: 'rgba(255,255,255,0.08)' }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Ionicons name="sparkles" size={18} color="#F59E0B" />
               <Text style={[styles.travelModalTitle, { color: colors.text.primary }]}>DESCUBRE</Text>
@@ -1034,7 +1045,7 @@ export default function SplitScreen() {
                 {getScenicByCountry(params.country).map((train) => (
                   <Pressable
                     key={train.id}
-                    style={[styles.scenicCard, { backgroundColor: colors.bg.elevated, borderColor: train.colors[0] + '55' }]}
+                    style={[styles.scenicCard, { backgroundColor: 'rgba(255,255,255,0.07)', borderColor: train.colors[0] + '66' }]}
                     onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setShowTravelModal(false); setScenicVisible(train.id); }}
                   >
                     <LinearGradient
@@ -1076,13 +1087,13 @@ export default function SplitScreen() {
             })()}
 
           </ScrollView>
-        </View>
+        </LinearGradient>
       </Modal>
 
       {/* ── Modal picker de estación manual ── */}
       <Modal visible={showStationPicker} animationType="slide" transparent onRequestClose={() => setShowStationPicker(false)}>
         <View style={styles.pickerOverlay}>
-          <View style={[styles.pickerSheet, { backgroundColor: colors.bg.base }]}>
+          <View style={[styles.pickerSheet, { backgroundColor: '#13133A' }]}>
             {/* Header */}
             <View style={styles.pickerHeader}>
               <Text style={[styles.pickerTitle, { color: colors.text.primary }]}>Cambiar estación</Text>
@@ -1183,15 +1194,15 @@ export default function SplitScreen() {
 // ─── STYLES ─────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   root: {
-    flex:            1,
-    backgroundColor: '#000000',
+    flex: 1,
   },
 
   // Upper 50%
   topHalf: {
     flex:              1,
+    backgroundColor:   'transparent',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.05)',
+    borderBottomColor: 'rgba(255,255,255,0.06)',
   },
   topNav: {
     flexDirection:    'row',
@@ -1217,12 +1228,12 @@ const styles = StyleSheet.create({
     flexDirection:     'row',
     alignItems:        'center',
     gap:               6,
-    paddingVertical:   8,
-    paddingHorizontal: 12,
-    backgroundColor:   '#2C2C2E',
+    paddingVertical:   9,
+    paddingHorizontal: 14,
+    backgroundColor:   'rgba(255,255,255,0.08)',
     borderRadius:      Radius.full,
     borderWidth:       1,
-    borderColor:       'rgba(255,255,255,0.09)',
+    borderColor:       'rgba(139,92,246,0.50)',
   },
   stationPillText: {
     fontSize:   13,
@@ -1288,12 +1299,12 @@ const styles = StyleSheet.create({
     gap:               Spacing['2'],
     marginHorizontal:  Spacing['4'],
     marginBottom:      Spacing['2'],
-    paddingVertical:   Spacing['2'],
+    paddingVertical:   10,
     paddingHorizontal: Spacing['3'],
-    backgroundColor:   '#2C2C2E',
-    borderRadius:      Radius.lg,
+    backgroundColor:   'rgba(14,14,46,0.45)',
+    borderRadius:      Radius.xl,
     borderWidth:       1,
-    borderColor:       'rgba(255,255,255,0.09)',
+    borderColor:       'rgba(255,255,255,0.18)',
   },
   reopenSearchIcon: { fontSize: 13 },
   reopenSearchText: {
@@ -1379,10 +1390,15 @@ const styles = StyleSheet.create({
     marginVertical:    8,
     paddingHorizontal: 12,
     paddingVertical:   10,
-    backgroundColor:   '#111113',
+    backgroundColor:   'rgba(14,14,46,0.55)',
     borderRadius:      28,
     borderWidth:       1,
-    borderColor:       'rgba(167,139,250,0.18)',
+    borderColor:       'rgba(167,139,250,0.35)',
+    shadowColor:       '#7C3AED',
+    shadowOffset:      { width: 0, height: 4 },
+    shadowOpacity:     0.20,
+    shadowRadius:      16,
+    elevation:         8,
   },
   floatingBtn: {
     flex:              1,
@@ -1395,12 +1411,12 @@ const styles = StyleSheet.create({
     borderWidth:       1,
   },
   floatingBtnPrimary: {
-    backgroundColor: '#0d0d0f',
-    borderColor:     'rgba(139,92,246,0.85)',
+    backgroundColor: 'rgba(139,92,246,0.12)',
+    borderColor:     'rgba(139,92,246,0.70)',
   },
   floatingBtnTravel: {
-    backgroundColor: '#0d0d0f',
-    borderColor:     'rgba(245,158,11,0.85)',
+    backgroundColor: 'rgba(245,158,11,0.10)',
+    borderColor:     'rgba(245,158,11,0.70)',
   },
   floatingBtnText: {
     fontSize:      11,
@@ -1501,10 +1517,11 @@ const styles = StyleSheet.create({
     gap:              Spacing['3'],
     padding:          Spacing['4'],
     paddingBottom:    Platform.select({ ios: 34, android: 20 }),
-    backgroundColor:  '#2C2C2E',
+    backgroundColor:  'rgba(52,211,153,0.12)',
     borderTopWidth:   1,
-    borderTopColor:   '#30D158',
-    ...Shadows.card,
+    borderTopColor:   '#34D399',
+    borderLeftWidth:  0,
+    ...Shadows.glass,
   },
   successTitle: {
     fontSize:   Typography.size.md,

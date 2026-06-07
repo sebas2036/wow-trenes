@@ -41,8 +41,8 @@ export default function PartnerCard({
       style={({ pressed }) => [
         styles.card,
         {
-          backgroundColor: colors.bg.elevated,
-          borderColor:     highlight ? gradColors[0] + '66' : colors.border.subtle,
+          backgroundColor: 'rgba(14,14,46,0.45)',
+          borderColor:     highlight ? gradColors[0] + '88' : 'rgba(255,255,255,0.15)',
           opacity:         pressed ? 0.85 : 1,
         },
       ]}
@@ -59,7 +59,7 @@ export default function PartnerCard({
         <Text style={[styles.title, { color: colors.text.primary }]} numberOfLines={1}>
           {title}
         </Text>
-        <Text style={[styles.subtitle, { color: colors.text.muted }]} numberOfLines={2}>
+        <Text style={[styles.subtitle, { color: 'rgba(255,255,255,0.80)' }]} numberOfLines={2}>
           {subtitle}
         </Text>
       </View>

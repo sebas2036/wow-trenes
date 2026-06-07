@@ -333,7 +333,8 @@ export default function HomeScreen() {
   const [intlDate,     setIntlDate]     = useState(0); // 0=hoy, 1=mañana, 2=pasado
   const [intlVisible,  setIntlVisible]  = useState(false);
   const [intlUrl,      setIntlUrl]      = useState('');
-  const [scenicIntlId, setScenicIntlId] = useState<string | null>(null);
+  const [scenicIntlId,   setScenicIntlId]   = useState<string | null>(null);
+  const [showAllScenic,  setShowAllScenic]  = useState(false);
   const { isOffline } = useNetwork();
   const [translator,    setTranslator]    = useState(false);
   const [notifVisible,  setNotifVisible]  = useState(false);
@@ -570,7 +571,7 @@ export default function HomeScreen() {
               <Pressable
                 key={t.key}
                 style={[styles.segmentBtn, active && styles.segmentBtnActive]}
-                onPress={() => { Haptics.selectionAsync(); setFilter(t.key); }}
+                onPress={() => { Haptics.selectionAsync(); setFilter(t.key); setShowAllScenic(false); }}
               >
                 {active && (
                   <>
@@ -637,15 +638,15 @@ export default function HomeScreen() {
         {filter === 'internacional' && (
           <View style={styles.intlWrap}>
             <Text style={[styles.intlTitle, { color: colors.text.primary }]}>Viaje internacional</Text>
-            <Text style={[styles.intlSub,   { color: colors.text.muted }]}>Trenes entre países · Trainline</Text>
+            <Text style={[styles.intlSub,   { color: 'rgba(255,255,255,0.80)' }]}>Trenes entre países · Trainline</Text>
 
             {/* Origen */}
-            <View style={[styles.intlField, { backgroundColor: colors.bg.elevated, borderColor: colors.border.subtle }]}>
+            <View style={[styles.intlField, { backgroundColor: 'rgba(14,14,46,0.45)', borderColor: 'rgba(255,255,255,0.18)' }]}>
               <Ionicons name="ellipse" size={10} color={colors.brand.primary} />
               <TextInput
-                style={[styles.intlInput, { color: colors.text.primary }]}
+                style={[styles.intlInput, { color: '#fff' }]}
                 placeholder="Ciudad de origen"
-                placeholderTextColor={colors.text.muted}
+                placeholderTextColor="rgba(255,255,255,0.55)"
                 value={intlOrigin}
                 onChangeText={setIntlOrigin}
                 autoCorrect={false}
@@ -653,12 +654,12 @@ export default function HomeScreen() {
             </View>
 
             {/* Destino */}
-            <View style={[styles.intlField, { backgroundColor: colors.bg.elevated, borderColor: colors.border.subtle }]}>
+            <View style={[styles.intlField, { backgroundColor: 'rgba(14,14,46,0.45)', borderColor: 'rgba(255,255,255,0.18)' }]}>
               <Ionicons name="ellipse" size={10} color="#30D158" />
               <TextInput
-                style={[styles.intlInput, { color: colors.text.primary }]}
+                style={[styles.intlInput, { color: '#fff' }]}
                 placeholder="Ciudad de destino"
-                placeholderTextColor={colors.text.muted}
+                placeholderTextColor="rgba(255,255,255,0.55)"
                 value={intlDest}
                 onChangeText={setIntlDest}
                 autoCorrect={false}
@@ -671,18 +672,22 @@ export default function HomeScreen() {
                 <Pressable
                   key={i}
                   style={[styles.intlDayChip,
-                    { backgroundColor: intlDate === i ? colors.bg.card : colors.bg.elevated,
-                      borderColor: intlDate === i ? colors.brand.primary : colors.border.subtle }]}
+                    { backgroundColor: intlDate === i ? 'rgba(88,28,135,0.55)' : 'rgba(14,14,46,0.45)',
+                      borderColor: intlDate === i ? colors.brand.primary : 'rgba(255,255,255,0.18)' }]}
                   onPress={() => { Haptics.selectionAsync(); setIntlDate(i); }}
                 >
-                  <Text style={[styles.intlDayText, { color: intlDate === i ? colors.brand.accent : colors.text.secondary }]}>{label}</Text>
+                  <Text style={[styles.intlDayText, { color: intlDate === i ? '#fff' : 'rgba(255,255,255,0.85)' }]}>{label}</Text>
                 </Pressable>
               ))}
             </View>
 
             {/* Buscar */}
             <Pressable
-              style={[styles.intlBtn, { backgroundColor: intlOrigin && intlDest ? colors.brand.primary : colors.bg.elevated }]}
+              style={[styles.intlBtn, {
+                backgroundColor: intlOrigin && intlDest ? colors.brand.primary : 'rgba(14,14,46,0.50)',
+                borderWidth: 1.5,
+                borderColor: intlOrigin && intlDest ? 'transparent' : 'rgba(255,255,255,0.40)',
+              }]}
               onPress={() => {
                 if (!intlOrigin.trim() || !intlDest.trim()) return;
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -693,22 +698,22 @@ export default function HomeScreen() {
                 setIntlVisible(true);
               }}
             >
-              <Ionicons name="search" size={16} color={intlOrigin && intlDest ? '#fff' : colors.text.muted} />
-              <Text style={[styles.intlBtnText, { color: intlOrigin && intlDest ? '#fff' : colors.text.muted }]}>
+              <Ionicons name="search" size={16} color={intlOrigin && intlDest ? '#fff' : 'rgba(255,255,255,0.75)'} />
+              <Text style={[styles.intlBtnText, { color: intlOrigin && intlDest ? '#fff' : 'rgba(255,255,255,0.75)' }]}>
                 Buscar en Trainline
               </Text>
             </Pressable>
 
-            <Text style={[styles.intlHint, { color: colors.text.muted }]}>
+            <Text style={[styles.intlHint, { color: 'rgba(255,255,255,0.75)' }]}>
               Compará precios y operadores internacionales
             </Text>
 
             {/* ── Trenes escénicos destacados ── */}
-            <Text style={[styles.intlSectionLabel, { color: colors.text.muted }]}>TRENES ESCÉNICOS · EXPERIENCIAS ÚNICAS</Text>
-            {SCENIC_TRAINS.map((train) => (
+            <Text style={[styles.intlSectionLabel, { color: '#fff' }]}>TRENES ESCÉNICOS · EXPERIENCIAS ÚNICAS</Text>
+            {(showAllScenic ? SCENIC_TRAINS : SCENIC_TRAINS.slice(0, 3)).map((train) => (
               <Pressable
                 key={train.id}
-                style={[styles.scenicIntlCard, { backgroundColor: colors.bg.elevated, borderColor: train.colors[0] + '44' }]}
+                style={[styles.scenicIntlCard, { backgroundColor: 'rgba(14,14,46,0.45)', borderColor: train.colors[0] + '66' }]}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                   setScenicIntlId(train.id);
@@ -722,8 +727,8 @@ export default function HomeScreen() {
                   <Ionicons name="train" size={14} color="#fff" />
                 </LinearGradient>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.scenicIntlName, { color: colors.text.primary }]}>{train.name}</Text>
-                  <Text style={[styles.scenicIntlRoute, { color: colors.text.muted }]}>{train.route} · {train.duration}</Text>
+                  <Text style={[styles.scenicIntlName, { color: '#fff' }]}>{train.name}</Text>
+                  <Text style={[styles.scenicIntlRoute, { color: 'rgba(255,255,255,0.80)' }]}>{train.route} · {train.duration}</Text>
                 </View>
                 <View style={[styles.scenicIntlReservar, { backgroundColor: train.colors[0] }]}>
                   <Text style={styles.scenicIntlReservarText}>Reservar</Text>
@@ -731,8 +736,24 @@ export default function HomeScreen() {
               </Pressable>
             ))}
 
+            {/* ── Divisor "Más / Menos experiencias" ── */}
+            {SCENIC_TRAINS.length > 3 && (
+              <Pressable
+                style={styles.moreExpBtn}
+                onPress={() => { Haptics.selectionAsync(); setShowAllScenic(v => !v); }}
+              >
+                <View style={styles.moreExpLine} />
+                <View style={styles.moreExpPill}>
+                  <Ionicons name="train-outline" size={12} color="#fff" />
+                  <Text style={styles.moreExpText}>{showAllScenic ? 'Ver menos' : 'Más experiencias'}</Text>
+                  <Ionicons name={showAllScenic ? 'chevron-up' : 'chevron-down'} size={12} color="#fff" />
+                </View>
+                <View style={styles.moreExpLine} />
+              </Pressable>
+            )}
+
             {/* ── Para tu viaje · partners ── */}
-            <Text style={[styles.intlSectionLabel, { color: colors.text.muted, marginTop: 16 }]}>PARA TU VIAJE</Text>
+            <Text style={[styles.intlSectionLabel, { color: '#fff', marginTop: 6 }]}>PARA TU VIAJE</Text>
             <PartnerCard {...getInsuranceOffer()} />
             <PartnerCard {...getYesimOffer()} />
             <PartnerCard {...getTiqetsOffer()} />
@@ -1045,6 +1066,20 @@ const styles = StyleSheet.create({
   scenicIntlName:    { fontSize: 13, fontWeight: '700' },
   scenicIntlRoute:   { fontSize: 11, marginTop: 1 },
   scenicIntlReservar:    { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
+
+  // Divisor "Más experiencias"
+  moreExpBtn: {
+    flexDirection: 'row', alignItems: 'center',
+    marginHorizontal: 12, marginTop: 8, marginBottom: 2, gap: 8,
+  },
+  moreExpLine: { flex: 1, height: 1, backgroundColor: 'rgba(167,139,250,0.25)' },
+  moreExpPill: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    paddingVertical: 7, paddingHorizontal: 14,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderRadius: 20, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.55)',
+  },
+  moreExpText: { fontSize: 12, fontWeight: '800', color: '#fff', letterSpacing: 0.5 },
   scenicIntlReservarText:{ fontSize: 11, fontWeight: '700', color: '#fff' },
   empty:      { alignItems: 'center', paddingVertical: 72, paddingHorizontal: 40 },
   emptyIcon:  { fontSize: 56, marginBottom: 18 },

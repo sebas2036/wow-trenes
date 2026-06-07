@@ -162,7 +162,7 @@ function BoardRow({
           {(entry.endpoint !== '—' ? entry.endpoint : entry.train)
             .toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
         </Text>
-        <Text style={[styles.boardStation, { color: colors.text.muted }]} numberOfLines={1}>
+        <Text style={[styles.boardStation, { color: 'rgba(255,255,255,0.80)' }]} numberOfLines={1}>
           {entry.train !== '—' ? entry.train + ' · ' : ''}{entry.station}
           {entry.platform ? `  ·  Andén ${entry.platform}` : ''}
         </Text>
@@ -687,7 +687,7 @@ export default function SalidasScreen() {
             <Text style={[styles.title, { color: colors.text.primary }]} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>
               {displayStation}
             </Text>
-            <Text style={[styles.subtitle, { color: colors.text.secondary }]}>
+            <Text style={[styles.subtitle, { color: 'rgba(255,255,255,0.80)' }]}>
               {selected.name} · {displayCountrySub}
               {isOffline ? ' · offline' : ''}
             </Text>
@@ -761,9 +761,9 @@ export default function SalidasScreen() {
                 };
               }}
               style={[styles.destChip, {
-                backgroundColor: active ? colors.brand.primary + '18' : colors.bg.elevated,
-                borderColor: active ? colors.brand.primary : colors.border.subtle,
-                borderWidth: active ? 1.5 : 0.5,
+                backgroundColor: active ? 'rgba(88,28,135,0.45)' : 'rgba(14,14,46,0.35)',
+                borderColor: active ? colors.brand.primary : 'rgba(255,255,255,0.15)',
+                borderWidth: active ? 1.5 : 1,
               }]}
               onPress={() => handleDestPress(d)}
             >
@@ -782,7 +782,7 @@ export default function SalidasScreen() {
       {/* ── Selector de estación (solo países con RT) ── */}
       {hasStationPicker && (
         <Pressable
-          style={[styles.stationPill, { backgroundColor: colors.bg.elevated, borderColor: colors.border.subtle }]}
+          style={[styles.stationPill, { backgroundColor: 'rgba(14,14,46,0.40)', borderColor: 'rgba(255,255,255,0.18)' }]}
           onPress={() => setPickerOpen(true)}
         >
           <Ionicons name="location-outline" size={14} color={colors.brand.primary} />
@@ -795,7 +795,7 @@ export default function SalidasScreen() {
 
       {/* ── Board header ── */}
       <View style={styles.boardHeader}>
-        <Text style={[styles.boardLabel, { color: colors.text.secondary }]}>
+        <Text style={[styles.boardLabel, { color: 'rgba(255,255,255,0.75)' }]}>
           {mode === 'salidas' ? t('board_departures') : t('board_arrivals')} · {selected.name.toUpperCase()}
         </Text>
         <Pressable onPress={handleBoardTap} hitSlop={8}>

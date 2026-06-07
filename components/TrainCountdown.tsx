@@ -482,11 +482,11 @@ const styles = StyleSheet.create({
   // Card
   card: {
     flexDirection:   'row',
-    backgroundColor: Colors.bg.elevated,
-    borderRadius:    Radius.md,
+    backgroundColor: 'rgba(14,14,46,0.45)',
+    borderRadius:    Radius.xl,
     overflow:        'hidden',
     borderWidth:     1,
-    borderColor:     Colors.border.subtle,
+    borderColor:     'rgba(255,255,255,0.15)',
   },
   cardFirst: {
     borderColor:  Colors.border.default,
@@ -557,13 +557,13 @@ const styles = StyleSheet.create({
   operatorLabel: {
     fontSize:      9,
     fontWeight:    Typography.weight.bold,
-    color:         Colors.text.muted,
+    color:         'rgba(255,255,255,0.75)',
     letterSpacing: 1.5,
   },
   trainNum: {
     fontSize:   Typography.size.xs,
     fontWeight: Typography.weight.semibold,
-    color:      Colors.text.secondary,
+    color:      'rgba(255,255,255,0.85)',
   },
   nextBadge: {
     paddingVertical:   1,
@@ -633,8 +633,9 @@ const styles = StyleSheet.create({
   },
   walkIcon: { fontSize: 10 },
   walkText: {
-    fontSize: 10,
-    color:    Colors.text.secondary,
+    fontSize:   10,
+    fontWeight: '600',
+    color:      'rgba(255,255,255,0.90)',
   },
   bufferChip: {
     paddingVertical:   2,
@@ -702,7 +703,7 @@ const styles = StyleSheet.create({
   expandStatLabel: {
     fontSize:      9,
     fontWeight:    Typography.weight.bold,
-    color:         Colors.text.muted,
+    color:         'rgba(255,255,255,0.70)',
     letterSpacing: 1.2,
   },
   expandStatValue: {
