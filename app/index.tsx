@@ -6,7 +6,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView,
-  ActivityIndicator, Platform, FlatList, TextInput,
+  ActivityIndicator, Platform, FlatList, TextInput, Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -493,8 +493,19 @@ export default function HomeScreen() {
   ];
 
   return (
-    <LinearGradient colors={[...Gradients.screenBg]} style={styles.root}>
-
+    <View style={styles.root}>
+      {/* Foto tren de noche — capa absoluta debajo de todo */}
+      <Image
+        source={require('../assets/images/bg-hero.png')}
+        style={StyleSheet.absoluteFillObject}
+        resizeMode="cover"
+      />
+      {/* Overlay oscuro para legibilidad */}
+      <LinearGradient
+        colors={['rgba(10,8,30,0.50)', 'rgba(14,14,46,0.65)', 'rgba(14,14,46,0.80)']}
+        style={StyleSheet.absoluteFillObject}
+        pointerEvents="none"
+      />
 
     <SafeAreaView style={styles.rootInner} edges={['top']}>
 
@@ -835,16 +846,16 @@ export default function HomeScreen() {
         );
       })()}
     </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 }
 
 // ── Estilos ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  root:          { flex: 1 },
-  rootInner:     { flex: 1 },
+  root:          { flex: 1, backgroundColor: '#0E0E2E' },
+  rootInner:     { flex: 1, backgroundColor: 'transparent' },
 
-  scroll:        { flex: 1 },
+  scroll:        { flex: 1, backgroundColor: 'transparent' },
   scrollContent: { paddingBottom: 12 },
 
   // ── Glass Card — Glassmorphism ──
