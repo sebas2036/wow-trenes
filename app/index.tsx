@@ -502,7 +502,7 @@ export default function HomeScreen() {
     >
       {/* Overlay oscuro para legibilidad */}
       <LinearGradient
-        colors={['rgba(10,8,30,0.72)', 'rgba(14,14,46,0.82)', 'rgba(14,14,46,0.92)']}
+        colors={['rgba(10,8,30,0.40)', 'rgba(14,14,46,0.55)', 'rgba(14,14,46,0.70)']}
         style={StyleSheet.absoluteFillObject}
         pointerEvents="none"
       />
