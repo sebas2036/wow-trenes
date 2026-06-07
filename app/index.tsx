@@ -587,7 +587,7 @@ export default function HomeScreen() {
                     <View style={[StyleSheet.absoluteFillObject, {
                       margin: 1.2,
                       borderRadius: Radius.sm - 1,
-                      backgroundColor: colors.bg.card,
+                      backgroundColor: 'rgba(88,28,135,0.75)',
                     }]} pointerEvents="none" />
                   </>
                 )}
@@ -1057,7 +1057,7 @@ const styles = StyleSheet.create({
   // GPS banner
   gpsBanner: {
     flexDirection: 'row', alignItems: 'center',
-    marginHorizontal: 12, marginBottom: 4,
+    marginHorizontal: 12, marginBottom: 16,
     borderRadius: Radius.xl, padding: 10, borderWidth: 0.5,
     gap: 10,
     overflow: 'hidden',
