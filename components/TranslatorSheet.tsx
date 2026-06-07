@@ -1023,7 +1023,7 @@ export default function TranslatorSheet({ visible, onClose }: TranslatorSheetPro
 
 // ─── STYLES — no colors hardcoded, all applied inline ────────────────────────
 const styles = StyleSheet.create({
-  rootGradient: { flex: 1 },
+  rootGradient: { flex: 1, backgroundColor: '#0E0E2E' },
   root: { flex: 1, backgroundColor: 'transparent' },
 
   // Header
