@@ -849,8 +849,8 @@ const styles = StyleSheet.create({
 
   // ── Glass Card — Glassmorphism ──
   glassCard: {
-    backgroundColor: 'rgba(255,255,255,0.05)',  // blanco tenue — efecto vidrio esmerilado
-    borderColor:     'rgba(255,255,255,0.18)',
+    backgroundColor: 'rgba(255,255,255,0.02)',  // casi invisible — vidrio puro
+    borderColor:     'rgba(255,255,255,0.12)',
     borderWidth:     1,
     overflow:        'hidden',
   },
