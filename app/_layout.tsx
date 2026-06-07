@@ -35,11 +35,11 @@ function AppStack() {
 
   return (
     <GestureHandlerRootView style={styles.root}>
-      <StatusBar style="light" backgroundColor={colors.bg.base} />
+      <StatusBar style="light" backgroundColor="#0E0E2E" />
       <Stack
         screenOptions={{
           headerShown:              false,
-          contentStyle:             { backgroundColor: 'transparent' },
+          contentStyle:             { backgroundColor: '#0E0E2E' },
           // Transición nativa de cada plataforma (iOS: spring push / Android: slide)
           animation:                'default',
           animationDuration:        300,
@@ -73,5 +73,5 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: 'transparent' },
+  root: { flex: 1, backgroundColor: '#0E0E2E' },
 });
