@@ -732,13 +732,10 @@ export default function SplitScreen() {
 
         {/* Nav bar */}
         <View style={styles.topNav}>
-          {/* Bandera del país (shared element con Home) */}
-          <Animated.View
-            sharedTransitionTag={`flag-${params.country ?? 'ES'}`}
-            style={styles.navFlag}
-          >
+          {/* Bandera del país */}
+          <View style={styles.navFlag}>
             <FlagCircle countryCode={(params.country ?? 'ES').split('_')[0].toLowerCase()} size="sm" />
-          </Animated.View>
+          </View>
 
           <Pressable
             onPress={handleBack}
