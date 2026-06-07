@@ -502,7 +502,7 @@ export default function HomeScreen() {
         resizeMode="cover"
       />
       <LinearGradient
-        colors={['rgba(10,8,30,0.20)', 'rgba(14,14,46,0.45)', 'rgba(14,14,46,0.65)']}
+        colors={['rgba(10,8,30,0.35)', 'rgba(14,14,46,0.60)', 'rgba(14,14,46,0.80)']}
         style={StyleSheet.absoluteFillObject}
         pointerEvents="none"
       />
@@ -879,7 +879,7 @@ const styles = StyleSheet.create({
 
   // ── Glass Card — Glassmorphism ──
   glassCard: {
-    backgroundColor: 'rgba(14,14,46,0.15)',     // muy transparente — foto se ve a través
+    backgroundColor: 'rgba(14,14,46,0.45)',
     borderColor:     'rgba(255,255,255,0.15)',
     borderWidth:     1,
     overflow:        'hidden',
