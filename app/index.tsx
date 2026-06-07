@@ -176,13 +176,16 @@ function CountryCard({
         onPressOut={() => { scale.value = withSpring(1, { damping: 10, stiffness: 180 }); }}
         accessibilityRole="button"
       >
-        {/* Blur real del fondo */}
-        <BlurView
-          intensity={Platform.OS === 'ios' ? 65 : 20}
-          tint="dark"
-          style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
-          experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
-        />
+        {/* Blur real del fondo — solo iOS (Android: View oscuro, sin blur nativo costoso) */}
+        {Platform.OS === 'ios' ? (
+          <BlurView
+            intensity={65}
+            tint="dark"
+            style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
+          />
+        ) : (
+          <View style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl, backgroundColor: 'rgba(18,12,50,0.82)' }]} />
+        )}
         {/* Glass rim light — brillo superior blanco */}
         <LinearGradient
           colors={['rgba(255,255,255,0.22)', 'rgba(255,255,255,0.00)']}
@@ -191,9 +194,9 @@ function CountryCard({
           style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
           pointerEvents="none"
         />
-        <Animated.View sharedTransitionTag={`flag-${country.code}`} style={styles.cardFlag}>
+        <View style={styles.cardFlag}>
           <FlagCircle countryCode={isoFromCode(country.code)} size="lg" />
-        </Animated.View>
+        </View>
 
         <View style={styles.cardInfo}>
           <Text style={[styles.cardName, { color: '#FFFFFF' }]}>{country.name}</Text>
@@ -258,13 +261,16 @@ function MetroCard({
         onPressIn={() => { scale.value = withSpring(0.955, { damping: 18, stiffness: 350 }); }}
         onPressOut={() => { scale.value = withSpring(1, { damping: 10, stiffness: 180 }); }}
       >
-        {/* Blur real del fondo */}
-        <BlurView
-          intensity={Platform.OS === 'ios' ? 65 : 20}
-          tint="dark"
-          style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
-          experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
-        />
+        {/* Blur real del fondo — solo iOS */}
+        {Platform.OS === 'ios' ? (
+          <BlurView
+            intensity={65}
+            tint="dark"
+            style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
+          />
+        ) : (
+          <View style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl, backgroundColor: 'rgba(18,12,50,0.82)' }]} />
+        )}
         {/* Glass rim light — brillo superior blanco */}
         <LinearGradient
           colors={['rgba(255,255,255,0.22)', 'rgba(255,255,255,0.00)']}
@@ -273,9 +279,9 @@ function MetroCard({
           style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
           pointerEvents="none"
         />
-        <Animated.View sharedTransitionTag={`flag-${metro.code}`} style={styles.cardFlag}>
+        <View style={styles.cardFlag}>
           <FlagCircle countryCode={isoFromCode(metro.code)} size="lg" />
-        </Animated.View>
+        </View>
         <View style={styles.cardInfo}>
           <Text style={[styles.cardName, { color: '#FFFFFF' }]}>{metro.cityKey ? t(metro.cityKey as any) : metro.city}</Text>
           <Text style={[styles.cardSub,  { color: 'rgba(255,255,255,0.75)' }]}>{metro.lines}</Text>
