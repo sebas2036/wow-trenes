@@ -427,7 +427,7 @@ export default function BuscarViaje() {
               const meta = trainMeta(trip.trainNumber);
               const isFastest = !!(trip as TripResult & { fastest?: boolean }).fastest;
               return (
-                <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
+                <Animated.View entering={FadeInDown.duration(280).delay(Math.min(index, 6) * 45)}>
                   <Pressable style={styles.card} onPress={() => handleBuy(trip)} android_ripple={{ color: Colors.brand.primary + '18' }}>
 
                     {/* Badge tipo tren + etiqueta "Más rápido" */}

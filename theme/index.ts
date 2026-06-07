@@ -130,6 +130,7 @@ export const Gradients = {
   safe:               ['rgba(34,197,94,0.15)', 'rgba(34,197,94,0)']                        as readonly [string, string],
   warn:               ['rgba(234,179,8,0.15)',  'rgba(234,179,8,0)']                       as readonly [string, string],
   danger:             ['rgba(239,68,68,0.15)', 'rgba(239,68,68,0)']                        as readonly [string, string],
+  screenBg:           ['#0E0E2E', '#0A0820', '#06040F']                                    as readonly [string, string, string],
 } as const;
 
 // ─── TYPOGRAPHY ───────────────────────────────────────────────────────────────
@@ -166,6 +167,7 @@ export const Shadows = {
   statusSafe:   { shadowColor: '#34C759', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6 },
   statusWarn:   { shadowColor: '#FF9F0A', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6 },
   statusDanger: { shadowColor: '#FF3B30', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6 },
+  glass:        { shadowColor: '#000',    shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 24, elevation: 10 },
 } as const;
 
 // ─── ANIMATION ────────────────────────────────────────────────────────────────

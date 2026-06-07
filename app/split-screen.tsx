@@ -733,7 +733,7 @@ export default function SplitScreen() {
       <ScrollView style={styles.topHalf} showsVerticalScrollIndicator={false} bounces={false}>
 
         {/* Nav bar */}
-        <Animated.View entering={FadeInDown.duration(350).springify()} style={styles.topNav}>
+        <Animated.View entering={FadeInDown.duration(350)} style={styles.topNav}>
           {/* Bandera del país (shared element con Home) */}
           <Animated.View
             sharedTransitionTag={`flag-${params.country ?? 'ES'}`}

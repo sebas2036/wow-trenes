@@ -208,7 +208,7 @@ function CountryCard({
                     styles.glassPill,
                     pressed && { opacity: 0.65 },
                   ]}
-                  onPress={(e) => { e.stopPropagation?.(); onMetroPress(m.code, m.label); }}
+                  onPress={(e) => { e.stopPropagation?.(); onMetroPress(m.code, m.label ?? (m.labelKey ? t(m.labelKey as any) : '')); }}
                 >
                   <Ionicons name="navigate" size={9} color={colors.brand.accent} />
                   <Text style={[styles.metroPillText, { color: colors.brand.accent }]}>
@@ -651,7 +651,7 @@ export default function HomeScreen() {
 
         {/* ── Sección Trenes ── */}
         {filter === 'trenes' && (
-          <Animated.View entering={FadeInDown.duration(320).springify()}>
+          <Animated.View entering={FadeInDown.duration(320)}>
             <Text style={[styles.sectionLabel, { color: '#fff' }]}>{t('home_countries_title')}</Text>
             <FlatList
               data={sortedCountries}
@@ -677,7 +677,7 @@ export default function HomeScreen() {
 
         {/* ── Internacional ── */}
         {filter === 'internacional' && (
-          <Animated.View entering={FadeInDown.duration(320).springify()} style={styles.intlWrap}>
+          <Animated.View entering={FadeInDown.duration(320)} style={styles.intlWrap}>
             <Text style={[styles.intlTitle, { color: colors.text.primary }]}>{t('intl_title')}</Text>
             <Text style={[styles.intlSub,   { color: 'rgba(255,255,255,0.80)' }]}>{t('intl_sub')}</Text>
 

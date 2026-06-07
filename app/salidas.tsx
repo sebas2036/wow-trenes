@@ -870,7 +870,7 @@ export default function SalidasScreen() {
         <ScrollView style={styles.boardScroll} showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 100 }}>
           {board.map((entry, i) => (
-            <Animated.View key={i} entering={FadeInDown.duration(280).delay(i * 45).springify()}>
+            <Animated.View key={i} entering={FadeInDown.duration(300).delay(Math.min(i, 8) * 38)}>
               <BoardRow
                 entry={entry}
                 index={i}

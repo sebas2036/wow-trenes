@@ -22,17 +22,20 @@ Notifications.setNotificationHandler({
 });
 
 function AppStack() {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
   useEffect(() => {
-    // Fire-and-forget — no bloquea el render. La app muestra [] mientras carga.
-    initDatabase().catch(console.warn);
-    initGeofenceTask().catch(console.warn);
+    // Delay 150ms para que el primer frame se renderice antes de cargar SQLite
+    const t = setTimeout(() => {
+      initDatabase().catch(console.warn);
+      initGeofenceTask().catch(console.warn);
+    }, 150);
+    return () => clearTimeout(t);
   }, []);
 
   return (
     <GestureHandlerRootView style={styles.root}>
-      <StatusBar style={isDark ? 'light' : 'dark'} backgroundColor={colors.bg.base} />
+      <StatusBar style="light" backgroundColor={colors.bg.base} />
       <Stack
         screenOptions={{
           headerShown:              false,

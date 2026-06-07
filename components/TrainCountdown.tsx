@@ -85,6 +85,13 @@ export default memo(function TrainCountdown({
   destStationId,
   destStationName,
 }: TrainCountdownProps) {
+  // Un único intervalo compartido por todas las tarjetas
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -144,6 +151,7 @@ export default memo(function TrainCountdown({
                 <TrainCard
                   clock={clock}
                   index={i}
+                  now={now}
                   onPress={() => onSelect(clock)}
                   onBuy={() => onBuy(clock)}
                   isDestMatch={!!destStationId && !!clock.train.isFinalDest}
@@ -173,6 +181,7 @@ export default memo(function TrainCountdown({
 function TrainCard({
   clock,
   index,
+  now,
   onPress,
   onBuy,
   isDestMatch = false,
@@ -180,6 +189,7 @@ function TrainCard({
 }: {
   clock:        PredictiveClock;
   index:        number;
+  now:          number;
   onPress:      () => void;
   onBuy:        () => void;
   isDestMatch?: boolean;
@@ -188,13 +198,6 @@ function TrainCard({
   const cfg = STATUS[clock.status];
   const { train } = clock;
   const [expanded, setExpanded] = useState(index === 0); // primera tarjeta expandida por defecto
-
-  // Contador vivo (1 seg)
-  const [now, setNow] = useState(Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, []);
 
   // Pulso verde para destino coincidente
   const glowOpacity = useSharedValue(0.3);
@@ -247,7 +250,7 @@ function TrainCard({
 
   return (
     <Animated.View
-      entering={FadeInDown.delay(index * 80).springify()}
+      entering={FadeInDown.duration(300).delay(index * 70)}
       style={[animStyle, pressAnimStyle]}
     >
       <Animated.View style={isDestMatch ? [styles.cardDestMatch, glowStyle] : undefined}>

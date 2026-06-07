@@ -1,10 +1,8 @@
 /**
  * WoW Train — ThemeContext
- * Detecta automáticamente el modo del sistema (claro/oscuro)
- * y provee los colores correctos a toda la app.
+ * Modo oscuro permanente — identidad cyberpunk/premium.
  */
-import React, { createContext, useContext, useMemo } from 'react';
-import { useColorScheme } from 'react-native';
+import React, { createContext, useContext } from 'react';
 import { getColors, type AppColors } from '../theme';
 
 interface ThemeContextValue {
@@ -20,13 +18,8 @@ const ThemeContext = createContext<ThemeContextValue>({
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const colorScheme = useColorScheme();
-  const scheme: 'light' | 'dark' = colorScheme === 'light' ? 'light' : 'dark';
-  const isDark = scheme === 'dark';
-  const colors = useMemo(() => getColors(scheme), [scheme]);
-
   return (
-    <ThemeContext.Provider value={{ colors, isDark, scheme }}>
+    <ThemeContext.Provider value={{ colors: getColors('dark'), isDark: true, scheme: 'dark' }}>
       {children}
     </ThemeContext.Provider>
   );
