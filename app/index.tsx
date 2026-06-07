@@ -13,9 +13,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
 
-import { Radius, Shadows } from '../theme';
+import { Radius, Shadows, Gradients } from '../theme';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import Svg, { Defs, LinearGradient as SvgGrad, Stop, Line } from 'react-native-svg';
 import { useTheme } from '../context/ThemeContext';
 import FlagCircle from '../components/FlagCircle';
@@ -84,23 +85,23 @@ interface CountryEntry {
 
 const COUNTRIES: CountryEntry[] = [
   // ── ACTIVOS — GTFS real funcionando ──────────────────────────────────
-  { code: 'ES', flag: '🇪🇸', name: 'España',       trainLabel: 'AVE · Renfe',        color: '#C0392B',
+  { code: 'ES', flag: '🇪🇸', name: 'Spain',        trainLabel: 'AVE · Renfe',        color: '#C0392B',
     metroOptions: [{ code: 'ES_MAD', label: 'Madrid' }, { code: 'ES_BCN', label: 'Barcelona' }] },
-  { code: 'FR', flag: '🇫🇷', name: 'France',        trainLabel: 'TGV · SNCF',         color: '#2980B9',
+  { code: 'FR', flag: '🇫🇷', name: 'France',         trainLabel: 'TGV · SNCF',         color: '#2980B9',
     metroOptions: [{ code: 'FR_PAR', label: 'París' }] },
-  { code: 'IT', flag: '🇮🇹', name: 'Italy',         trainLabel: 'Frecciarossa',       color: '#27AE60',
+  { code: 'IT', flag: '🇮🇹', name: 'Italy',          trainLabel: 'Frecciarossa',       color: '#27AE60',
     metroOptions: [{ code: 'IT_ROM', label: 'Roma' }, { code: 'IT_MIL', label: 'Milán' }] },
-  { code: 'DE', flag: '🇩🇪', name: 'Germany',       trainLabel: 'ICE · RE · DB',      color: '#E74C3C',
+  { code: 'DE', flag: '🇩🇪', name: 'Germany',        trainLabel: 'ICE · RE · DB',      color: '#E74C3C',
     metroOptions: [{ code: 'DE_BER', label: 'Berlín' }, { code: 'DE_MUN', label: 'Múnich' }] },
   { code: 'AT', flag: '🇦🇹', name: 'Austria',       trainLabel: 'Railjet · ÖBB',     color: '#C0392B',
     metroOptions: [{ code: 'AT_VIE', label: 'Viena' }] },
-  { code: 'NL', flag: '🇳🇱', name: 'Netherlands',   trainLabel: 'Intercity · NS',     color: '#E67E22',
+  { code: 'NL', flag: '🇳🇱', name: 'Netherlands',    trainLabel: 'Intercity · NS',     color: '#E67E22',
     metroOptions: [{ code: 'NL_AMS', label: 'Ámsterdam' }] },
-  { code: 'BE', flag: '🇧🇪', name: 'Belgium',       trainLabel: 'IC · Thalys',        color: '#F39C12',
+  { code: 'BE', flag: '🇧🇪', name: 'Belgium',        trainLabel: 'IC · Thalys',        color: '#F39C12',
     metroOptions: [{ code: 'BE_BRU', label: 'Bruselas' }] },
   { code: 'PT', flag: '🇵🇹', name: 'Portugal',      trainLabel: 'Alfa Pendular · CP', color: '#27AE60',
     metroOptions: [{ code: 'PT_LIS', label: 'Lisboa' }] },
-  { code: 'CH', flag: '🇨🇭', name: 'Switzerland',   trainLabel: 'SBB · Glacier',      color: '#DC143C' },
+  { code: 'CH', flag: '🇨🇭', name: 'Switzerland',    trainLabel: 'SBB · Glacier',      color: '#DC143C' },
   // ── OCULTOS — sin datos reales ───────────────────────────────────────
   { code: 'GB', flag: '🇬🇧', name: 'Reino Unido',   trainLabel: 'Avanti · LNER',     color: '#C0192B',  hidden: true },
   { code: 'NO', flag: '🇳🇴', name: 'Noruega',       trainLabel: 'Bergensbanen',      color: '#003F87',  hidden: true },
@@ -159,24 +160,27 @@ function CountryCard({
   onFavToggle:  (code: CountryCode) => void;
 }) {
   const { colors, isDark } = useTheme();
-  // En Android, elevation recorta hijos en borderRadius — wrapper separa sombra del contenido
-  const shadowStyle = Platform.OS === 'ios'
-    ? (isDark ? Shadows.cardDark : Shadows.card)
-    : { elevation: 6, shadowColor: '#7C3AED' };
   return (
-    <View style={[styles.cardShadow, shadowStyle, { backgroundColor: colors.bg.card, borderRadius: Radius.xl }]}>
+    <View style={[styles.cardShadow, styles.cardGlow, { borderRadius: Radius.xl }]}>
       <Pressable
         style={({ pressed }) => [
           styles.card,
-          { backgroundColor: colors.bg.card, borderColor: colors.border.card },
-          pressed && { opacity: 0.88, transform: [{ scale: 0.982 }] },
+          styles.glassCard,
+          pressed && { opacity: 0.82, transform: [{ scale: 0.978 }] },
         ]}
         onPress={() => onPress(country)}
         accessibilityRole="button"
       >
-        {/* Rim light — gradiente de luz desde arriba */}
+        {/* Blur real del fondo */}
+        <BlurView
+          intensity={Platform.OS === 'ios' ? 40 : 18}
+          tint="dark"
+          style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
+          experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
+        />
+        {/* Glass rim light — brillo superior violeta */}
         <LinearGradient
-          colors={['rgba(255,255,255,0.10)', 'rgba(255,255,255,0.00)']}
+          colors={['rgba(167,139,250,0.18)', 'rgba(255,255,255,0.00)']}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
           style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
@@ -187,8 +191,8 @@ function CountryCard({
         </View>
 
         <View style={styles.cardInfo}>
-          <Text style={[styles.cardName, { color: colors.text.primary }]}>{country.name}</Text>
-          <Text style={[styles.cardSub, { color: colors.text.secondary }]}>{country.trainLabel}</Text>
+          <Text style={[styles.cardName, { color: '#FFFFFF' }]}>{country.name}</Text>
+          <Text style={[styles.cardSub, { color: 'rgba(226,232,240,0.60)' }]}>{country.trainLabel}</Text>
           {country.metroOptions && country.metroOptions.length > 0 && (
             <View style={styles.metroRow}>
               {country.metroOptions.slice(0, 2).map((m) => (
@@ -196,7 +200,7 @@ function CountryCard({
                   key={m.code}
                   style={({ pressed }) => [
                     styles.metroPill,
-                    { backgroundColor: colors.bg.elevated, borderWidth: 0.5, borderColor: colors.brand.primary + '66' },
+                    styles.glassPill,
                     pressed && { opacity: 0.65 },
                   ]}
                   onPress={(e) => { e.stopPropagation?.(); onMetroPress(m.code, m.label); }}
@@ -212,18 +216,18 @@ function CountryCard({
         </View>
 
         <Pressable
-          style={styles.favBtn}
+          style={[styles.favBtn, isFav && styles.favBtnActive]}
           onPress={(e) => { e.stopPropagation?.(); onFavToggle(country.code); }}
           hitSlop={12}
         >
           <Ionicons
             name={isFav ? 'heart' : 'heart-outline'}
-            size={18}
-            color={isFav ? '#FF3B30' : colors.text.muted}
+            size={20}
+            color={isFav ? '#FF453A' : 'rgba(226,232,240,0.55)'}
           />
         </Pressable>
 
-        <Text style={[styles.cardArrow, { color: colors.text.muted }]}>›</Text>
+        <Ionicons name="chevron-forward" size={16} color="rgba(226,232,240,0.30)" />
       </Pressable>
     </View>
   );
@@ -239,21 +243,26 @@ function MetroCard({
   onFavToggle: (code: CountryCode) => void;
 }) {
   const { colors, isDark } = useTheme();
-  const shadowStyle = Platform.OS === 'ios'
-    ? (isDark ? Shadows.cardDark : Shadows.card)
-    : { elevation: 6, shadowColor: '#7C3AED' };
   return (
-    <View style={[styles.cardShadow, shadowStyle, { backgroundColor: colors.bg.card, borderRadius: Radius.xl }]}>
+    <View style={[styles.cardShadow, styles.cardGlow, { borderRadius: Radius.xl }]}>
       <Pressable
         style={({ pressed }) => [
           styles.card,
-          { backgroundColor: colors.bg.card, borderColor: colors.border.card },
-          pressed && { opacity: 0.88, transform: [{ scale: 0.982 }] },
+          styles.glassCard,
+          pressed && { opacity: 0.82, transform: [{ scale: 0.978 }] },
         ]}
         onPress={() => onPress(metro.code)}
       >
+        {/* Blur real del fondo */}
+        <BlurView
+          intensity={Platform.OS === 'ios' ? 40 : 18}
+          tint="dark"
+          style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
+          experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
+        />
+        {/* Glass rim light — brillo superior violeta */}
         <LinearGradient
-          colors={['rgba(255,255,255,0.10)', 'rgba(255,255,255,0.00)']}
+          colors={['rgba(167,139,250,0.18)', 'rgba(255,255,255,0.00)']}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
           style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
@@ -263,8 +272,8 @@ function MetroCard({
           <FlagCircle countryCode={isoFromCode(metro.code)} size="lg" />
         </View>
         <View style={styles.cardInfo}>
-          <Text style={[styles.cardName, { color: colors.text.primary }]}>{metro.city}</Text>
-          <Text style={[styles.cardSub,  { color: colors.text.secondary }]}>{metro.lines}</Text>
+          <Text style={[styles.cardName, { color: '#FFFFFF' }]}>{metro.city}</Text>
+          <Text style={[styles.cardSub,  { color: 'rgba(226,232,240,0.60)' }]}>{metro.lines}</Text>
         </View>
         <Pressable
           style={styles.favBtn}
@@ -274,10 +283,10 @@ function MetroCard({
           <Ionicons
             name={isFav ? 'heart' : 'heart-outline'}
             size={22}
-            color={isFav ? '#FF3B30' : colors.text.muted}
+            color={isFav ? '#FF3B30' : 'rgba(226,232,240,0.40)'}
           />
         </Pressable>
-        <Text style={[styles.cardArrow, { color: colors.text.muted }]}>›</Text>
+        <Ionicons name="chevron-forward" size={16} color="rgba(226,232,240,0.30)" />
       </Pressable>
     </View>
   );
@@ -484,7 +493,8 @@ export default function HomeScreen() {
   ];
 
   return (
-    <SafeAreaView style={[styles.root, { backgroundColor: colors.bg.base }]} edges={['top']}>
+    <LinearGradient colors={[...Gradients.screenBg]} style={styles.root}>
+    <SafeAreaView style={styles.rootInner} edges={['top']}>
 
       {/* ── Offline Banner ── */}
       {isOffline && (
@@ -543,7 +553,7 @@ export default function HomeScreen() {
         </View>
 
         {/* ── Segmented control con íconos + borde degradé violeta ── */}
-        <View style={[styles.segmentedWrap, { backgroundColor: colors.bg.elevated }]}>
+        <View style={[styles.segmentedWrap, { backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.10)', borderRadius: Radius.md }]}>
           {TABS.map((t) => {
             const active = filter === t.key;
             return (
@@ -725,7 +735,7 @@ export default function HomeScreen() {
 
       {/* ── Fade hint — indica que hay más contenido debajo ── */}
       <LinearGradient
-        colors={['transparent', colors.bg.base + 'CC', colors.bg.base]}
+        colors={['transparent', '#0E0E2ECC', '#0E0E2E']}
         locations={[0, 0.6, 1]}
         style={styles.scrollFade}
         pointerEvents="none"
@@ -735,12 +745,18 @@ export default function HomeScreen() {
       <Pressable
         style={({ pressed }) => [
           styles.gpsBanner,
-          { backgroundColor: colors.bg.surface, borderColor: colors.border.subtle },
-          pressed && { opacity: 0.88 },
+          styles.glassCard,
+          pressed && { opacity: 0.85 },
         ]}
         onPress={handleGPS}
         disabled={gpsLoading}
       >
+        <BlurView
+          intensity={Platform.OS === 'ios' ? 45 : 18}
+          tint="dark"
+          style={StyleSheet.absoluteFillObject}
+          experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
+        />
         <View style={[styles.gpsPinWrap, { backgroundColor: colors.brand.primary }]}>
           <Ionicons name="location" size={20} color="#fff" />
         </View>
@@ -753,12 +769,12 @@ export default function HomeScreen() {
           </Text>
         </View>
         <Pressable
-          style={[styles.gpsBtn, { backgroundColor: colors.bg.card, borderWidth: 1, borderColor: colors.brand.primary }]}
+          style={[styles.gpsBtn, { backgroundColor: colors.brand.primary }]}
           onPress={handleGPS}
           disabled={gpsLoading}
         >
           {gpsLoading
-            ? <ActivityIndicator size="small" color={colors.brand.accent} />
+            ? <ActivityIndicator size="small" color="#fff" />
             : <Text style={[styles.gpsBtnText, { color: '#fff' }]}>✦ {t('home_gps_btn')}</Text>
           }
         </Pressable>
@@ -817,14 +833,37 @@ export default function HomeScreen() {
         );
       })()}
     </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 // ── Estilos ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   root:          { flex: 1 },
+  rootInner:     { flex: 1 },
   scroll:        { flex: 1 },
   scrollContent: { paddingBottom: 12 },
+
+  // ── Glass Card — Glassmorphism ──
+  glassCard: {
+    backgroundColor: 'rgba(88,28,135,0.22)',   // violeta oscuro semitransparente
+    borderColor:     'rgba(167,139,250,0.32)',  // borde violeta visible
+    borderWidth:     1,
+    overflow:        'hidden',
+  },
+  glassPill: {
+    backgroundColor: 'rgba(167,139,250,0.12)',
+    borderWidth:     0.5,
+    borderColor:     'rgba(167,139,250,0.50)',
+  },
+  // Glow externo violeta
+  cardGlow: {
+    shadowColor:   '#7C3AED',
+    shadowOffset:  { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius:  18,
+    elevation:     10,
+  },
 
   // Header — limpio, tipografía pura
   header: {
@@ -876,17 +915,17 @@ const styles = StyleSheet.create({
     overflow:      'visible',
   },
   logoWow: {
-    fontSize:      32,
-    fontWeight:    '800',
+    fontSize:      34,
+    fontWeight:    '900',
     fontStyle:     'italic',
-    letterSpacing: -0.5,
-    lineHeight:    36,
+    letterSpacing: -1,
+    lineHeight:    38,
   },
   logoTrenes: {
     fontSize:      22,
-    fontWeight:    '300',
-    letterSpacing: 5,
-    lineHeight:    36,
+    fontWeight:    '200',
+    letterSpacing: 6,
+    lineHeight:    38,
   },
   logoSub: { fontSize: 13, marginTop: 3, letterSpacing: 0.1 },
 
@@ -941,24 +980,23 @@ const styles = StyleSheet.create({
   // Wrapper de sombra (separado del contenido para evitar recorte en Android)
   cardShadow: {
     borderRadius: Radius.xl,
-    marginBottom: 0, // gap lo maneja el list
+    marginBottom: 0,
+    overflow: 'hidden',
   },
   // Card — sin strips, sin speed lines
   card: {
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: Radius.xl,
-    borderWidth: 0.5,
-    paddingLeft: 12,
-    paddingRight: 8,
-    paddingVertical: 7,
-    minHeight: 58,
+    paddingLeft: 14,
+    paddingRight: 12,
+    paddingVertical: 10,
+    minHeight: 62,
   },
   cardFlag:  { marginRight: 14 },
   cardInfo:  { flex: 1, gap: 3 },
-  cardName:  { fontSize: 17, fontWeight: '700', letterSpacing: -0.3 },
-  cardSub:   { fontSize: 12 },
-  cardArrow: { fontSize: 20, paddingHorizontal: 8, fontWeight: '300' },
+  cardName:  { fontSize: 18, fontWeight: '700', letterSpacing: -0.3 },
+  cardSub:   { fontSize: 12, fontWeight: '300', letterSpacing: 0.3 },
 
   // Metro pills
   metroRow:     { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
@@ -967,7 +1005,15 @@ const styles = StyleSheet.create({
 
   // Favorito
   // Corazón — Ionicons vector, nunca se recorta
-  favBtn: { paddingHorizontal: 10, paddingVertical: 8, flexShrink: 0 },
+  favBtn: {
+    paddingHorizontal: 8, paddingVertical: 8, flexShrink: 0,
+    borderRadius: 20, alignItems: 'center', justifyContent: 'center',
+  },
+  favBtnActive: {
+    backgroundColor: 'rgba(255,59,48,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,59,48,0.25)',
+  },
 
   // Empty state
   // Internacional
@@ -1000,6 +1046,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 12, marginBottom: 4,
     borderRadius: Radius.xl, padding: 10, borderWidth: 0.5,
     gap: 10,
+    overflow: 'hidden',
   },
   gpsPinWrap: {
     width: 40, height: 40, borderRadius: Radius.md,
