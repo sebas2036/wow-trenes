@@ -72,7 +72,7 @@ function detectMetroCityFromCoords(coords: Coordinates): { code: CountryCode; ci
 }
 
 // ── Datos países ─────────────────────────────────────────────────────────────
-interface MetroOption { code: CountryCode; label: string }
+interface MetroOption { code: CountryCode; label?: string; labelKey?: string }
 interface CountryEntry {
   code:          CountryCode;
   flag:          string;
@@ -88,19 +88,19 @@ const COUNTRIES: CountryEntry[] = [
   { code: 'ES', flag: '🇪🇸', name: 'Spain',        trainLabel: 'AVE · Renfe',        color: '#C0392B',
     metroOptions: [{ code: 'ES_MAD', label: 'Madrid' }, { code: 'ES_BCN', label: 'Barcelona' }] },
   { code: 'FR', flag: '🇫🇷', name: 'France',         trainLabel: 'TGV · SNCF',         color: '#2980B9',
-    metroOptions: [{ code: 'FR_PAR', label: 'París' }] },
+    metroOptions: [{ code: 'FR_PAR', labelKey: 'city_paris' }] },
   { code: 'IT', flag: '🇮🇹', name: 'Italy',          trainLabel: 'Frecciarossa',       color: '#27AE60',
-    metroOptions: [{ code: 'IT_ROM', label: 'Roma' }, { code: 'IT_MIL', label: 'Milán' }] },
+    metroOptions: [{ code: 'IT_ROM', labelKey: 'city_rome' }, { code: 'IT_MIL', labelKey: 'city_milan' }] },
   { code: 'DE', flag: '🇩🇪', name: 'Germany',        trainLabel: 'ICE · RE · DB',      color: '#E74C3C',
-    metroOptions: [{ code: 'DE_BER', label: 'Berlín' }, { code: 'DE_MUN', label: 'Múnich' }] },
+    metroOptions: [{ code: 'DE_BER', labelKey: 'city_berlin' }, { code: 'DE_MUN', label: 'Munich' }] },
   { code: 'AT', flag: '🇦🇹', name: 'Austria',       trainLabel: 'Railjet · ÖBB',     color: '#C0392B',
-    metroOptions: [{ code: 'AT_VIE', label: 'Viena' }] },
+    metroOptions: [{ code: 'AT_VIE', labelKey: 'city_vienna' }] },
   { code: 'NL', flag: '🇳🇱', name: 'Netherlands',    trainLabel: 'Intercity · NS',     color: '#E67E22',
-    metroOptions: [{ code: 'NL_AMS', label: 'Ámsterdam' }] },
+    metroOptions: [{ code: 'NL_AMS', labelKey: 'city_amsterdam' }] },
   { code: 'BE', flag: '🇧🇪', name: 'Belgium',        trainLabel: 'IC · Thalys',        color: '#F39C12',
-    metroOptions: [{ code: 'BE_BRU', label: 'Bruselas' }] },
+    metroOptions: [{ code: 'BE_BRU', labelKey: 'city_brussels' }] },
   { code: 'PT', flag: '🇵🇹', name: 'Portugal',      trainLabel: 'Alfa Pendular · CP', color: '#27AE60',
-    metroOptions: [{ code: 'PT_LIS', label: 'Lisboa' }] },
+    metroOptions: [{ code: 'PT_LIS', labelKey: 'city_lisbon' }] },
   { code: 'CH', flag: '🇨🇭', name: 'Switzerland',    trainLabel: 'SBB · Glacier',      color: '#DC143C' },
   // ── OCULTOS — sin datos reales ───────────────────────────────────────
   { code: 'GB', flag: '🇬🇧', name: 'Reino Unido',   trainLabel: 'Avanti · LNER',     color: '#C0192B',  hidden: true },
@@ -117,25 +117,26 @@ function isoFromCode(code: string): string {
 
 // ── Datos metro ───────────────────────────────────────────────────────────────
 interface MetroCity {
-  code:    CountryCode;
-  city:    string;
-  flag:    string;
-  lines:   string;
-  color:   string;
-  hidden?: boolean;
+  code:     CountryCode;
+  city:     string;
+  cityKey?: string;
+  flag:     string;
+  lines:    string;
+  color:    string;
+  hidden?:  boolean;
 }
 
 const METRO_CITIES: MetroCity[] = [
   // ── EUROPA ───────────────────────────────────────────────────────────
   { code: 'ES_MAD', city: 'Madrid',       flag: '🇪🇸', lines: 'Metro Madrid · L1-L12',         color: '#C0392B' },
   { code: 'ES_BCN', city: 'Barcelona',    flag: '🇪🇸', lines: 'TMB · L1-L11 · 166 estaciones', color: '#F39C12' },
-  { code: 'FR_PAR', city: 'París',        flag: '🇫🇷', lines: 'RATP · M1-M14 · RER A-E',       color: '#003CA6' },
-  { code: 'IT_ROM', city: 'Roma',         flag: '🇮🇹', lines: 'ATAC · Líneas A, B, C',         color: '#E74C3C' },
-  { code: 'IT_MIL', city: 'Milán',        flag: '🇮🇹', lines: 'ATM · M1-M5',                  color: '#27AE60' },
-  { code: 'AT_VIE', city: 'Viena',        flag: '🇦🇹', lines: 'Wiener Linien · U1-U6',         color: '#E52020' },
-  { code: 'NL_AMS', city: 'Amsterdam',    flag: '🇳🇱', lines: 'GVB · Líneas 51-54',           color: '#FF6B00' },
-  { code: 'PT_LIS', city: 'Lisboa',       flag: '🇵🇹', lines: 'Metro Lisboa · 4 líneas',       color: '#27AE60' },
-  { code: 'BE_BRU', city: 'Bruselas',     flag: '🇧🇪', lines: 'STIB · L1, L2, L5, L6',        color: '#F39C12' },
+  { code: 'FR_PAR', city: 'Paris',         cityKey: 'city_paris',    flag: '🇫🇷', lines: 'RATP · M1-M14 · RER A-E',  color: '#003CA6' },
+  { code: 'IT_ROM', city: 'Rome',          cityKey: 'city_rome',     flag: '🇮🇹', lines: 'ATAC · Lines A, B, C',      color: '#E74C3C' },
+  { code: 'IT_MIL', city: 'Milan',         cityKey: 'city_milan',    flag: '🇮🇹', lines: 'ATM · M1-M5',              color: '#27AE60' },
+  { code: 'AT_VIE', city: 'Vienna',        cityKey: 'city_vienna',   flag: '🇦🇹', lines: 'Wiener Linien · U1-U6',    color: '#E52020' },
+  { code: 'NL_AMS', city: 'Amsterdam',     cityKey: 'city_amsterdam',flag: '🇳🇱', lines: 'GVB · Lines 51-54',        color: '#FF6B00' },
+  { code: 'PT_LIS', city: 'Lisbon',        cityKey: 'city_lisbon',   flag: '🇵🇹', lines: 'Metro Lisboa · 4 lines',   color: '#27AE60' },
+  { code: 'BE_BRU', city: 'Brussels',      cityKey: 'city_brussels', flag: '🇧🇪', lines: 'STIB · L1, L2, L5, L6',   color: '#F39C12' },
   { code: 'DK_CPH', city: 'Copenhague',   flag: '🇩🇰', lines: 'Metro · M1-M4',                color: '#C8102E' },
   { code: 'NO_OSL', city: 'Oslo',         flag: '🇳🇴', lines: 'T-bane · L1-L6',               color: '#003F87' },
   { code: 'DE_BER', city: 'Berlín',       flag: '🇩🇪', lines: 'BVG · U1-U9 · S-Bahn',        color: '#224F9F' },
@@ -207,7 +208,7 @@ function CountryCard({
                 >
                   <Ionicons name="navigate" size={9} color={colors.brand.accent} />
                   <Text style={[styles.metroPillText, { color: colors.brand.accent }]}>
-                    {m.label}
+                    {m.labelKey ? t(m.labelKey as any) : m.label}
                   </Text>
                 </Pressable>
               ))}
@@ -272,7 +273,7 @@ function MetroCard({
           <FlagCircle countryCode={isoFromCode(metro.code)} size="lg" />
         </View>
         <View style={styles.cardInfo}>
-          <Text style={[styles.cardName, { color: '#FFFFFF' }]}>{metro.city}</Text>
+          <Text style={[styles.cardName, { color: '#FFFFFF' }]}>{metro.cityKey ? t(metro.cityKey as any) : metro.city}</Text>
           <Text style={[styles.cardSub,  { color: 'rgba(226,232,240,0.60)' }]}>{metro.lines}</Text>
         </View>
         <Pressable
@@ -489,8 +490,8 @@ export default function HomeScreen() {
     .sort((a, b) => (favs.includes(a.code) ? 0 : 1) - (favs.includes(b.code) ? 0 : 1));
 
   const TABS: { key: FilterTab; label: string; icon: keyof typeof Ionicons.glyphMap; iconOut: keyof typeof Ionicons.glyphMap }[] = [
-    { key: 'trenes',        label: 'Trenes',        icon: 'train',  iconOut: 'train-outline'  },
-    { key: 'internacional', label: 'Internacional',  icon: 'globe',  iconOut: 'globe-outline'  },
+    { key: 'trenes',        label: t('filter_trains'), icon: 'train',  iconOut: 'train-outline'  },
+    { key: 'internacional', label: t('filter_intl'),   icon: 'globe',  iconOut: 'globe-outline'  },
   ];
 
   return (

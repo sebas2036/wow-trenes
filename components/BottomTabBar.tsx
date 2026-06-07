@@ -9,22 +9,23 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../context/ThemeContext';
+import { t } from '../services/i18n';
 
 export type TabName = 'inicio' | 'salidas' | 'traducir' | 'ajustes';
 
 interface TabConfig {
   name:       TabName;
-  label:      string;
+  labelKey:   string;
   icon:       keyof typeof Ionicons.glyphMap;
   iconActive: keyof typeof Ionicons.glyphMap;
   path:       string;
 }
 
 const TABS: TabConfig[] = [
-  { name: 'inicio',   label: 'Inicio',   icon: 'home-outline',     iconActive: 'home',          path: '/'        },
-  { name: 'salidas',  label: 'Salidas',  icon: 'train-outline',    iconActive: 'train',         path: '/salidas' },
-  { name: 'traducir', label: 'Traducir', icon: 'language-outline',  iconActive: 'language',      path: '/'        },
-  { name: 'ajustes',  label: 'Ajustes',  icon: 'settings-outline',  iconActive: 'settings',      path: '/ajustes' },
+  { name: 'inicio',   labelKey: 'tab_home',        icon: 'home-outline',      iconActive: 'home',      path: '/'        },
+  { name: 'salidas',  labelKey: 'tab_departures',   icon: 'train-outline',     iconActive: 'train',     path: '/salidas' },
+  { name: 'traducir', labelKey: 'tab_translate',    icon: 'language-outline',  iconActive: 'language',  path: '/'        },
+  { name: 'ajustes',  labelKey: 'tab_settings',     icon: 'settings-outline',  iconActive: 'settings',  path: '/ajustes' },
 ];
 
 interface Props {
@@ -59,10 +60,10 @@ export default function BottomTabBar({ active, onTranslatePress, onHomePress }: 
             style={styles.tab}
             onPress={() => handlePress(tab)}
             accessibilityRole="button"
-            accessibilityLabel={tab.label}
+            accessibilityLabel={t(tab.labelKey as any)}
           >
             <Ionicons name={iconName} size={24} color={iconColor} />
-            <Text style={[styles.label, { color: isActive ? '#fff' : colors.text.secondary }]}>{tab.label}</Text>
+            <Text style={[styles.label, { color: isActive ? '#fff' : colors.text.secondary }]}>{t(tab.labelKey as any)}</Text>
             {isActive && <View style={[styles.dot, { backgroundColor: colors.brand.accent }]} />}
           </Pressable>
         );
