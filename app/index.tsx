@@ -850,9 +850,9 @@ export default function HomeScreen() {
 // ── Estilos ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   root:          { flex: 1 },
-  rootInner:     { flex: 1 },
+  rootInner:     { flex: 1, backgroundColor: 'transparent' },
 
-  scroll:        { flex: 1 },
+  scroll:        { flex: 1, backgroundColor: 'transparent' },
   scrollContent: { paddingBottom: 12 },
 
   // ── Glass Card — Glassmorphism ──
