@@ -149,7 +149,7 @@ export type CountryCode =
 
 // Supported UI languages (ISO 639-1)
 export type AppLanguage =
-  | 'es' | 'en' | 'pt' | 'fr' | 'de' | 'it' | 'ja' | 'zh' | 'ko' | 'ar';
+  | 'es' | 'en' | 'pt' | 'fr' | 'de' | 'it' | 'ja' | 'zh' | 'ko' | 'ar' | 'ru';
 
 export interface CountryDestination {
   code:        CountryCode;

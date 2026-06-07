@@ -22,6 +22,9 @@ import { getLanguage } from './i18n';
 // MyMemory — 100% gratis, sin API key, 1000 palabras/día por IP (suficiente para MVP)
 // Docs: https://mymemory.translated.net/doc/spec.php
 const MYMEMORY_URL = 'https://api.mymemory.translated.net/get';
+// Google Translate endpoint no oficial — sin API key, sin límite estricto
+// Usado como fallback cuando MyMemory no soporta el par de idiomas
+const GOOGLE_TRANSLATE_URL = 'https://translate.googleapis.com/translate_a/single';
 const TIMEOUT_MS = 8_000;
 
 // ── Auto-detección de idioma por rangos Unicode ───────────────────────────────
@@ -29,10 +32,37 @@ function detectScriptLanguage(text: string): string {
   if (/[぀-ゟ゠-ヿ]/.test(text)) return 'ja'; // hiragana / katakana → japonés
   if (/[가-힯ᄀ-ᇿ]/.test(text)) return 'ko'; // hangul → coreano
   if (/[一-鿿㐀-䶿]/.test(text)) return 'zh'; // CJK → chino (sin kana)
-  if (/[؀-ۿ]/.test(text))               return 'ar'; // árabe
-  if (/[Ѐ-ӿ]/.test(text))               return 'ru'; // cirílico
-  if (/[ऀ-ॿ]/.test(text))               return 'hi'; // devanagari
-  return 'en'; // fallback: latín → asume inglés
+  if (/[؀-ۿ]/.test(text))       return 'ar'; // árabe
+  if (/[Ѐ-ӿ]/.test(text))       return 'ru'; // cirílico
+  if (/[ऀ-ॿ]/.test(text))       return 'hi'; // devanagari
+
+  // Detección de idiomas latinos por vocabulario frecuente
+  // Incluye saludos y palabras comunes para reconocer resultados de traducción cortos
+  const lower = text.toLowerCase();
+
+  const esWords = /\b(hola|cómo|estás|como|estas|adiós|adios|gracias|buenos|días|buenas|noches|tardes|señor|señora|tren|salida|llegada|andén|billete|bienvenido|sí|también|pero|para|desde|muy|más|bien|todo|estar|hay)\b/g;
+
+  const deWords = /\b(hallo|guten|tag|morgen|abend|nacht|tschüss|danke|bitte|ja|nein|wie|geht|sehr|gut|willkommen|auf|wiedersehen|nicht|bahn|bahnhof|gleis|abfahrt|ankunft|zug|die|der|das|und|ist|kein|ein|eine|mit|von|nach|achtung|vorsicht)\b/g;
+
+  const frWords = /\b(bonjour|bonsoir|bonne|nuit|salut|merci|oui|non|comment|allez|très|bien|au|revoir|s'il|vous|plaît|voie|quai|arrivée|départ|train|gare|sortie|entrée|attention|billet|avec|pour|dans|sur|une|les|des|est|sont)\b/g;
+
+  const itWords = /\b(ciao|buongiorno|buonasera|buonanotte|grazie|prego|sì|bene|molto|arrivederci|scusi|dove|quando|come|perché|binario|partenza|arrivo|treno|stazione|uscita|entrata|attenzione|biglietto|questo|quella)\b/g;
+
+  const ptWords = /\b(olá|oi|tchau|obrigado|obrigada|bom|boa|tarde|sim|não|você|tudo|bem|por|favor|onde|quando|chegada|partida|comboio|estação|saída|entrada|atenção|bilhete|também|muito)\b/g;
+
+  const esScore = (lower.match(esWords) ?? []).length;
+  const deScore = (lower.match(deWords) ?? []).length;
+  const frScore = (lower.match(frWords) ?? []).length;
+  const itScore = (lower.match(itWords) ?? []).length;
+  const ptScore = (lower.match(ptWords) ?? []).length;
+
+  const max = Math.max(esScore, deScore, frScore, itScore, ptScore);
+  if (max === 0) return 'en'; // fallback inglés
+  if (deScore === max) return 'de';
+  if (frScore === max) return 'fr';
+  if (itScore === max) return 'it';
+  if (ptScore === max) return 'pt';
+  return 'es';
 }
 
 // ── Frases ferroviarias offline ───────────────────────────────────────────────
@@ -265,12 +295,27 @@ async function translateViaApi(
   sourceLang: string = 'auto',
 ): Promise<TranslationResult | null> {
   try {
-    // MyMemory no soporta 'auto' — detectamos el script nosotros
-    const detectedSource = sourceLang === 'auto' ? detectScriptLanguage(text) : sourceLang;
+    // MyMemory no soporta 'auto' — detectamos el script nosotros.
+    // Si el usuario seleccionó un idioma específico pero el texto no coincide con ese script
+    // (ej: seleccionó Japonés pero escribió chino), usar auto-detección de todas formas.
+    let detectedSource: string;
+    if (sourceLang === 'auto') {
+      detectedSource = detectScriptLanguage(text);
+    } else if (!textMatchesLang(text, sourceLang)) {
+      // El texto no tiene el script del idioma seleccionado → detectar automáticamente
+      detectedSource = detectScriptLanguage(text);
+    } else {
+      detectedSource = sourceLang;
+    }
     const langpair = `${detectedSource}|${targetLang}`;
 
-    const url = `${MYMEMORY_URL}?q=${encodeURIComponent(text)}&langpair=${encodeURIComponent(langpair)}`;
-    const res  = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+    // Texto plano sin signos de apertura ni caracteres que confunden a MyMemory
+    const cleanText = text.replace(/[¿¡]/g, '').trim();
+    const url = `${MYMEMORY_URL}?q=${encodeURIComponent(cleanText)}&langpair=${encodeURIComponent(langpair)}`;
+    // AbortSignal.timeout no disponible en Hermes antiguo → fallback manual
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    const res  = await fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timer));
 
     if (!res.ok) return null;
 
@@ -279,8 +324,31 @@ async function translateViaApi(
     if (json.responseStatus !== 200 || !json.responseData?.translatedText) return null;
 
     const translated = json.responseData.translatedText as string;
+
     // MyMemory a veces devuelve el texto original si no pudo traducir
-    if (translated.toLowerCase() === text.toLowerCase()) return null;
+    if (translated.toLowerCase() === cleanText.toLowerCase()) return null;
+
+    // Rechazar basura: resultado todo mayúsculas de 1-3 chars cuando fuente es más larga
+    // (ej: "WAV", "N/A", "OK" para una frase entera)
+    const srcWords = text.trim().split(/\s+/).length;
+    if (srcWords >= 3 && /^[A-Z0-9\/\-]{1,4}$/.test(translated.trim())) return null;
+
+    // Validar que el resultado tiene el script correcto para el idioma pedido
+    const scriptOk = isResultScriptValid(translated, targetLang);
+    if (!scriptOk) return null;
+
+    // Para pares Latino→Latino (fuente NO es inglés): validar que el resultado
+    // no sea el idioma de origen ni inglés genérico.
+    // EXCLUIR pares en→xx: son fiables y palabras cortas ("Ola", "Hallo")
+    // caen como 'en' en el detector aunque sean correctas.
+    const latinTargets = ['es', 'pt', 'fr', 'de', 'it'];
+    if (latinTargets.includes(targetLang) && detectedSource !== 'en') {
+      const resultLang = detectScriptLanguage(translated);
+      // Rechazar si devolvió el mismo idioma que la fuente (MyMemory no tradujo)
+      if (resultLang === detectedSource && targetLang !== detectedSource) return null;
+      // Rechazar si devolvió inglés cuando se pidió otro idioma latino
+      if (resultLang === 'en' && targetLang !== 'en') return null;
+    }
 
     return {
       originalText:   text,
@@ -292,6 +360,104 @@ async function translateViaApi(
   } catch {
     return null;
   }
+}
+
+/** Verifica que el texto traducido contiene el script esperado para el idioma destino */
+function isResultScriptValid(text: string, targetLang: AppLanguage): boolean {
+  const hasArabic  = /[؀-ۿ]/.test(text);
+  const hasCJK     = /[一-鿿ぁ-ヿ가-힣]/.test(text);
+  switch (targetLang) {
+    case 'ar': return hasArabic;
+    case 'ja': return /[ぁ-ヿ一-鿿]/.test(text);
+    case 'zh': return /[一-鿿]/.test(text);
+    case 'ko': return /[가-힯]/.test(text);
+    case 'ru': return /[Ѐ-ӿ]/.test(text); // debe tener cirílico
+    // Idiomas con escritura latina: rechazar si contiene árabe o CJK
+    case 'en': case 'es': case 'fr': case 'de': case 'it': case 'pt':
+      return !hasArabic && !hasCJK;
+    default:   return true;
+  }
+}
+
+/** Verifica si el texto coincide con el script del idioma seleccionado */
+function textMatchesLang(text: string, lang: string): boolean {
+  switch (lang) {
+    case 'ja': return /[ぁ-ゟ゠-ヿ]/.test(text);        // requiere kana
+    case 'zh': return /[一-鿿]/.test(text);
+    case 'ko': return /[가-힣]/.test(text);
+    case 'ru': return /[Ѐ-ӿ]/.test(text);
+    case 'ar': return /[؀-ۿ]/.test(text);
+    default:   return true; // latín: siempre aceptar
+  }
+}
+
+// ── Google Translate (endpoint no oficial, sin API key) ──────────────────────
+// Mapeo de códigos: los nuestros son ISO 639-1, Google usa los mismos excepto zh
+const toGoogleCode = (lang: string): string => {
+  if (lang === 'zh') return 'zh-CN';
+  if (lang === 'auto') return 'auto';
+  return lang;
+};
+
+async function translateViaGoogle(
+  text:       string,
+  targetLang: AppLanguage,
+  sourceLang: string = 'auto',
+): Promise<TranslationResult | null> {
+  try {
+    const src = toGoogleCode(sourceLang === 'auto' ? detectScriptLanguage(text) : sourceLang);
+    const tgt = toGoogleCode(targetLang);
+    const cleanText = text.replace(/[¿¡]/g, '').trim();
+    const url = `${GOOGLE_TRANSLATE_URL}?client=gtx&sl=${src}&tl=${tgt}&dt=t&q=${encodeURIComponent(cleanText)}`;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    const res = await fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timer));
+    if (!res.ok) return null;
+    const json = await res.json();
+    // Resultado: array de segmentos en json[0], cada segmento tiene la traducción en [0][0]
+    if (!Array.isArray(json?.[0])) return null;
+    const translated = (json[0] as any[])
+      .map((seg: any) => (Array.isArray(seg) ? seg[0] ?? '' : ''))
+      .join('');
+    if (!translated.trim()) return null;
+    if (translated.toLowerCase() === cleanText.toLowerCase()) return null;
+    const scriptOk = isResultScriptValid(translated, targetLang);
+    if (!scriptOk) return null;
+    return {
+      originalText:   text,
+      translatedText: translated,
+      detectedLang:   src === 'auto' ? null : src,
+      source:         'api',
+      confidence:     'high',
+    };
+  } catch {
+    return null;
+  }
+}
+
+// ── Traducción vía puente inglés ─────────────────────────────────────────────
+// Para pares Latino→Latino, MyMemory falla con frecuencia.
+// Solución: traducir en dos pasos  source→en  y  en→target
+async function translateViaBridge(
+  text:       string,
+  targetLang: AppLanguage,
+  sourceLang: string,
+): Promise<TranslationResult | null> {
+  // Paso 1: idioma fuente → inglés
+  const step1 = await translateViaApi(text, 'en', sourceLang);
+  if (!step1) return null;
+
+  // Paso 2: inglés → idioma destino
+  const step2 = await translateViaApi(step1.translatedText, targetLang, 'en');
+  if (!step2) return null;
+
+  return {
+    originalText:   text,
+    translatedText: step2.translatedText,
+    detectedLang:   step1.detectedLang,
+    source:         'api',
+    confidence:     'medium',
+  };
 }
 
 // ── API pública ───────────────────────────────────────────────────────────────
@@ -321,18 +487,28 @@ export async function translate(
   const offlineResult = lookupOffline(text, target);
   if (offlineResult) return offlineResult;
 
-  // 2. LibreTranslate API (requiere red)
+  // 2. Bridge vía inglés para todo par con fuente latina (≠ inglés).
+  //    MyMemory falla en es|pt, es|ja, es|ko, es|ar, fr|de, etc.
+  //    Los pares en|xx son los más confiables → usamos inglés como puente.
+  const detectedSrc = sourceLang === 'auto' ? detectScriptLanguage(text) : sourceLang;
+  const latinSrcs   = ['es', 'pt', 'fr', 'de', 'it'];
+  const useBridge   = latinSrcs.includes(detectedSrc) && target !== 'en' && target !== detectedSrc;
+
+  if (useBridge) {
+    const bridgeResult = await translateViaBridge(text, target, detectedSrc);
+    if (bridgeResult) return bridgeResult;
+  }
+
+  // 3. API directa MyMemory — para fuentes CJK/árabe/ruso o pares con inglés
   const apiResult = await translateViaApi(text, target, sourceLang);
   if (apiResult) return apiResult;
 
-  // 3. Fallback — devuelve original
-  return {
-    originalText:   text,
-    translatedText: text,
-    detectedLang:   null,
-    source:         'fallback',
-    confidence:     'low',
-  };
+  // 4. Google Translate (fallback — sin API key, cubre todos los pares)
+  const googleResult = await translateViaGoogle(text, target, detectedSrc);
+  if (googleResult) return googleResult;
+
+  // 5. Sin resultado
+  throw new Error(`No se pudo traducir al idioma seleccionado. Verificá tu conexión.`);
 }
 
 /**
@@ -343,6 +519,7 @@ export const SOURCE_LANGUAGES = [
   { code: 'ja',   label: '日本語 (Japonés)' },
   { code: 'zh',   label: '中文 (Chino)' },
   { code: 'ko',   label: '한국어 (Coreano)' },
+  { code: 'ru',   label: 'Русский (Ruso)' },
   { code: 'fr',   label: 'Français (Francés)' },
   { code: 'de',   label: 'Deutsch (Alemán)' },
   { code: 'it',   label: 'Italiano' },

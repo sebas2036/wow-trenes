@@ -121,7 +121,7 @@ const translations = {
     search_popular_from: 'DESTINOS POPULARES DESDE {city}',
     search_no_changes:   'Sin cambios',
     search_fastest:      'MÁS RÁPIDO',
-    search_buy:          'Comprar en Omio',
+    search_buy:          'Comprar pasaje',
     search_price_hint:   'precio estimado',
     search_info:         'Horarios · Tocá para ver precios y comprar',
     // Split screen extra
@@ -241,7 +241,7 @@ const translations = {
     search_popular_from: 'POPULAR DESTINATIONS FROM {city}',
     search_no_changes:   'Direct',
     search_fastest:      'FASTEST',
-    search_buy:          'Buy on Omio',
+    search_buy:          'Buy ticket',
     search_price_hint:   'estimated price',
     search_info:         'Schedules · Tap to see prices and buy',
     split_next_trains:   'Next trains',
@@ -360,7 +360,7 @@ const translations = {
     search_popular_from: 'DESTINOS POPULARES DE {city}',
     search_no_changes:   'Direto',
     search_fastest:      'MAIS RÁPIDO',
-    search_buy:          'Comprar no Omio',
+    search_buy:          'Comprar bilhete',
     search_price_hint:   'preço estimado',
     search_info:         'Horários · Toque para ver preços e comprar',
     split_next_trains:   'Próximos trens',
@@ -479,7 +479,7 @@ const translations = {
     search_popular_from: '{city}からの人気目的地',
     search_no_changes:   '直通',
     search_fastest:      '最速',
-    search_buy:          'Omioで購入',
+    search_buy:          'チケット購入',
     search_price_hint:   '概算価格',
     search_info:         '時刻表 · タップして価格と購入',
     split_next_trains:   '次の電車',
@@ -598,7 +598,7 @@ const translations = {
     search_popular_from: '{city}的热门目的地',
     search_no_changes:   '直达',
     search_fastest:      '最快',
-    search_buy:          '在Omio购买',
+    search_buy:          '购买车票',
     search_price_hint:   '预估价格',
     search_info:         '时刻表 · 点击查看价格和购买',
     split_next_trains:   '下一班列车',
@@ -717,7 +717,7 @@ const translations = {
     search_popular_from: '{city}의 인기 목적지',
     search_no_changes:   '직행',
     search_fastest:      '최고속',
-    search_buy:          'Omio에서 구매',
+    search_buy:          '티켓 구매',
     search_price_hint:   '예상 가격',
     search_info:         '시간표 · 탭하여 가격 및 구매',
     split_next_trains:   '다음 기차',
@@ -836,7 +836,7 @@ const translations = {
     search_popular_from: 'DESTINATIONS POPULAIRES DEPUIS {city}',
     search_no_changes:   'Direct',
     search_fastest:      'PLUS RAPIDE',
-    search_buy:          'Acheter sur Omio',
+    search_buy:          'Acheter un billet',
     search_price_hint:   'prix estimé',
     search_info:         'Horaires · Appuyez pour voir les prix et acheter',
     split_next_trains:   'Prochains trains',
@@ -955,7 +955,7 @@ const translations = {
     search_popular_from: 'BELIEBTE ZIELE VON {city}',
     search_no_changes:   'Direkt',
     search_fastest:      'SCHNELLSTE',
-    search_buy:          'Bei Omio kaufen',
+    search_buy:          'Ticket kaufen',
     search_price_hint:   'geschätzter Preis',
     search_info:         'Fahrpläne · Tippen für Preise und Kauf',
     split_next_trains:   'Nächste Züge',
@@ -1074,7 +1074,7 @@ const translations = {
     search_popular_from: 'DESTINAZIONI POPOLARI DA {city}',
     search_no_changes:   'Diretto',
     search_fastest:      'PIÙ VELOCE',
-    search_buy:          'Acquista su Omio',
+    search_buy:          'Acquista biglietto',
     search_price_hint:   'prezzo stimato',
     search_info:         'Orari · Tocca per vedere prezzi e acquistare',
     split_next_trains:   'Prossimi treni',
@@ -1193,7 +1193,7 @@ const translations = {
     search_popular_from: 'الوجهات الشعبية من {city}',
     search_no_changes:   'مباشر',
     search_fastest:      'الأسرع',
-    search_buy:          'اشترِ على Omio',
+    search_buy:          'شراء التذكرة',
     search_price_hint:   'السعر التقديري',
     search_info:         'جداول · اضغط لرؤية الأسعار والشراء',
     split_next_trains:   'القطارات القادمة',
@@ -1247,7 +1247,7 @@ function detectLanguage(): AppLanguage {
 
 // ── Estado global (singleton) ─────────────────────────────────────────────────
 let currentLang: AppLanguage      = detectLanguage();
-let currentStrings: Translations  = translations[currentLang] as Translations;
+let currentStrings: Translations  = (translations as any)[currentLang] as Translations ?? translations.en as Translations;
 
 // ── API pública ───────────────────────────────────────────────────────────────
 
@@ -1281,7 +1281,7 @@ export function getLanguage(): AppLanguage {
  */
 export function setLanguage(lang: AppLanguage): void {
   currentLang   = lang;
-  currentStrings = translations[lang] as Translations;
+  currentStrings = (translations as any)[lang] as Translations ?? translations.en as Translations;
 }
 
 /**
@@ -1305,6 +1305,7 @@ export const SUPPORTED_LANGUAGES: { code: AppLanguage; name: string; flag: strin
   { code: 'zh', name: '中文',        flag: '🇨🇳' },
   { code: 'ko', name: '한국어',      flag: '🇰🇷' },
   { code: 'ar', name: 'العربية',    flag: '🇸🇦' },
+  { code: 'ru', name: 'Русский',    flag: '🇷🇺' },
 ];
 
 /**
