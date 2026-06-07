@@ -41,8 +41,8 @@ function AppStack() {
           headerShown:              false,
           contentStyle:             { backgroundColor: '#0E0E2E' },
           // Transición nativa de cada plataforma (iOS: spring push / Android: slide)
-          animation:                'default',
-          animationDuration:        300,
+          animation:                'fade',
+          animationDuration:        200,
           // Deslizar desde cualquier punto de la pantalla para volver (iOS)
           fullScreenGestureEnabled: true,
         }}

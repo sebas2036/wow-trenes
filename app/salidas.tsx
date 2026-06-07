@@ -869,7 +869,7 @@ export default function SalidasScreen() {
         <ScrollView style={styles.boardScroll} showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 100 }}>
           {board.map((entry, i) => (
-            <View>
+            <View key={entry.tripId ?? `${entry.time}-${entry.endpoint}-${i}`}>
               <BoardRow
                 entry={entry}
                 index={i}
