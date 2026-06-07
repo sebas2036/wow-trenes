@@ -44,9 +44,9 @@ export default function BottomTabBar({ active, onTranslatePress, onHomePress }: 
     if (tab.name === 'traducir') { onTranslatePress?.(); return; }
     if (tab.name === 'inicio' && active === 'inicio') { onHomePress?.(); return; }
     if (tab.name === active) return;
-    // navigate() vuelve a la pantalla si ya existe en el stack (no crea duplicado).
-    // Crítico para home: settings→home usa la instancia ya montada, ready=true, sin parpadeo.
-    router.navigate(tab.path as any);
+    // replace() en vez de push/navigate: los tabs nunca apilan.
+    // El back del teléfono sale directo de la app (comportamiento correcto en tabs).
+    router.replace(tab.path as any);
   };
 
   return (
