@@ -6,6 +6,7 @@
  */
 import { buildKlookUrl, buildKiwitaxiUrl, buildYesimUrl, buildTiqetsUrl, buildStorageUrl, buildInsuranceUrl } from '../services/affiliateEngine';
 import type { PartnerCardProps } from '../components/PartnerCard';
+import { t } from '../services/i18n';
 
 // Ofertas estándar por ciudad
 const CITY_OFFERS: Record<string, PartnerCardProps[]> = {
@@ -218,9 +219,9 @@ const CITY_OFFERS: Record<string, PartnerCardProps[]> = {
 export function getYesimOffer(countryCode?: string): PartnerCardProps {
   return {
     icon: 'globe-outline',
-    title: 'eSIM Europa · Yesim',
-    subtitle: 'Internet en 30+ países · desde €4.90',
-    cta: 'Activar',
+    title: t('p_yesim_title'),
+    subtitle: t('p_yesim_sub'),
+    cta: t('p_yesim_cta'),
     url: buildYesimUrl(countryCode),
     colors: ['#10B981', '#059669'],
     highlight: true,
@@ -230,9 +231,9 @@ export function getYesimOffer(countryCode?: string): PartnerCardProps {
 export function getTiqetsOffer(): PartnerCardProps {
   return {
     icon: 'ticket-outline',
-    title: 'Entradas sin fila',
-    subtitle: 'Sagrada Familia, Coliseo, Louvre y 6.000+ atracciones',
-    cta: 'Ver entradas',
+    title: t('p_tiqets_title'),
+    subtitle: t('p_tiqets_sub'),
+    cta: t('p_tiqets_cta'),
     url: buildTiqetsUrl(),
     colors: ['#EC4899', '#BE185D'],
   };
@@ -241,9 +242,9 @@ export function getTiqetsOffer(): PartnerCardProps {
 export function getStorageOffer(): PartnerCardProps {
   return {
     icon: 'bag-handle-outline',
-    title: 'Guardar equipaje',
-    subtitle: '1.000+ puntos en ciudades europeas · desde €5',
-    cta: 'Buscar',
+    title: t('p_storage_title'),
+    subtitle: t('p_storage_sub'),
+    cta: t('p_storage_cta'),
     url: buildStorageUrl(),
     colors: ['#0EA5E9', '#0369A1'],
   };
@@ -252,9 +253,9 @@ export function getStorageOffer(): PartnerCardProps {
 export function getInsuranceOffer(): PartnerCardProps {
   return {
     icon: 'shield-checkmark-outline',
-    title: 'Seguro de viaje · EKTA',
-    subtitle: 'Cobertura médica, cancelaciones y equipaje · póliza instantánea',
-    cta: 'Asegurarme',
+    title: t('p_insurance_title'),
+    subtitle: t('p_insurance_sub'),
+    cta: t('p_insurance_cta'),
     url: buildInsuranceUrl(),
     colors: ['#EF4444', '#B91C1C'],
     highlight: true,

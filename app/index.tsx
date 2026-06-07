@@ -746,7 +746,7 @@ export default function HomeScreen() {
                 <View style={styles.moreExpLine} />
                 <View style={styles.moreExpPill}>
                   <Ionicons name="train-outline" size={12} color="#fff" />
-                  <Text style={styles.moreExpText}>{showAllScenic ? 'Ver menos' : 'Más experiencias'}</Text>
+                  <Text style={styles.moreExpText}>{showAllScenic ? t('less_exp') : t('more_exp')}</Text>
                   <Ionicons name={showAllScenic ? 'chevron-up' : 'chevron-down'} size={12} color="#fff" />
                 </View>
                 <View style={styles.moreExpLine} />
@@ -754,7 +754,7 @@ export default function HomeScreen() {
             )}
 
             {/* ── Para tu viaje · partners ── */}
-            <Text style={[styles.intlSectionLabel, { color: '#fff', marginTop: 6 }]}>PARA TU VIAJE</Text>
+            <Text style={[styles.intlSectionLabel, { color: '#fff', marginTop: 6 }]}>{t('for_trip')}</Text>
             <PartnerCard {...getInsuranceOffer()} />
             <PartnerCard {...getYesimOffer()} />
             <PartnerCard {...getTiqetsOffer()} />
