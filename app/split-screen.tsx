@@ -719,6 +719,7 @@ export default function SplitScreen() {
         source={require('../assets/images/bg-hero.png')}
         style={[StyleSheet.absoluteFillObject, { top: -280, bottom: 280 }]}
         resizeMode="cover"
+        fadeDuration={0}
       />
       <LinearGradient
         colors={['rgba(10,8,30,0.20)', 'rgba(14,14,46,0.55)', 'rgba(14,14,46,0.75)']}

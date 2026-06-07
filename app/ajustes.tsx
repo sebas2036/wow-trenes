@@ -91,7 +91,7 @@ export default function AjustesScreen() {
 
   return (
     <View style={styles.rootGradient}>
-      <Image source={require('../assets/images/bg-hero.png')} style={[StyleSheet.absoluteFillObject, { top: -280, bottom: 280 }]} resizeMode="cover" />
+      <Image source={require('../assets/images/bg-hero.png')} style={[StyleSheet.absoluteFillObject, { top: -280, bottom: 280 }]} resizeMode="cover" fadeDuration={0} />
       <LinearGradient colors={['rgba(10,8,30,0.20)', 'rgba(14,14,46,0.45)', 'rgba(14,14,46,0.65)']} style={StyleSheet.absoluteFillObject} pointerEvents="none" />
     <SafeAreaView style={styles.root} edges={['top']}>
 
