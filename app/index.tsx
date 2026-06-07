@@ -502,7 +502,7 @@ export default function HomeScreen() {
       />
       {/* Overlay oscuro para legibilidad */}
       <LinearGradient
-        colors={['rgba(10,8,30,0.50)', 'rgba(14,14,46,0.65)', 'rgba(14,14,46,0.80)']}
+        colors={['rgba(10,8,30,0.20)', 'rgba(14,14,46,0.45)', 'rgba(14,14,46,0.65)']}
         style={StyleSheet.absoluteFillObject}
         pointerEvents="none"
       />
@@ -860,8 +860,8 @@ const styles = StyleSheet.create({
 
   // ── Glass Card — Glassmorphism ──
   glassCard: {
-    backgroundColor: 'rgba(255,255,255,0.02)',  // casi invisible — vidrio puro
-    borderColor:     'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(14,14,46,0.35)',     // oscuro semitransparente — deja ver la foto
+    borderColor:     'rgba(255,255,255,0.15)',
     borderWidth:     1,
     overflow:        'hidden',
   },
