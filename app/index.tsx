@@ -860,7 +860,7 @@ const styles = StyleSheet.create({
 
   // ── Glass Card — Glassmorphism ──
   glassCard: {
-    backgroundColor: 'rgba(14,14,46,0.35)',     // oscuro semitransparente — deja ver la foto
+    backgroundColor: 'rgba(14,14,46,0.15)',     // muy transparente — foto se ve a través
     borderColor:     'rgba(255,255,255,0.15)',
     borderWidth:     1,
     overflow:        'hidden',
