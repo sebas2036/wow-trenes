@@ -6,7 +6,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView,
-  ActivityIndicator, Platform, FlatList, TextInput,
+  ActivityIndicator, Platform, FlatList, TextInput, ImageBackground,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -493,8 +493,17 @@ export default function HomeScreen() {
   ];
 
   return (
-    <LinearGradient colors={[...Gradients.screenBg]} style={styles.root}>
-
+    <ImageBackground
+      source={require('../assets/images/bg-hero.png')}
+      style={styles.root}
+      resizeMode="cover"
+    >
+      {/* Overlay oscuro para legibilidad */}
+      <LinearGradient
+        colors={['rgba(10,8,30,0.72)', 'rgba(14,14,46,0.82)', 'rgba(14,14,46,0.92)']}
+        style={StyleSheet.absoluteFillObject}
+        pointerEvents="none"
+      />
 
     <SafeAreaView style={styles.rootInner} edges={['top']}>
 
@@ -835,7 +844,7 @@ export default function HomeScreen() {
         );
       })()}
     </SafeAreaView>
-    </LinearGradient>
+    </ImageBackground>
   );
 }
 
