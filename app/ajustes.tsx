@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
   section: {
     fontSize: 11, fontWeight: '700', letterSpacing: 1.3,
     paddingHorizontal: 22, marginTop: 28, marginBottom: 8,
-    color: 'rgba(226,232,240,0.45)',
+    color: '#ffffff',
   },
 
   group: {
