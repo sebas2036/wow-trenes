@@ -495,10 +495,28 @@ export default function HomeScreen() {
   return (
     <LinearGradient colors={[...Gradients.screenBg]} style={styles.root}>
 
-      {/* ── Neon orbs — luces de fondo difuminadas ── */}
-      <View style={styles.orb1} pointerEvents="none" />
-      <View style={styles.orb2} pointerEvents="none" />
-      <View style={styles.orb3} pointerEvents="none" />
+      {/* ── Neon orbs — gradiente radial simulado con LinearGradient ── */}
+      <LinearGradient
+        colors={['rgba(124,58,237,0.55)', 'rgba(124,58,237,0.20)', 'rgba(124,58,237,0.00)']}
+        style={styles.orb1}
+        start={{ x: 0.5, y: 0.5 }}
+        end={{ x: 1.0, y: 1.0 }}
+        pointerEvents="none"
+      />
+      <LinearGradient
+        colors={['rgba(37,99,235,0.45)', 'rgba(37,99,235,0.15)', 'rgba(37,99,235,0.00)']}
+        style={styles.orb2}
+        start={{ x: 0.5, y: 0.5 }}
+        end={{ x: 1.0, y: 1.0 }}
+        pointerEvents="none"
+      />
+      <LinearGradient
+        colors={['rgba(139,92,246,0.40)', 'rgba(139,92,246,0.12)', 'rgba(139,92,246,0.00)']}
+        style={styles.orb3}
+        start={{ x: 0.5, y: 0.5 }}
+        end={{ x: 1.0, y: 1.0 }}
+        pointerEvents="none"
+      />
 
     <SafeAreaView style={styles.rootInner} edges={['top']}>
 
@@ -848,56 +866,43 @@ const styles = StyleSheet.create({
   root:          { flex: 1 },
   rootInner:     { flex: 1 },
 
-  // ── Neon orbs — esferas de luz difuminadas tipo bokeh ──
+  // ── Neon orbs — gradiente circular que se desvanece ──
   orb1: {
-    position:        'absolute',
-    width:           320,
-    height:          320,
-    borderRadius:    160,
-    backgroundColor: 'rgba(124,58,237,0.28)',   // morado eléctrico
-    top:             -60,
-    left:            -80,
-    shadowColor:     '#7C3AED',
-    shadowOffset:    { width: 0, height: 0 },
-    shadowOpacity:   1,
-    shadowRadius:    90,
-    elevation:       0,
+    position:     'absolute',
+    width:        380,
+    height:       380,
+    borderRadius: 190,
+    top:          -100,
+    left:         -120,
+    overflow:     'hidden',
   },
   orb2: {
-    position:        'absolute',
-    width:           260,
-    height:          260,
-    borderRadius:    130,
-    backgroundColor: 'rgba(37,99,235,0.22)',     // azul neón
-    top:             180,
-    right:           -100,
-    shadowColor:     '#2563EB',
-    shadowOffset:    { width: 0, height: 0 },
-    shadowOpacity:   1,
-    shadowRadius:    80,
-    elevation:       0,
+    position:     'absolute',
+    width:        320,
+    height:       320,
+    borderRadius: 160,
+    top:          200,
+    right:        -130,
+    overflow:     'hidden',
   },
   orb3: {
-    position:        'absolute',
-    width:           200,
-    height:          200,
-    borderRadius:    100,
-    backgroundColor: 'rgba(139,92,246,0.18)',    // violeta medio
-    bottom:          120,
-    left:            60,
-    shadowColor:     '#8B5CF6',
-    shadowOffset:    { width: 0, height: 0 },
-    shadowOpacity:   1,
-    shadowRadius:    70,
-    elevation:       0,
+    position:     'absolute',
+    width:        260,
+    height:       260,
+    borderRadius: 130,
+    bottom:       150,
+    left:         30,
+    overflow:     'hidden',
   },
   scroll:        { flex: 1 },
   scrollContent: { paddingBottom: 12 },
 
   // ── Glass Card — Glassmorphism ──
   glassCard: {
-    backgroundColor: 'rgba(88,28,135,0.22)',   // violeta oscuro semitransparente
-    borderColor:     'rgba(167,139,250,0.32)',  // borde violeta visible
+    backgroundColor: Platform.OS === 'ios'
+      ? 'rgba(88,28,135,0.20)'       // iOS: más transparente, el blur hace el resto
+      : 'rgba(60,20,110,0.45)',       // Android: más opaco pero oscuro (sin blur real)
+    borderColor:     'rgba(167,139,250,0.28)',
     borderWidth:     1,
     overflow:        'hidden',
   },
