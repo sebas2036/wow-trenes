@@ -173,16 +173,16 @@ function CountryCard({
       >
         {/* Blur real del fondo */}
         <BlurView
-          intensity={Platform.OS === 'ios' ? 40 : 18}
+          intensity={Platform.OS === 'ios' ? 65 : 20}
           tint="dark"
           style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
           experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
         />
-        {/* Glass rim light — brillo superior violeta */}
+        {/* Glass rim light — brillo superior blanco */}
         <LinearGradient
-          colors={['rgba(167,139,250,0.18)', 'rgba(255,255,255,0.00)']}
+          colors={['rgba(255,255,255,0.22)', 'rgba(255,255,255,0.00)']}
           start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
+          end={{ x: 0, y: 0.5 }}
           style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
           pointerEvents="none"
         />
@@ -255,16 +255,16 @@ function MetroCard({
       >
         {/* Blur real del fondo */}
         <BlurView
-          intensity={Platform.OS === 'ios' ? 40 : 18}
+          intensity={Platform.OS === 'ios' ? 65 : 20}
           tint="dark"
           style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
           experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
         />
-        {/* Glass rim light — brillo superior violeta */}
+        {/* Glass rim light — brillo superior blanco */}
         <LinearGradient
-          colors={['rgba(167,139,250,0.18)', 'rgba(255,255,255,0.00)']}
+          colors={['rgba(255,255,255,0.22)', 'rgba(255,255,255,0.00)']}
           start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
+          end={{ x: 0, y: 0.5 }}
           style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
           pointerEvents="none"
         />
@@ -849,8 +849,8 @@ const styles = StyleSheet.create({
 
   // ── Glass Card — Glassmorphism ──
   glassCard: {
-    backgroundColor: 'rgba(88,28,135,0.12)',   // muy transparente en ambas plataformas
-    borderColor:     'rgba(167,139,250,0.28)',
+    backgroundColor: 'rgba(255,255,255,0.05)',  // blanco tenue — efecto vidrio esmerilado
+    borderColor:     'rgba(255,255,255,0.18)',
     borderWidth:     1,
     overflow:        'hidden',
   },
