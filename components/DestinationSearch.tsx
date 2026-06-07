@@ -14,7 +14,7 @@ import {
   Pressable, ActivityIndicator, Keyboard,
   Platform, ScrollView,
 } from 'react-native';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+
 import { Ionicons } from '@expo/vector-icons';
 
 import { Typography, Spacing, Radius } from '../theme';
@@ -125,7 +125,7 @@ function StationSearch({ onStationFound, countryHint, placeholder }: {
 
       {/* Lista de resultados */}
       {results.length > 0 && (
-        <Animated.View entering={FadeIn.duration(200)} style={styles.listCard}>
+        <View style={styles.listCard}>
           <ScrollView
             keyboardShouldPersistTaps="handled"
             style={{ maxHeight: 240 }}
@@ -168,15 +168,15 @@ function StationSearch({ onStationFound, countryHint, placeholder }: {
               </Pressable>
             ))}
           </ScrollView>
-        </Animated.View>
+        </View>
       )}
 
       {/* Sin resultados */}
       {text.length >= 2 && !searching && results.length === 0 && (
-        <Animated.View entering={FadeIn.duration(200)} style={styles.errorCard}>
+        <View style={styles.errorCard}>
           <Ionicons name="search-outline" size={14} color={D.muted} />
           <Text style={styles.errorText}>Sin resultados para "{text}"</Text>
-        </Animated.View>
+        </View>
       )}
     </View>
   );
@@ -239,7 +239,7 @@ function AddressSearch({ onStationFound, countryHint, placeholder }: {
       </View>
 
       {status === 'found' && result && (
-        <Animated.View entering={FadeIn.duration(300)} exiting={FadeOut.duration(200)} style={styles.resultCard}>
+        <View style={styles.resultCard}>
           <View style={styles.resultHeader}>
             <Ionicons name="subway-outline" size={14} color={D.primary} />
             <Text style={styles.resultStation} numberOfLines={1}>{result.station.name}</Text>
@@ -263,14 +263,14 @@ function AddressSearch({ onStationFound, countryHint, placeholder }: {
               <Text style={styles.useBtnText}>Usar →</Text>
             </Pressable>
           </View>
-        </Animated.View>
+        </View>
       )}
 
       {(status === 'not_found' || status === 'error') && error && (
-        <Animated.View entering={FadeIn.duration(250)} style={styles.errorCard}>
+        <View style={styles.errorCard}>
           <Ionicons name="warning-outline" size={14} color={D.danger} />
           <Text style={styles.errorText}>{error}</Text>
-        </Animated.View>
+        </View>
       )}
     </View>
   );

@@ -38,9 +38,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import MapView, { Marker, Polyline, Circle, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Haptics from 'expo-haptics';
 import Animated, {
-  FadeIn,
-  FadeOut,
-  FadeInDown,
   useSharedValue,
   useAnimatedStyle,
   withTiming,
@@ -132,7 +129,7 @@ function PurchaseSuccessBanner({
   onDismiss:  () => void;
 }) {
   return (
-    <Animated.View entering={FadeIn.duration(400)} exiting={FadeOut.duration(300)} style={styles.successBanner}>
+    <View style={styles.successBanner}>
       <Ionicons name="checkmark-circle" size={28} color="#30D158" style={{ marginTop: 2 }} />
       <View style={{ flex: 1 }}>
         <Text style={styles.successTitle}>¡Billete confirmado!</Text>
@@ -146,7 +143,7 @@ function PurchaseSuccessBanner({
       <Pressable onPress={onDismiss} style={styles.successClose} accessibilityLabel="Cerrar">
         <Ionicons name="close" size={16} color="rgba(235,235,245,0.60)" />
       </Pressable>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -733,7 +730,7 @@ export default function SplitScreen() {
       <ScrollView style={styles.topHalf} showsVerticalScrollIndicator={false} bounces={false}>
 
         {/* Nav bar */}
-        <Animated.View entering={FadeInDown.duration(350)} style={styles.topNav}>
+        <View style={styles.topNav}>
           {/* Bandera del país (shared element con Home) */}
           <Animated.View
             sharedTransitionTag={`flag-${params.country ?? 'ES'}`}
@@ -768,7 +765,7 @@ export default function SplitScreen() {
           <Pressable onPress={refresh} style={styles.refreshBtn} accessibilityLabel="Actualizar horarios">
             <Text style={styles.refreshText}>↻</Text>
           </Pressable>
-        </Animated.View>
+        </View>
 
         {/* ── Banner: dónde estás → distancia a estación ── */}
         {(placeName || distToStation !== null) && (
@@ -794,9 +791,7 @@ export default function SplitScreen() {
 
         {/* ── Buscador "¿A dónde vas?" — modo país y metro ── */}
         {showDestSearch && (
-          <Animated.View
-            entering={FadeIn.duration(300)}
-            exiting={FadeOut.duration(200)}
+          <View
             style={[styles.destSearchWrap, { backgroundColor: 'transparent' }]}
           >
             <View style={styles.destSearchHeader}>
@@ -816,7 +811,7 @@ export default function SplitScreen() {
               placeholder={isMetro ? 'Escribe una calle o lugar…' : 'Ciudad o estación destino…'}
               longDistance={!isMetro}
             />
-          </Animated.View>
+          </View>
         )}
 
         {/* ── Botón para reabrir el buscador ── */}

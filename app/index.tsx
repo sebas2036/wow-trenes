@@ -6,7 +6,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import Animated, {
   useSharedValue, useAnimatedStyle, withSpring,
-  FadeInDown, FadeIn,
+
 } from 'react-native-reanimated';
 import {
   View, Text, StyleSheet, Pressable, ScrollView,
@@ -651,7 +651,7 @@ export default function HomeScreen() {
 
         {/* ── Sección Trenes ── */}
         {filter === 'trenes' && (
-          <Animated.View entering={FadeInDown.duration(320)}>
+          <View>
             <Text style={[styles.sectionLabel, { color: '#fff' }]}>{t('home_countries_title')}</Text>
             <FlatList
               data={sortedCountries}
@@ -670,14 +670,14 @@ export default function HomeScreen() {
                 />
               )}
             />
-          </Animated.View>
+          </View>
         )}
 
         {/* ── Sección Metro ── */}
 
         {/* ── Internacional ── */}
         {filter === 'internacional' && (
-          <Animated.View entering={FadeInDown.duration(320)} style={styles.intlWrap}>
+          <View style={styles.intlWrap}>
             <Text style={[styles.intlTitle, { color: colors.text.primary }]}>{t('intl_title')}</Text>
             <Text style={[styles.intlSub,   { color: 'rgba(255,255,255,0.80)' }]}>{t('intl_sub')}</Text>
 
@@ -781,7 +781,7 @@ export default function HomeScreen() {
             <PartnerCard {...getYesimOffer()} />
             <PartnerCard {...getTiqetsOffer()} />
             <PartnerCard {...getStorageOffer()} />
-          </Animated.View>
+          </View>
         )}
 
         <View style={{ height: 12 }} />
@@ -796,7 +796,7 @@ export default function HomeScreen() {
       />
 
       {/* ── GPS Banner — estilo original mejorado ── */}
-      <Animated.View entering={FadeIn.duration(600).delay(200)}>
+      <View>
       <Pressable
         style={({ pressed }) => [
           styles.gpsBanner,
@@ -834,7 +834,7 @@ export default function HomeScreen() {
           }
         </Pressable>
       </Pressable>
-      </Animated.View>
+      </View>
 
       <BottomTabBar active="inicio" onTranslatePress={() => setTranslator(true)} onHomePress={() => setFilter('trenes')} />
       <TranslatorSheet visible={translator} onClose={() => setTranslator(false)} />

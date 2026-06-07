@@ -12,7 +12,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import Animated, { FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { Colors, Typography, Spacing, Radius, Gradients } from '../theme';
@@ -427,7 +426,7 @@ export default function BuscarViaje() {
               const meta = trainMeta(trip.trainNumber);
               const isFastest = !!(trip as TripResult & { fastest?: boolean }).fastest;
               return (
-                <Animated.View entering={FadeInDown.duration(280).delay(Math.min(index, 6) * 45)}>
+                <View>
                   <Pressable style={styles.card} onPress={() => handleBuy(trip)} android_ripple={{ color: Colors.brand.primary + '18' }}>
 
                     {/* Badge tipo tren + etiqueta "Más rápido" */}
@@ -479,7 +478,7 @@ export default function BuscarViaje() {
                     </View>
 
                   </Pressable>
-                </Animated.View>
+                </View>
               );
             }}
           />

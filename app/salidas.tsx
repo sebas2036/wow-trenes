@@ -4,7 +4,6 @@
  * Si GPS no cubre la zona, selector manual de país/estación.
  */
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import Animated, { FadeInDown } from 'react-native-reanimated';
 import {
   View, Text, StyleSheet, Pressable, ScrollView,
   ActivityIndicator, Modal, TextInput, FlatList,
@@ -870,14 +869,14 @@ export default function SalidasScreen() {
         <ScrollView style={styles.boardScroll} showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 100 }}>
           {board.map((entry, i) => (
-            <Animated.View key={i} entering={FadeInDown.duration(300).delay(Math.min(i, 8) * 38)}>
+            <View>
               <BoardRow
                 entry={entry}
                 index={i}
                 originName={displayStation}
                 countryCode={selected.code}
               />
-            </Animated.View>
+            </View>
           ))}
         </ScrollView>
       )}

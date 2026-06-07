@@ -27,7 +27,7 @@ import Animated, {
   withSequence,
   withTiming,
   withSpring,
-  FadeInDown,
+
 } from 'react-native-reanimated';
 import { Colors, Typography, Spacing, Radius } from '../theme';
 import type { PredictiveClock, ArrivalStatus } from '../types';
@@ -250,7 +250,6 @@ function TrainCard({
 
   return (
     <Animated.View
-      entering={FadeInDown.duration(300).delay(index * 70)}
       style={[animStyle, pressAnimStyle]}
     >
       <Animated.View style={isDestMatch ? [styles.cardDestMatch, glowStyle] : undefined}>
