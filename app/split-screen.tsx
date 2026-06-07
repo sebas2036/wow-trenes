@@ -806,7 +806,7 @@ export default function SplitScreen() {
             <DestinationSearch
               onStationFound={handleDestinationFound}
               countryHint={countryHint}
-              placeholder={isMetro ? 'Escribe una calle o lugar…' : 'Ciudad o estación destino…'}
+              placeholder={isMetro ? t('split_search_addr') : t('split_search_city')}
               longDistance={!isMetro}
             />
           </View>
