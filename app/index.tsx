@@ -899,9 +899,7 @@ const styles = StyleSheet.create({
 
   // ── Glass Card — Glassmorphism ──
   glassCard: {
-    backgroundColor: Platform.OS === 'ios'
-      ? 'rgba(88,28,135,0.20)'       // iOS: más transparente, el blur hace el resto
-      : 'rgba(60,20,110,0.45)',       // Android: más opaco pero oscuro (sin blur real)
+    backgroundColor: 'rgba(88,28,135,0.12)',   // muy transparente en ambas plataformas
     borderColor:     'rgba(167,139,250,0.28)',
     borderWidth:     1,
     overflow:        'hidden',
