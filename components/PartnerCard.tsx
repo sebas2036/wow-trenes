@@ -10,6 +10,7 @@
  */
 import React from 'react';
 import { View, Text, Pressable, StyleSheet, Linking } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -29,6 +30,8 @@ export default function PartnerCard({
   icon, title, subtitle, cta, url, colors: gradColors, highlight = false,
 }: PartnerCardProps) {
   const { colors } = useTheme();
+  const scale     = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   const handlePress = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -36,14 +39,16 @@ export default function PartnerCard({
   };
 
   return (
+    <Animated.View style={animStyle}>
     <Pressable
       onPress={handlePress}
-      style={({ pressed }) => [
+      onPressIn={() => { scale.value = withSpring(0.955, { damping: 18, stiffness: 350 }); }}
+      onPressOut={() => { scale.value = withSpring(1,     { damping: 10, stiffness: 180 }); }}
+      style={[
         styles.card,
         {
           backgroundColor: 'rgba(14,14,46,0.45)',
           borderColor:     highlight ? gradColors[0] + '88' : 'rgba(255,255,255,0.15)',
-          opacity:         pressed ? 0.85 : 1,
         },
       ]}
     >
@@ -68,6 +73,7 @@ export default function PartnerCard({
         <Text style={styles.ctaText}>{cta}</Text>
       </View>
     </Pressable>
+    </Animated.View>
   );
 }
 

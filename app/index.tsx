@@ -4,6 +4,9 @@
  * "Less, but better."
  */
 import React, { useState, useCallback, useEffect } from 'react';
+import Animated, {
+  useSharedValue, useAnimatedStyle, withSpring,
+} from 'react-native-reanimated';
 import {
   View, Text, StyleSheet, Pressable, ScrollView,
   ActivityIndicator, Platform, FlatList, TextInput, Image,
@@ -161,15 +164,15 @@ function CountryCard({
   onFavToggle:  (code: CountryCode) => void;
 }) {
   const { colors, isDark } = useTheme();
+  const scale = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   return (
-    <View style={[styles.cardShadow, styles.cardGlow, { borderRadius: Radius.xl }]}>
+    <Animated.View style={[animStyle, styles.cardShadow, styles.cardGlow, { borderRadius: Radius.xl }]}>
       <Pressable
-        style={({ pressed }) => [
-          styles.card,
-          styles.glassCard,
-          pressed && { opacity: 0.82, transform: [{ scale: 0.978 }] },
-        ]}
+        style={[styles.card, styles.glassCard]}
         onPress={() => onPress(country)}
+        onPressIn={() => { scale.value = withSpring(0.955, { damping: 18, stiffness: 350 }); }}
+        onPressOut={() => { scale.value = withSpring(1, { damping: 10, stiffness: 180 }); }}
         accessibilityRole="button"
       >
         {/* Blur real del fondo */}
@@ -230,7 +233,7 @@ function CountryCard({
 
         <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.60)" />
       </Pressable>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -244,15 +247,15 @@ function MetroCard({
   onFavToggle: (code: CountryCode) => void;
 }) {
   const { colors, isDark } = useTheme();
+  const scale = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   return (
-    <View style={[styles.cardShadow, styles.cardGlow, { borderRadius: Radius.xl }]}>
+    <Animated.View style={[animStyle, styles.cardShadow, styles.cardGlow, { borderRadius: Radius.xl }]}>
       <Pressable
-        style={({ pressed }) => [
-          styles.card,
-          styles.glassCard,
-          pressed && { opacity: 0.82, transform: [{ scale: 0.978 }] },
-        ]}
+        style={[styles.card, styles.glassCard]}
         onPress={() => onPress(metro.code)}
+        onPressIn={() => { scale.value = withSpring(0.955, { damping: 18, stiffness: 350 }); }}
+        onPressOut={() => { scale.value = withSpring(1, { damping: 10, stiffness: 180 }); }}
       >
         {/* Blur real del fondo */}
         <BlurView
@@ -289,7 +292,7 @@ function MetroCard({
         </Pressable>
         <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.60)" />
       </Pressable>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -318,6 +321,42 @@ function SpeedLines() {
       {/* Línea inferior — blanca suave */}
       <Line x1="4"  y1="25" x2="80" y2="25" stroke="url(#spd3)" strokeWidth="1.6" />
     </Svg>
+  );
+}
+
+// ── Scenic Card (Internacional) ───────────────────────────────────────────────
+function ScenicCard({ train, onPress }: { train: any; onPress: () => void }) {
+  const scale    = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  return (
+    <Animated.View style={animStyle}>
+      <Pressable
+        style={[
+          styles.scenicIntlCard,
+          { backgroundColor: 'rgba(14,14,46,0.45)', borderColor: train.colors[0] + '66' },
+        ]}
+        onPress={onPress}
+        onPressIn={() => { scale.value = withSpring(0.955, { damping: 18, stiffness: 350 }); }}
+        onPressOut={() => { scale.value = withSpring(1,     { damping: 10, stiffness: 180 }); }}
+      >
+        <LinearGradient
+          colors={train.colors}
+          style={styles.scenicIntlBadge}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+        >
+          <Ionicons name="train" size={14} color="#fff" />
+        </LinearGradient>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.scenicIntlName,  { color: '#fff' }]}>{train.name}</Text>
+          <Text style={[styles.scenicIntlRoute, { color: 'rgba(255,255,255,0.80)' }]}>
+            {train.route} · {train.duration}
+          </Text>
+        </View>
+        <View style={[styles.scenicIntlReservar, { backgroundColor: train.colors[0] }]}>
+          <Text style={styles.scenicIntlReservarText}>{t('intl_book')}</Text>
+        </View>
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -712,29 +751,11 @@ export default function HomeScreen() {
             {/* ── Trenes escénicos destacados ── */}
             <Text style={[styles.intlSectionLabel, { color: '#fff' }]}>{t('intl_scenic')}</Text>
             {(showAllScenic ? SCENIC_TRAINS : SCENIC_TRAINS.slice(0, 3)).map((train) => (
-              <Pressable
+              <ScenicCard
                 key={train.id}
-                style={[styles.scenicIntlCard, { backgroundColor: 'rgba(14,14,46,0.45)', borderColor: train.colors[0] + '66' }]}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  setScenicIntlId(train.id);
-                }}
-              >
-                <LinearGradient
-                  colors={train.colors}
-                  style={styles.scenicIntlBadge}
-                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                >
-                  <Ionicons name="train" size={14} color="#fff" />
-                </LinearGradient>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.scenicIntlName, { color: '#fff' }]}>{train.name}</Text>
-                  <Text style={[styles.scenicIntlRoute, { color: 'rgba(255,255,255,0.80)' }]}>{train.route} · {train.duration}</Text>
-                </View>
-                <View style={[styles.scenicIntlReservar, { backgroundColor: train.colors[0] }]}>
-                  <Text style={styles.scenicIntlReservarText}>{t('intl_book')}</Text>
-                </View>
-              </Pressable>
+                train={train}
+                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setScenicIntlId(train.id); }}
+              />
             ))}
 
             {/* ── Divisor "Más / Menos experiencias" ── */}

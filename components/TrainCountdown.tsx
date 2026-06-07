@@ -214,6 +214,10 @@ function TrainCard({
     shadowOpacity: glowOpacity.value * 0.4,
   }));
 
+  // Press scale
+  const pressScale    = useSharedValue(1);
+  const pressAnimStyle = useAnimatedStyle(() => ({ transform: [{ scale: pressScale.value }] }));
+
   // Pulso para warn/danger
   const opacity = useSharedValue(1);
   const prevStatus = useRef(clock.status);
@@ -244,16 +248,17 @@ function TrainCard({
   return (
     <Animated.View
       entering={FadeInDown.delay(index * 80).springify()}
-      style={animStyle}
+      style={[animStyle, pressAnimStyle]}
     >
       <Animated.View style={isDestMatch ? [styles.cardDestMatch, glowStyle] : undefined}>
       <Pressable
-        style={({ pressed }) => [
+        style={[
           styles.card,
           index === 0 && styles.cardFirst,
-          pressed && styles.cardPressed,
         ]}
         onPress={() => index === 0 ? setExpanded(e => !e) : onPress()}
+        onPressIn={() => { pressScale.value = withSpring(0.965, { damping: 18, stiffness: 350 }); }}
+        onPressOut={() => { pressScale.value = withSpring(1,     { damping: 10, stiffness: 180 }); }}
         accessibilityRole="button"
         accessibilityLabel={`${train.operator} ${train.trainNumber} a ${train.destination.name} — ${fmt(train.departureTime)}`}
       >
