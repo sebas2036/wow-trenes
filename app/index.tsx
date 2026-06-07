@@ -389,9 +389,16 @@ export default function HomeScreen() {
   const prevUnread = React.useRef(unreadCount);
 
   // ── Onboarding: primer arranque ──────────────────────────────────────────
+  // ready=false mientras verificamos → pantalla vacía (nunca flashea home antes de onboarding)
+  const [ready, setReady] = useState(false);
   useEffect(() => {
     AsyncStorage.getItem(ONBOARDING_KEY).then((done) => {
-      if (!done) router.replace('/onboarding');
+      if (!done) {
+        router.replace('/onboarding');
+        // No setReady(true) → el home nunca renderiza antes del onboarding
+      } else {
+        setReady(true);
+      }
     });
   }, []);
 
@@ -539,6 +546,9 @@ export default function HomeScreen() {
     { key: 'trenes',        label: t('filter_trains'), icon: 'train',  iconOut: 'train-outline'  },
     { key: 'internacional', label: t('filter_intl'),   icon: 'globe',  iconOut: 'globe-outline'  },
   ];
+
+  // Mientras verificamos onboarding → pantalla oscura vacía (sin flashear contenido)
+  if (!ready) return <View style={{ flex: 1, backgroundColor: '#0E0E2E' }} />;
 
   return (
     <View style={styles.root}>

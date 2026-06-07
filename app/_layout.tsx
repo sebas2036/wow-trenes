@@ -35,11 +35,13 @@ function AppStack() {
 
   return (
     <GestureHandlerRootView style={styles.root}>
-      <StatusBar style="light" backgroundColor="#0E0E2E" />
+      <StatusBar style="light" backgroundColor="#0E0E2E" translucent />
       <Stack
         screenOptions={{
           headerShown:              false,
-          contentStyle:             { backgroundColor: '#0E0E2E' },
+          // Transparent: cada pantalla dibuja su propio fondo (bg-hero + gradiente)
+          // El GestureHandlerRootView con #0E0E2E garantiza que nunca se vea blanco en Android
+          contentStyle:             { backgroundColor: 'transparent' },
           // Transición nativa de cada plataforma (iOS: spring push / Android: slide)
           animation:                'default',
           animationDuration:        250,
