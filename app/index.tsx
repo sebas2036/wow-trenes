@@ -173,16 +173,16 @@ function CountryCard({
       >
         {/* Blur real del fondo */}
         <BlurView
-          intensity={Platform.OS === 'ios' ? 40 : 18}
+          intensity={Platform.OS === 'ios' ? 65 : 20}
           tint="dark"
           style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
           experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
         />
-        {/* Glass rim light — brillo superior violeta */}
+        {/* Glass rim light — brillo superior blanco */}
         <LinearGradient
-          colors={['rgba(167,139,250,0.18)', 'rgba(255,255,255,0.00)']}
+          colors={['rgba(255,255,255,0.22)', 'rgba(255,255,255,0.00)']}
           start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
+          end={{ x: 0, y: 0.5 }}
           style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
           pointerEvents="none"
         />
@@ -255,16 +255,16 @@ function MetroCard({
       >
         {/* Blur real del fondo */}
         <BlurView
-          intensity={Platform.OS === 'ios' ? 40 : 18}
+          intensity={Platform.OS === 'ios' ? 65 : 20}
           tint="dark"
           style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
           experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
         />
-        {/* Glass rim light — brillo superior violeta */}
+        {/* Glass rim light — brillo superior blanco */}
         <LinearGradient
-          colors={['rgba(167,139,250,0.18)', 'rgba(255,255,255,0.00)']}
+          colors={['rgba(255,255,255,0.22)', 'rgba(255,255,255,0.00)']}
           start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
+          end={{ x: 0, y: 0.5 }}
           style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
           pointerEvents="none"
         />
@@ -495,10 +495,6 @@ export default function HomeScreen() {
   return (
     <LinearGradient colors={[...Gradients.screenBg]} style={styles.root}>
 
-      {/* ── Neon orbs — luces de fondo difuminadas ── */}
-      <View style={styles.orb1} pointerEvents="none" />
-      <View style={styles.orb2} pointerEvents="none" />
-      <View style={styles.orb3} pointerEvents="none" />
 
     <SafeAreaView style={styles.rootInner} edges={['top']}>
 
@@ -848,56 +844,13 @@ const styles = StyleSheet.create({
   root:          { flex: 1 },
   rootInner:     { flex: 1 },
 
-  // ── Neon orbs — esferas de luz difuminadas tipo bokeh ──
-  orb1: {
-    position:        'absolute',
-    width:           320,
-    height:          320,
-    borderRadius:    160,
-    backgroundColor: 'rgba(124,58,237,0.28)',   // morado eléctrico
-    top:             -60,
-    left:            -80,
-    shadowColor:     '#7C3AED',
-    shadowOffset:    { width: 0, height: 0 },
-    shadowOpacity:   1,
-    shadowRadius:    90,
-    elevation:       0,
-  },
-  orb2: {
-    position:        'absolute',
-    width:           260,
-    height:          260,
-    borderRadius:    130,
-    backgroundColor: 'rgba(37,99,235,0.22)',     // azul neón
-    top:             180,
-    right:           -100,
-    shadowColor:     '#2563EB',
-    shadowOffset:    { width: 0, height: 0 },
-    shadowOpacity:   1,
-    shadowRadius:    80,
-    elevation:       0,
-  },
-  orb3: {
-    position:        'absolute',
-    width:           200,
-    height:          200,
-    borderRadius:    100,
-    backgroundColor: 'rgba(139,92,246,0.18)',    // violeta medio
-    bottom:          120,
-    left:            60,
-    shadowColor:     '#8B5CF6',
-    shadowOffset:    { width: 0, height: 0 },
-    shadowOpacity:   1,
-    shadowRadius:    70,
-    elevation:       0,
-  },
   scroll:        { flex: 1 },
   scrollContent: { paddingBottom: 12 },
 
   // ── Glass Card — Glassmorphism ──
   glassCard: {
-    backgroundColor: 'rgba(88,28,135,0.22)',   // violeta oscuro semitransparente
-    borderColor:     'rgba(167,139,250,0.32)',  // borde violeta visible
+    backgroundColor: 'rgba(255,255,255,0.02)',  // casi invisible — vidrio puro
+    borderColor:     'rgba(255,255,255,0.12)',
     borderWidth:     1,
     overflow:        'hidden',
   },
