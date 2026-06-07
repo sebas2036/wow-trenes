@@ -1301,10 +1301,10 @@ const styles = StyleSheet.create({
     marginBottom:      Spacing['2'],
     paddingVertical:   10,
     paddingHorizontal: Spacing['3'],
-    backgroundColor:   'rgba(14,14,46,0.45)',
+    backgroundColor:   'rgba(8,8,32,0.65)',
     borderRadius:      Radius.xl,
     borderWidth:       1,
-    borderColor:       'rgba(255,255,255,0.18)',
+    borderColor:       'rgba(255,255,255,0.25)',
   },
   reopenSearchIcon: { fontSize: 13 },
   reopenSearchText: {
