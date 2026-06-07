@@ -495,28 +495,6 @@ export default function HomeScreen() {
   return (
     <LinearGradient colors={[...Gradients.screenBg]} style={styles.root}>
 
-      {/* ── Neon orbs — gradiente radial simulado con LinearGradient ── */}
-      <LinearGradient
-        colors={['rgba(124,58,237,0.55)', 'rgba(124,58,237,0.20)', 'rgba(124,58,237,0.00)']}
-        style={styles.orb1}
-        start={{ x: 0.5, y: 0.5 }}
-        end={{ x: 1.0, y: 1.0 }}
-        pointerEvents="none"
-      />
-      <LinearGradient
-        colors={['rgba(37,99,235,0.45)', 'rgba(37,99,235,0.15)', 'rgba(37,99,235,0.00)']}
-        style={styles.orb2}
-        start={{ x: 0.5, y: 0.5 }}
-        end={{ x: 1.0, y: 1.0 }}
-        pointerEvents="none"
-      />
-      <LinearGradient
-        colors={['rgba(139,92,246,0.40)', 'rgba(139,92,246,0.12)', 'rgba(139,92,246,0.00)']}
-        style={styles.orb3}
-        start={{ x: 0.5, y: 0.5 }}
-        end={{ x: 1.0, y: 1.0 }}
-        pointerEvents="none"
-      />
 
     <SafeAreaView style={styles.rootInner} edges={['top']}>
 
@@ -866,34 +844,6 @@ const styles = StyleSheet.create({
   root:          { flex: 1 },
   rootInner:     { flex: 1 },
 
-  // ── Neon orbs — gradiente circular que se desvanece ──
-  orb1: {
-    position:     'absolute',
-    width:        380,
-    height:       380,
-    borderRadius: 190,
-    top:          -100,
-    left:         -120,
-    overflow:     'hidden',
-  },
-  orb2: {
-    position:     'absolute',
-    width:        320,
-    height:       320,
-    borderRadius: 160,
-    top:          200,
-    right:        -130,
-    overflow:     'hidden',
-  },
-  orb3: {
-    position:     'absolute',
-    width:        260,
-    height:       260,
-    borderRadius: 130,
-    bottom:       150,
-    left:         30,
-    overflow:     'hidden',
-  },
   scroll:        { flex: 1 },
   scrollContent: { paddingBottom: 12 },
 
