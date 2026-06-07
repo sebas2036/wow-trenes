@@ -367,6 +367,12 @@ function ScenicCard({ train, onPress }: { train: any; onPress: () => void }) {
   );
 }
 
+// ── Cache de onboarding — persiste entre re-montajes del componente ──────────
+// Cuando BottomTabBar hace router.push('/') desde otra pestaña, el componente
+// se monta de nuevo. Si ya sabemos que el onboarding está hecho, ready=true
+// desde el primer frame → sin parpadeo oscuro.
+let _onboardingChecked = false;
+
 // ── Pantalla principal ────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const router = useRouter();
@@ -389,14 +395,16 @@ export default function HomeScreen() {
   const prevUnread = React.useRef(unreadCount);
 
   // ── Onboarding: primer arranque ──────────────────────────────────────────
-  // ready=false mientras verificamos → pantalla vacía (nunca flashea home antes de onboarding)
-  const [ready, setReady] = useState(false);
+  // Si ya comprobamos antes (re-montaje desde BottomTabBar), ready=true instantáneo.
+  const [ready, setReady] = useState(_onboardingChecked);
   useEffect(() => {
+    if (_onboardingChecked) return; // Ya sabemos: onboarding hecho → no volver a preguntar
     AsyncStorage.getItem(ONBOARDING_KEY).then((done) => {
       if (!done) {
         router.replace('/onboarding');
-        // No setReady(true) → el home nunca renderiza antes del onboarding
+        // No setReady(true) → el home nunca flashea antes del onboarding
       } else {
+        _onboardingChecked = true;
         setReady(true);
       }
     });
