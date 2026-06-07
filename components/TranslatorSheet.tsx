@@ -873,6 +873,10 @@ export default function TranslatorSheet({ visible, onClose }: TranslatorSheetPro
                     style={[styles.gtLangChip, active && styles.gtLangChipActive]}
                     onPress={() => setSourceLang(lang.code)}
                   >
+                    {lang.code === 'auto'
+                      ? <Ionicons name="globe-outline" size={16} color={active ? '#C4B5FD' : colors.text.muted} />
+                      : <FlagCircle countryCode={LANG_TO_COUNTRY[lang.code] ?? lang.code} size="sm" />
+                    }
                     <Text style={[styles.gtLangChipText, { color: active ? '#C4B5FD' : colors.text.muted }, active && { fontWeight: '700' }]}>
                       {lang.label}
                     </Text>
@@ -891,7 +895,7 @@ export default function TranslatorSheet({ visible, onClose }: TranslatorSheetPro
                   setInputText(text);
                   scheduleAutoTranslate(text);
                 }}
-                placeholder="出発 · Bahnsteig · 站台 · Платформа..."
+                placeholder={"Your train.\nYour world."}
                 placeholderTextColor="rgba(148,163,184,0.45)"
                 multiline
                 autoCorrect={false}

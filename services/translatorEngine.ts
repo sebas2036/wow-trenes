@@ -405,7 +405,8 @@ async function translateViaGoogle(
   sourceLang: string = 'auto',
 ): Promise<TranslationResult | null> {
   try {
-    const src = toGoogleCode(sourceLang === 'auto' ? detectScriptLanguage(text) : sourceLang);
+    // Con 'auto', dejar que Google detecte el idioma (es más preciso que detectScriptLanguage)
+    const src = sourceLang === 'auto' ? 'auto' : toGoogleCode(sourceLang);
     const tgt = toGoogleCode(targetLang);
     const cleanText = text.replace(/[¿¡]/g, '').trim();
     const url = `${GOOGLE_TRANSLATE_URL}?client=gtx&sl=${src}&tl=${tgt}&dt=t&q=${encodeURIComponent(cleanText)}`;
@@ -487,25 +488,24 @@ export async function translate(
   const offlineResult = lookupOffline(text, target);
   if (offlineResult) return offlineResult;
 
-  // 2. Bridge vía inglés para todo par con fuente latina (≠ inglés).
-  //    MyMemory falla en es|pt, es|ja, es|ko, es|ar, fr|de, etc.
-  //    Los pares en|xx son los más confiables → usamos inglés como puente.
   const detectedSrc = sourceLang === 'auto' ? detectScriptLanguage(text) : sourceLang;
-  const latinSrcs   = ['es', 'pt', 'fr', 'de', 'it'];
-  const useBridge   = latinSrcs.includes(detectedSrc) && target !== 'en' && target !== detectedSrc;
 
+  // 2. Google Translate — primer intento para todos los pares
+  //    Maneja es|ko, es|ja, fr|de, etc. directamente sin bridge
+  const googleResult = await translateViaGoogle(text, target, sourceLang);
+  if (googleResult) return googleResult;
+
+  // 3. MyMemory bridge vía inglés — fallback cuando Google falla
+  const isLatinScript = !/[一-鿿ぁ-ヿ가-힣؀-ۿѐ-ӿऀ-ॿ]/.test(text);
+  const useBridge     = isLatinScript && target !== 'en' && detectedSrc !== target;
   if (useBridge) {
     const bridgeResult = await translateViaBridge(text, target, detectedSrc);
     if (bridgeResult) return bridgeResult;
   }
 
-  // 3. API directa MyMemory — para fuentes CJK/árabe/ruso o pares con inglés
+  // 4. MyMemory directo
   const apiResult = await translateViaApi(text, target, sourceLang);
   if (apiResult) return apiResult;
-
-  // 4. Google Translate (fallback — sin API key, cubre todos los pares)
-  const googleResult = await translateViaGoogle(text, target, detectedSrc);
-  if (googleResult) return googleResult;
 
   // 5. Sin resultado
   throw new Error(`No se pudo traducir al idioma seleccionado. Verificá tu conexión.`);
