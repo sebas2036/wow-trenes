@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { Radius, Gradients } from '../theme';
 import { useTheme } from '../context/ThemeContext';
+import { t } from '../services/i18n';
 import { LinearGradient } from 'expo-linear-gradient';
 import BottomTabBar from '../components/BottomTabBar';
 import TranslatorSheet from '../components/TranslatorSheet';
@@ -95,23 +96,23 @@ export default function AjustesScreen() {
     <SafeAreaView style={styles.root} edges={['top']}>
 
       <View style={styles.header}>
-        <Text style={styles.title}>Ajustes</Text>
+        <Text style={styles.title}>{t('settings_title')}</Text>
       </View>
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
 
         {/* ── Preferencias ── */}
-        <Text style={styles.section}>PREFERENCIAS</Text>
+        <Text style={styles.section}>{t('settings_prefs')}</Text>
         <View style={groupStyle}>
           <Row
             iconName="notifications-outline" iconBg="#7C3AED"
-            label="Notificaciones de tren" colors={colors}
+            label={t('settings_notifs')} colors={colors}
             isSwitch switchValue={notifications}
             onToggle={(v) => { Haptics.selectionAsync(); setNotifications(v); }}
           />
           <Row
             iconName="pulse-outline" iconBg="#0A84FF"
-            label="Vibración (haptics)" colors={colors}
+            label={t('settings_haptics')} colors={colors}
             isSwitch switchValue={haptics}
             onToggle={(v) => { Haptics.selectionAsync(); setHaptics(v); }}
             isLast
@@ -119,82 +120,82 @@ export default function AjustesScreen() {
         </View>
 
         {/* ── Datos ── */}
-        <Text style={styles.section}>DATOS</Text>
+        <Text style={styles.section}>{t('settings_data')}</Text>
         <View style={groupStyle}>
           <Row
             iconName="globe-outline" iconBg="#30D158"
-            label="Países cargados" value="+13 países" colors={colors}
+            label={t('settings_countries')} value={t('settings_countries_val')} colors={colors}
           />
           <Row
             iconName="subway-outline" iconBg="#FF9F0A"
-            label="Metros disponibles" value="6 ciudades" colors={colors}
+            label={t('settings_metros')} value={t('settings_metros_val')} colors={colors}
           />
           <Row
             iconName="refresh-outline" iconBg="#0A84FF"
-            label="Última actualización GTFS" value="Hoy" colors={colors}
+            label={t('settings_gtfs')} value={t('settings_today')} colors={colors}
             isLast
           />
         </View>
 
         {/* ── Legal ── */}
-        <Text style={styles.section}>LEGAL</Text>
+        <Text style={styles.section}>{t('settings_legal')}</Text>
         <View style={groupStyle}>
           <Row
             iconName="help-circle-outline" iconBg="#FF9F0A"
-            label="Preguntas frecuentes (FAQ)" colors={colors}
+            label={t('settings_faq')} colors={colors}
             onPress={() => goLegal('faq')}
           />
           <Row
             iconName="document-text-outline" iconBg="#0A84FF"
-            label="Términos y Condiciones" colors={colors}
+            label={t('settings_terms')} colors={colors}
             onPress={() => goLegal('terms')}
           />
           <Row
             iconName="lock-closed-outline" iconBg="#FF453A"
-            label="Política de Privacidad" colors={colors}
+            label={t('settings_privacy')} colors={colors}
             onPress={() => goLegal('privacy')}
           />
           <Row
             iconName="shield-checkmark-outline" iconBg="#30D158"
-            label="Seguridad y Privacidad" colors={colors}
+            label={t('settings_security')} colors={colors}
             onPress={() => goLegal('security')}
             isLast
           />
         </View>
 
         {/* ── Privacidad ── */}
-        <Text style={styles.section}>PRIVACIDAD</Text>
+        <Text style={styles.section}>{t('settings_privacy_sec')}</Text>
         <View style={groupStyle}>
           <Row
             iconName="person-remove-outline" iconBg="#30D158"
-            label="Sin cuentas de usuario" value="RGPD Art. 5" colors={colors}
+            label={t('settings_no_accounts')} value="RGPD Art. 5" colors={colors}
           />
           <Row
             iconName="card-outline" iconBg="#0A84FF"
-            label="Pagos vía Trainline (MoR)" value="PCI-DSS" colors={colors}
+            label={t('settings_payments')} value="PCI-DSS" colors={colors}
           />
           <Row
             iconName="phone-portrait-outline" iconBg="#7C3AED"
-            label="Tickets guardados localmente" value="Solo en tu teléfono" colors={colors}
+            label={t('settings_local_tickets')} value={t('settings_local_val')} colors={colors}
             isLast
           />
         </View>
 
         {/* ── Acerca de ── */}
-        <Text style={styles.section}>ACERCA DE</Text>
+        <Text style={styles.section}>{t('settings_about')}</Text>
         <View style={groupStyle}>
           <Row
             iconName="information-circle-outline" iconBg="#636366"
-            label="Versión" value={APP_VERSION} colors={colors}
+            label={t('settings_version')} value={APP_VERSION} colors={colors}
           />
           <Row
             iconName="star-outline" iconBg="#FFD60A"
-            label="Calificar la app" colors={colors}
+            label={t('settings_rate')} colors={colors}
             onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
           />
           <Row
             iconName="bug-outline" iconBg="#FF453A"
-            label="Reportar un problema" colors={colors}
+            label={t('settings_report')} colors={colors}
             onPress={() => Linking.openURL('mailto:Glosx@outlook.com?subject=WoW Train - Bug')}
             isLast
           />
@@ -206,7 +207,7 @@ export default function AjustesScreen() {
             <Text style={{ color: '#A78BFA' }}>WoW </Text>TRAIN
           </Text>
           <Text style={styles.brandSub}>
-            Hecho para viajeros del mundo
+            {t('settings_tagline')}
           </Text>
         </View>
 
