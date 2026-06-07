@@ -6,7 +6,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView,
-  ActivityIndicator, Platform, FlatList, TextInput, ImageBackground,
+  ActivityIndicator, Platform, FlatList, TextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -171,19 +171,18 @@ function CountryCard({
         onPress={() => onPress(country)}
         accessibilityRole="button"
       >
-        {/* Blur solo en iOS — en Android causa sangrado del árbol React */}
-        {Platform.OS === 'ios' && (
-          <BlurView
-            intensity={65}
-            tint="dark"
-            style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
-          />
-        )}
-        {/* Glass rim light — brillo superior blanco */}
+        {/* Blur real del fondo */}
+        <BlurView
+          intensity={Platform.OS === 'ios' ? 40 : 18}
+          tint="dark"
+          style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
+          experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
+        />
+        {/* Glass rim light — brillo superior violeta */}
         <LinearGradient
-          colors={['rgba(255,255,255,0.22)', 'rgba(255,255,255,0.00)']}
+          colors={['rgba(167,139,250,0.18)', 'rgba(255,255,255,0.00)']}
           start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 0.5 }}
+          end={{ x: 0, y: 1 }}
           style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
           pointerEvents="none"
         />
@@ -254,19 +253,18 @@ function MetroCard({
         ]}
         onPress={() => onPress(metro.code)}
       >
-        {/* Blur solo en iOS */}
-        {Platform.OS === 'ios' && (
-          <BlurView
-            intensity={65}
-            tint="dark"
-            style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
-          />
-        )}
-        {/* Glass rim light — brillo superior blanco */}
+        {/* Blur real del fondo */}
+        <BlurView
+          intensity={Platform.OS === 'ios' ? 40 : 18}
+          tint="dark"
+          style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
+          experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
+        />
+        {/* Glass rim light — brillo superior violeta */}
         <LinearGradient
-          colors={['rgba(255,255,255,0.22)', 'rgba(255,255,255,0.00)']}
+          colors={['rgba(167,139,250,0.18)', 'rgba(255,255,255,0.00)']}
           start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 0.5 }}
+          end={{ x: 0, y: 1 }}
           style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
           pointerEvents="none"
         />
@@ -495,18 +493,7 @@ export default function HomeScreen() {
   ];
 
   return (
-    <ImageBackground
-      source={require('../assets/images/bg-hero.png')}
-      style={styles.root}
-      resizeMode="cover"
-    >
-      {/* Overlay oscuro para legibilidad */}
-      <LinearGradient
-        colors={['rgba(10,8,30,0.40)', 'rgba(14,14,46,0.55)', 'rgba(14,14,46,0.70)']}
-        style={StyleSheet.absoluteFillObject}
-        pointerEvents="none"
-      />
-
+    <LinearGradient colors={[...Gradients.screenBg]} style={styles.root}>
     <SafeAreaView style={styles.rootInner} edges={['top']}>
 
       {/* ── Offline Banner ── */}
@@ -764,9 +751,12 @@ export default function HomeScreen() {
         onPress={handleGPS}
         disabled={gpsLoading}
       >
-        {Platform.OS === 'ios' && (
-          <BlurView intensity={45} tint="dark" style={StyleSheet.absoluteFillObject} />
-        )}
+        <BlurView
+          intensity={Platform.OS === 'ios' ? 45 : 18}
+          tint="dark"
+          style={StyleSheet.absoluteFillObject}
+          experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
+        />
         <View style={[styles.gpsPinWrap, { backgroundColor: colors.brand.primary }]}>
           <Ionicons name="location" size={20} color="#fff" />
         </View>
@@ -843,22 +833,21 @@ export default function HomeScreen() {
         );
       })()}
     </SafeAreaView>
-    </ImageBackground>
+    </LinearGradient>
   );
 }
 
 // ── Estilos ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   root:          { flex: 1 },
-  rootInner:     { flex: 1, backgroundColor: 'transparent' },
-
-  scroll:        { flex: 1, backgroundColor: 'transparent' },
+  rootInner:     { flex: 1 },
+  scroll:        { flex: 1 },
   scrollContent: { paddingBottom: 12 },
 
   // ── Glass Card — Glassmorphism ──
   glassCard: {
-    backgroundColor: 'rgba(255,255,255,0.02)',  // casi invisible — vidrio puro
-    borderColor:     'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(88,28,135,0.22)',   // violeta oscuro semitransparente
+    borderColor:     'rgba(167,139,250,0.32)',  // borde violeta visible
     borderWidth:     1,
     overflow:        'hidden',
   },

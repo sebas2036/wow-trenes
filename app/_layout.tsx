@@ -36,7 +36,7 @@ function AppStack() {
       <Stack
         screenOptions={{
           headerShown:       false,
-          contentStyle:      { backgroundColor: 'transparent' },
+          contentStyle:      { backgroundColor: colors.bg.base },
           animation:         'slide_from_right',
           animationDuration: 280,
         }}
@@ -66,5 +66,5 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: 'transparent' },
+  root: { flex: 1 },
 });

@@ -646,10 +646,9 @@ export default function TranslatorSheet({ visible, onClose }: TranslatorSheetPro
     <Modal
       visible={visible}
       animationType="slide"
-      presentationStyle="fullScreen"
+      presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View style={styles.rootSolid}>
       <LinearGradient colors={[...Gradients.screenBg]} style={styles.rootGradient}>
       <SafeAreaView style={styles.root}>
 
@@ -1018,16 +1017,14 @@ export default function TranslatorSheet({ visible, onClose }: TranslatorSheetPro
         </ScrollView>
       </SafeAreaView>
       </LinearGradient>
-      </View>
     </Modal>
   );
 }
 
 // ─── STYLES — no colors hardcoded, all applied inline ────────────────────────
 const styles = StyleSheet.create({
-  rootSolid:    { flex: 1, backgroundColor: '#0E0E2E' },
   rootGradient: { flex: 1 },
-  root:         { flex: 1, backgroundColor: 'transparent' },
+  root: { flex: 1, backgroundColor: 'transparent' },
 
   // Header
   header: {
