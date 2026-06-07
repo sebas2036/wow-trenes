@@ -497,7 +497,7 @@ export default function HomeScreen() {
       {/* Foto tren de noche — desplazada hacia arriba para mostrar las luces */}
       <Image
         source={require('../assets/images/bg-hero.png')}
-        style={[StyleSheet.absoluteFillObject, { top: -160, bottom: 160 }]}
+        style={[StyleSheet.absoluteFillObject, { top: -280, bottom: 280 }]}
         resizeMode="cover"
       />
       {/* Overlay oscuro para legibilidad */}
