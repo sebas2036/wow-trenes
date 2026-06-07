@@ -193,7 +193,7 @@ function CountryCard({
 
         <View style={styles.cardInfo}>
           <Text style={[styles.cardName, { color: '#FFFFFF' }]}>{country.name}</Text>
-          <Text style={[styles.cardSub, { color: 'rgba(226,232,240,0.60)' }]}>{country.trainLabel}</Text>
+          <Text style={[styles.cardSub, { color: 'rgba(255,255,255,0.75)' }]}>{country.trainLabel}</Text>
           {country.metroOptions && country.metroOptions.length > 0 && (
             <View style={styles.metroRow}>
               {country.metroOptions.slice(0, 2).map((m) => (
@@ -224,11 +224,11 @@ function CountryCard({
           <Ionicons
             name={isFav ? 'heart' : 'heart-outline'}
             size={20}
-            color={isFav ? '#FF453A' : 'rgba(226,232,240,0.55)'}
+            color={isFav ? '#FF453A' : 'rgba(255,255,255,0.65)'}
           />
         </Pressable>
 
-        <Ionicons name="chevron-forward" size={16} color="rgba(226,232,240,0.30)" />
+        <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.60)" />
       </Pressable>
     </View>
   );
@@ -274,7 +274,7 @@ function MetroCard({
         </View>
         <View style={styles.cardInfo}>
           <Text style={[styles.cardName, { color: '#FFFFFF' }]}>{metro.cityKey ? t(metro.cityKey as any) : metro.city}</Text>
-          <Text style={[styles.cardSub,  { color: 'rgba(226,232,240,0.60)' }]}>{metro.lines}</Text>
+          <Text style={[styles.cardSub,  { color: 'rgba(255,255,255,0.75)' }]}>{metro.lines}</Text>
         </View>
         <Pressable
           style={styles.favBtn}
@@ -284,10 +284,10 @@ function MetroCard({
           <Ionicons
             name={isFav ? 'heart' : 'heart-outline'}
             size={22}
-            color={isFav ? '#FF3B30' : 'rgba(226,232,240,0.40)'}
+            color={isFav ? '#FF3B30' : 'rgba(255,255,255,0.65)'}
           />
         </Pressable>
-        <Ionicons name="chevron-forward" size={16} color="rgba(226,232,240,0.30)" />
+        <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.60)" />
       </Pressable>
     </View>
   );
@@ -612,7 +612,7 @@ export default function HomeScreen() {
         {/* ── Sección Trenes ── */}
         {filter === 'trenes' && (
           <>
-            <Text style={[styles.sectionLabel, { color: colors.text.secondary }]}>{t('home_countries_title')}</Text>
+            <Text style={[styles.sectionLabel, { color: '#fff' }]}>{t('home_countries_title')}</Text>
             <FlatList
               data={sortedCountries}
               keyExtractor={(c) => c.code}
@@ -796,7 +796,7 @@ export default function HomeScreen() {
           <Text style={[styles.gpsBannerTitle, { color: colors.text.primary }]} numberOfLines={1}>
             {t('home_gps_question')}
           </Text>
-          <Text style={[styles.gpsBannerSub, { color: colors.text.secondary }]} numberOfLines={1}>
+          <Text style={[styles.gpsBannerSub, { color: 'rgba(255,255,255,0.80)' }]} numberOfLines={1}>
             {t('home_gps_sub')}
           </Text>
         </View>
