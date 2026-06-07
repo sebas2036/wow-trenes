@@ -171,13 +171,14 @@ function CountryCard({
         onPress={() => onPress(country)}
         accessibilityRole="button"
       >
-        {/* Blur real del fondo */}
-        <BlurView
-          intensity={Platform.OS === 'ios' ? 65 : 20}
-          tint="dark"
-          style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
-          experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
-        />
+        {/* Blur solo en iOS — en Android causa sangrado del árbol React */}
+        {Platform.OS === 'ios' && (
+          <BlurView
+            intensity={65}
+            tint="dark"
+            style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
+          />
+        )}
         {/* Glass rim light — brillo superior blanco */}
         <LinearGradient
           colors={['rgba(255,255,255,0.22)', 'rgba(255,255,255,0.00)']}
@@ -253,13 +254,14 @@ function MetroCard({
         ]}
         onPress={() => onPress(metro.code)}
       >
-        {/* Blur real del fondo */}
-        <BlurView
-          intensity={Platform.OS === 'ios' ? 65 : 20}
-          tint="dark"
-          style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
-          experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
-        />
+        {/* Blur solo en iOS */}
+        {Platform.OS === 'ios' && (
+          <BlurView
+            intensity={65}
+            tint="dark"
+            style={[StyleSheet.absoluteFillObject, { borderRadius: Radius.xl }]}
+          />
+        )}
         {/* Glass rim light — brillo superior blanco */}
         <LinearGradient
           colors={['rgba(255,255,255,0.22)', 'rgba(255,255,255,0.00)']}
@@ -762,12 +764,9 @@ export default function HomeScreen() {
         onPress={handleGPS}
         disabled={gpsLoading}
       >
-        <BlurView
-          intensity={Platform.OS === 'ios' ? 45 : 18}
-          tint="dark"
-          style={StyleSheet.absoluteFillObject}
-          experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
-        />
+        {Platform.OS === 'ios' && (
+          <BlurView intensity={45} tint="dark" style={StyleSheet.absoluteFillObject} />
+        )}
         <View style={[styles.gpsPinWrap, { backgroundColor: colors.brand.primary }]}>
           <Ionicons name="location" size={20} color="#fff" />
         </View>
