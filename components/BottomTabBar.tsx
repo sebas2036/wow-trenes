@@ -44,7 +44,9 @@ export default function BottomTabBar({ active, onTranslatePress, onHomePress }: 
     if (tab.name === 'traducir') { onTranslatePress?.(); return; }
     if (tab.name === 'inicio' && active === 'inicio') { onHomePress?.(); return; }
     if (tab.name === active) return;
-    router.push(tab.path as any);
+    // navigate() vuelve a la pantalla si ya existe en el stack (no crea duplicado).
+    // Crítico para home: settings→home usa la instancia ya montada, ready=true, sin parpadeo.
+    router.navigate(tab.path as any);
   };
 
   return (
