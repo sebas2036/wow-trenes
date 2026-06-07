@@ -10,7 +10,7 @@
     "splash": {
       "image": "./assets/images/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0E0E2E"
+      "backgroundColor": "#320079"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -42,7 +42,7 @@
       "icon": "./assets/images/icon.png",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#09090B"
+        "backgroundColor": "#320079"
       },
       "package": "com.wowtrenes.app",
       "versionCode": 1,
