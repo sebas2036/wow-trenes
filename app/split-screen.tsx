@@ -738,7 +738,7 @@ export default function SplitScreen() {
             accessibilityRole="button"
             accessibilityLabel="Volver"
           >
-            <Text style={styles.backText}>‹ {isTourist ? 'Mapa' : 'Países'}</Text>
+            <Text style={styles.backText}>‹ {isTourist ? t('split_back_map') : t('split_back_countries')}</Text>
           </Pressable>
 
           {/* Origin station pill — muestra estación actual, tappeable para cambiar */}
