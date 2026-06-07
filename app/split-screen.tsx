@@ -796,7 +796,7 @@ export default function SplitScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Ionicons name={isMetro ? 'subway-outline' : 'train-outline'} size={14} color={colors.text.primary} />
                 <Text style={[styles.destSearchTitle, { color: colors.text.primary }]}>
-                  {isMetro ? params.metroCity : '¿A dónde vas?'}
+                  {isMetro ? params.metroCity : t('split_where_going')}
                 </Text>
               </View>
               <Pressable onPress={() => setShowDestSearch(false)} hitSlop={8}>
@@ -832,7 +832,7 @@ export default function SplitScreen() {
             }]} numberOfLines={1}>
               {destStation
                 ? destStation.name
-                : isMetro ? `¿A dónde vas en ${params.metroCity}?` : '¿A dónde vas?'}
+                : isMetro ? `${t('split_where_going')} · ${params.metroCity}` : t('split_where_going')}
             </Text>
             {destStation && searchedDestWalk > 0 && (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
@@ -904,7 +904,7 @@ export default function SplitScreen() {
             onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowTravelModal(true); }}
           >
             <Ionicons name="sparkles" size={16} color="#FCD34D" />
-            <Text style={[styles.floatingBtnText, { color: '#FCD34D' }]}>DESCUBRE</Text>
+            <Text style={[styles.floatingBtnText, { color: '#FCD34D' }]}>{t('split_discover')}</Text>
           </Pressable>
         </RNAnimated.View>
       </View>
@@ -1031,7 +1031,7 @@ export default function SplitScreen() {
           <View style={[styles.travelModalHeader, { borderBottomColor: 'rgba(255,255,255,0.08)' }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Ionicons name="sparkles" size={18} color="#F59E0B" />
-              <Text style={[styles.travelModalTitle, { color: colors.text.primary }]}>DESCUBRE</Text>
+              <Text style={[styles.travelModalTitle, { color: colors.text.primary }]}>{t('split_discover')}</Text>
             </View>
             <Pressable onPress={() => setShowTravelModal(false)} hitSlop={12}>
               <Ionicons name="close" size={22} color={colors.text.muted} />

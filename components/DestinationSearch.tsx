@@ -22,6 +22,7 @@ import { useAddressToStation, type AddressSearchResult } from '../hooks/useAddre
 import { searchStations } from '../services/gtfsDatabase';
 import { translateStationQuery } from '../services/stationTranslations';
 import type { Station, CountryCode } from '../types';
+import { t } from '../services/i18n';
 
 const D = {
   bg:        '#2C2C2E',
@@ -48,7 +49,7 @@ export default function DestinationSearch({
   placeholder,
   longDistance = false,
 }: DestinationSearchProps) {
-  const defaultPlaceholder = longDistance ? 'Ciudad o estación destino…' : '¿A dónde vas? Escribe la dirección…';
+  const defaultPlaceholder = longDistance ? t('split_where_going') : t('split_where_going');
 
   return longDistance
     ? <StationSearch
