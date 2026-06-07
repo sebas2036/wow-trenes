@@ -7,7 +7,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView,
   ActivityIndicator, Modal, TextInput, FlatList,
-  KeyboardAvoidingView, Platform, Linking, InteractionManager,
+  KeyboardAvoidingView, Platform, Linking, InteractionManager, Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,7 +15,7 @@ import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { Radius, Shadows } from '../theme';
+import { Radius, Shadows, Gradients } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 import {
   getCountryBoard, setActiveCountry, type BoardEntry,
@@ -146,10 +146,7 @@ function BoardRow({
   }, [originName, entry, countryCode]);
 
   return (
-    <View style={[
-      styles.boardRow,
-      { backgroundColor: colors.bg.elevated, borderBottomColor: colors.border.strong },
-    ]}>
+    <View style={styles.boardRow}>
       <View style={{ alignItems: 'center' }}>
         <Text style={[styles.boardTime, { color: '#ffffff' }]} numberOfLines={1}>
           {entry.time}
@@ -171,16 +168,18 @@ function BoardRow({
         </Text>
       </View>
       <View style={[styles.statusPill, {
-        backgroundColor: entry.status === 'cancelled' ? '#FF453A20'
-          : entry.status === 'delayed' ? '#FF9F0A15' : '#22c55e15',
+        backgroundColor: entry.status === 'cancelled' ? 'rgba(255,69,58,0.15)'
+          : entry.status === 'delayed' ? 'rgba(250,180,50,0.15)' : 'rgba(52,211,153,0.15)',
       }]}>
         <View style={[styles.statusDot, {
           backgroundColor: entry.status === 'cancelled' ? '#FF453A'
-            : entry.status === 'delayed' ? '#FF9F0A' : '#4ade80',
+            : entry.status === 'delayed' ? '#FAB432' : '#34D399',
+          shadowColor: entry.status === 'cancelled' ? '#FF453A' : entry.status === 'delayed' ? '#FAB432' : '#34D399',
+          shadowOpacity: 0.8, shadowRadius: 4, shadowOffset: { width: 0, height: 0 },
         }]} />
         <Text style={[styles.statusText, {
           color: entry.status === 'cancelled' ? '#FF453A'
-            : entry.status === 'delayed' ? '#FF9F0A' : '#4ade80',
+            : entry.status === 'delayed' ? '#FAB432' : '#34D399',
         }]}>
           {entry.status === 'cancelled' ? 'Cancelado'
             : entry.delay ? entry.delay
@@ -239,7 +238,7 @@ function StationPicker({
         style={styles.pickerOverlay}
       >
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        <View style={[styles.pickerSheet, { backgroundColor: colors.bg.card }]}>
+        <View style={[styles.pickerSheet, { backgroundColor: '#13133A' }]}>
 
           {/* Handle */}
           <View style={[styles.pickerHandle, { backgroundColor: colors.border.subtle }]} />
@@ -321,6 +320,8 @@ export default function SalidasScreen() {
   const [dbDownloading,   setDbDownloading]   = useState(false);
   const loadRef = useRef(0);
   const didAutoGps = useRef(false);
+  const chipsScrollRef = useRef<ScrollView>(null);
+  const chipWidths = useRef<{ [code: string]: { x: number; width: number } }>({});
   const { isOffline } = useNetwork();
 
   const hasStationPicker = RT_STATION_COUNTRIES[selected.code] === true;
@@ -399,6 +400,20 @@ export default function SalidasScreen() {
       setStationName(getStationNameForCountry(selected.code));
     }
   }, [selected.code, gpsDetected]);
+
+  // Auto-scroll: centra el chip del país activo en el ScrollView horizontal
+  useEffect(() => {
+    const chip = chipWidths.current[selected.code];
+    if (!chip || !chipsScrollRef.current) return;
+    // Pequeño delay para que el layout esté listo
+    const t = setTimeout(() => {
+      // Calcula el offset para centrar el chip en pantalla (~360px de ancho medio)
+      const screenCenter = 180;
+      const targetX = chip.x - screenCenter + chip.width / 2;
+      chipsScrollRef.current?.scrollTo({ x: Math.max(0, targetX), animated: true });
+    }, 120);
+    return () => clearTimeout(t);
+  }, [selected.code]);
 
   // Parsea "HH:MM" y devuelve minutos desde medianoche
   const timeToMinutes = (t: string): number => {
@@ -630,7 +645,18 @@ export default function SalidasScreen() {
   const displayCountrySub = selected.sub;
 
   return (
-    <SafeAreaView style={[styles.root, { backgroundColor: colors.bg.base }]} edges={['top']}>
+    <View style={styles.rootGradient}>
+      <Image
+        source={require('../assets/images/bg-hero.png')}
+        style={[StyleSheet.absoluteFillObject, { top: -280, bottom: 280 }]}
+        resizeMode="cover"
+      />
+      <LinearGradient
+        colors={['rgba(10,8,30,0.20)', 'rgba(14,14,46,0.45)', 'rgba(14,14,46,0.65)']}
+        style={StyleSheet.absoluteFillObject}
+        pointerEvents="none"
+      />
+    <SafeAreaView style={styles.root} edges={['top']}>
 
       {/* ── Offline Banner ── */}
       {isOffline && (
@@ -678,7 +704,7 @@ export default function SalidasScreen() {
       </Pressable>
 
       {/* ── Segmented control ── */}
-      <View style={[styles.segWrap, { backgroundColor: colors.bg.elevated }]}>
+      <View style={[styles.segWrap, { backgroundColor: 'rgba(255,255,255,0.07)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }]}>
         {TABS.map((t) => {
           const active = mode === t.key;
           return (
@@ -719,6 +745,7 @@ export default function SalidasScreen() {
 
       {/* ── Selector de país (chips horizontales) ── */}
       <ScrollView
+        ref={chipsScrollRef}
         horizontal showsHorizontalScrollIndicator={false}
         style={styles.destScroll} contentContainerStyle={styles.destContent}
       >
@@ -727,6 +754,12 @@ export default function SalidasScreen() {
           return (
             <Pressable
               key={d.code}
+              onLayout={(e) => {
+                chipWidths.current[d.code] = {
+                  x: e.nativeEvent.layout.x,
+                  width: e.nativeEvent.layout.width,
+                };
+              }}
               style={[styles.destChip, {
                 backgroundColor: active ? colors.brand.primary + '18' : colors.bg.elevated,
                 borderColor: active ? colors.brand.primary : colors.border.subtle,
@@ -858,12 +891,14 @@ export default function SalidasScreen() {
         onClose={() => setPickerOpen(false)}
       />
     </SafeAreaView>
+    </View>
   );
 }
 
 // ── Estilos ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  root:   { flex: 1 },
+  rootGradient: { flex: 1 },
+  root:   { flex: 1, backgroundColor: 'transparent' },
 
   // Indicador de descarga DB lazy
   downloadBanner: {
@@ -882,13 +917,14 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: 'row', alignItems: 'flex-start', flex: 1, marginRight: 12,
   },
-  title:    { fontSize: 22, fontWeight: '800', letterSpacing: -0.3 },
-  subtitle: { fontSize: 12, marginTop: 2 },
+  title:    { fontSize: 24, fontWeight: '800', letterSpacing: -0.5, color: '#fff' },
+  subtitle: { fontSize: 12, marginTop: 3, fontWeight: '300', letterSpacing: 0.2 },
 
   refreshBtn: {
-    width: 36, height: 36, borderRadius: 18,
+    width: 38, height: 38, borderRadius: 19,
     alignItems: 'center', justifyContent: 'center',
-    borderWidth: 0.5,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
   },
 
   segWrap: {
@@ -926,16 +962,20 @@ const styles = StyleSheet.create({
   boardLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 0.7 },
   boardMore:  { fontSize: 12, fontWeight: '600' },
 
-  boardScroll: { flex: 1, marginHorizontal: 20, borderRadius: 20, overflow: 'hidden' },
+  boardScroll: { flex: 1, marginHorizontal: 16 },
   boardRow: {
     flexDirection: 'row', alignItems: 'center',
-    paddingVertical: 12, paddingHorizontal: 16,
-    borderBottomWidth: 1, gap: 10,
+    paddingVertical: 14, paddingHorizontal: 16,
+    marginBottom: 8, gap: 10,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.13)',
   },
-  boardTime:    { fontSize: 20, fontWeight: '700', width: 62, letterSpacing: -0.5 },
-  boardInfo:    { flex: 1, gap: 2 },
-  boardTrain:   { fontSize: 14, fontWeight: '600' },
-  boardStation: { fontSize: 11 },
+  boardTime:    { fontSize: 22, fontWeight: '800', width: 64, letterSpacing: -0.8, color: '#fff' },
+  boardInfo:    { flex: 1, gap: 3 },
+  boardTrain:   { fontSize: 14, fontWeight: '700' },
+  boardStation: { fontSize: 11, fontWeight: '300' },
 
   statusPill: {
     flexDirection: 'row', alignItems: 'center', gap: 4,

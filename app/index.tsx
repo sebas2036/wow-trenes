@@ -6,7 +6,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView,
-  ActivityIndicator, Platform, FlatList, TextInput,
+  ActivityIndicator, Platform, FlatList, TextInput, Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -494,6 +494,16 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.root}>
+      <Image
+        source={require('../assets/images/bg-hero.png')}
+        style={[StyleSheet.absoluteFillObject, { top: -280, bottom: 280 }]}
+        resizeMode="cover"
+      />
+      <LinearGradient
+        colors={['rgba(10,8,30,0.20)', 'rgba(14,14,46,0.45)', 'rgba(14,14,46,0.65)']}
+        style={StyleSheet.absoluteFillObject}
+        pointerEvents="none"
+      />
     <SafeAreaView style={styles.rootInner} edges={['top']}>
 
       {/* ── Offline Banner ── */}

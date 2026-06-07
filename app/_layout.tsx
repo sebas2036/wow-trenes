@@ -6,8 +6,7 @@ import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { StyleSheet, Image, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { StyleSheet } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { NotificationProvider } from '../context/NotificationContext';
@@ -33,18 +32,7 @@ function AppStack() {
 
   return (
     <GestureHandlerRootView style={styles.root}>
-      {/* Fondo global — foto tren de noche aplicada a toda la app */}
-      <Image
-        source={require('../assets/images/bg-hero.png')}
-        style={StyleSheet.absoluteFillObject}
-        resizeMode="cover"
-      />
-      <LinearGradient
-        colors={['rgba(10,8,30,0.20)', 'rgba(14,14,46,0.55)', 'rgba(14,14,46,0.80)']}
-        style={StyleSheet.absoluteFillObject}
-        pointerEvents="none"
-      />
-      <StatusBar style={isDark ? 'light' : 'dark'} backgroundColor="transparent" />
+      <StatusBar style={isDark ? 'light' : 'dark'} backgroundColor={colors.bg.base} />
       <Stack
         screenOptions={{
           headerShown:       false,

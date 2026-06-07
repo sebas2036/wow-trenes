@@ -4,15 +4,16 @@
  */
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, Switch, ScrollView, Linking,
+  View, Text, StyleSheet, Pressable, Switch, ScrollView, Linking, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Radius } from '../theme';
+import { Radius, Gradients } from '../theme';
 import { useTheme } from '../context/ThemeContext';
+import { LinearGradient } from 'expo-linear-gradient';
 import BottomTabBar from '../components/BottomTabBar';
 import TranslatorSheet from '../components/TranslatorSheet';
 
@@ -67,7 +68,7 @@ function Row({
           <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
         ) : null}
       </Pressable>
-      {!isLast && <View style={[styles.divider, { backgroundColor: colors.border.subtle }]} />}
+      {!isLast && <View style={styles.divider} />}
     </>
   );
 }
@@ -85,22 +86,22 @@ export default function AjustesScreen() {
     router.push({ pathname: '/legal', params: { page } });
   };
 
-  const groupStyle = [styles.group, {
-    backgroundColor: colors.bg.card,
-    borderColor:     colors.border.card,
-  }];
+  const groupStyle = [styles.group];
 
   return (
-    <SafeAreaView style={[styles.root, { backgroundColor: colors.bg.base }]} edges={['top']}>
+    <View style={styles.rootGradient}>
+      <Image source={require('../assets/images/bg-hero.png')} style={[StyleSheet.absoluteFillObject, { top: -280, bottom: 280 }]} resizeMode="cover" />
+      <LinearGradient colors={['rgba(10,8,30,0.20)', 'rgba(14,14,46,0.45)', 'rgba(14,14,46,0.65)']} style={StyleSheet.absoluteFillObject} pointerEvents="none" />
+    <SafeAreaView style={styles.root} edges={['top']}>
 
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text.primary }]}>Ajustes</Text>
+        <Text style={styles.title}>Ajustes</Text>
       </View>
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
 
         {/* ── Preferencias ── */}
-        <Text style={[styles.section, { color: colors.text.muted }]}>PREFERENCIAS</Text>
+        <Text style={styles.section}>PREFERENCIAS</Text>
         <View style={groupStyle}>
           <Row
             iconName="notifications-outline" iconBg="#7C3AED"
@@ -118,7 +119,7 @@ export default function AjustesScreen() {
         </View>
 
         {/* ── Datos ── */}
-        <Text style={[styles.section, { color: colors.text.muted }]}>DATOS</Text>
+        <Text style={styles.section}>DATOS</Text>
         <View style={groupStyle}>
           <Row
             iconName="globe-outline" iconBg="#30D158"
@@ -136,7 +137,7 @@ export default function AjustesScreen() {
         </View>
 
         {/* ── Legal ── */}
-        <Text style={[styles.section, { color: colors.text.muted }]}>LEGAL</Text>
+        <Text style={styles.section}>LEGAL</Text>
         <View style={groupStyle}>
           <Row
             iconName="help-circle-outline" iconBg="#FF9F0A"
@@ -162,7 +163,7 @@ export default function AjustesScreen() {
         </View>
 
         {/* ── Privacidad ── */}
-        <Text style={[styles.section, { color: colors.text.muted }]}>PRIVACIDAD</Text>
+        <Text style={styles.section}>PRIVACIDAD</Text>
         <View style={groupStyle}>
           <Row
             iconName="person-remove-outline" iconBg="#30D158"
@@ -180,7 +181,7 @@ export default function AjustesScreen() {
         </View>
 
         {/* ── Acerca de ── */}
-        <Text style={[styles.section, { color: colors.text.muted }]}>ACERCA DE</Text>
+        <Text style={styles.section}>ACERCA DE</Text>
         <View style={groupStyle}>
           <Row
             iconName="information-circle-outline" iconBg="#636366"
@@ -201,10 +202,10 @@ export default function AjustesScreen() {
 
         {/* ── Branding ── */}
         <View style={styles.brand}>
-          <Text style={[styles.brandLogo, { color: colors.text.primary }]}>
-            <Text style={{ color: colors.brand.primary }}>WoW </Text>TRAIN
+          <Text style={styles.brandLogo}>
+            <Text style={{ color: '#A78BFA' }}>WoW </Text>TRAIN
           </Text>
-          <Text style={[styles.brandSub, { color: colors.text.muted }]}>
+          <Text style={styles.brandSub}>
             Hecho para viajeros del mundo
           </Text>
         </View>
@@ -215,46 +216,55 @@ export default function AjustesScreen() {
       <BottomTabBar active="ajustes" onTranslatePress={() => setTranslator(true)} />
       <TranslatorSheet visible={translator} onClose={() => setTranslator(false)} />
     </SafeAreaView>
+    </View>
   );
 }
 
 // ── Estilos ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  root:   { flex: 1 },
+  rootGradient: { flex: 1 },
+  root:   { flex: 1, backgroundColor: 'transparent' },
   header: { paddingHorizontal: 22, paddingTop: 20, paddingBottom: 6 },
-  title:  { fontSize: 30, fontWeight: '800', letterSpacing: -0.3 },
+  title:  { fontSize: 34, fontWeight: '900', letterSpacing: -0.8, color: '#fff' },
   scroll: { flex: 1 },
 
   section: {
-    fontSize: 11, fontWeight: '700', letterSpacing: 1.1,
-    paddingHorizontal: 22, marginTop: 24, marginBottom: 8,
+    fontSize: 11, fontWeight: '700', letterSpacing: 1.3,
+    paddingHorizontal: 22, marginTop: 28, marginBottom: 8,
+    color: 'rgba(226,232,240,0.45)',
   },
 
   group: {
     marginHorizontal: 16,
-    borderRadius: Radius.lg,
-    borderWidth: 0.5,
+    borderRadius: Radius.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.13)',
+    backgroundColor: 'rgba(255,255,255,0.07)',
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.20,
+    shadowRadius: 20,
   },
 
   row: {
     flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 14, paddingVertical: 13, gap: 13,
+    paddingHorizontal: 16, paddingVertical: 14, gap: 13,
   },
 
   // Ícono iOS Settings — cuadrado redondeado con color + icono blanco
   iconWrap: {
-    width: 32, height: 32,
-    borderRadius: 8,
+    width: 34, height: 34,
+    borderRadius: 9,
     alignItems: 'center', justifyContent: 'center',
     flexShrink: 0,
   },
 
-  divider:  { height: 0.5, marginLeft: 59 },
-  rowLabel: { flex: 1, fontSize: 15, fontWeight: '500' },
-  rowValue: { fontSize: 13 },
+  divider:  { height: 0.5, marginLeft: 62, backgroundColor: 'rgba(255,255,255,0.08)' },
+  rowLabel: { flex: 1, fontSize: 15, fontWeight: '500', color: '#fff' },
+  rowValue: { fontSize: 13, fontWeight: '300', color: 'rgba(226,232,240,0.50)' },
 
-  brand:     { alignItems: 'center', paddingVertical: 36, gap: 6 },
-  brandLogo: { fontSize: 20, fontWeight: '900', letterSpacing: -0.3 },
-  brandSub:  { fontSize: 12 },
+  brand:     { alignItems: 'center', paddingVertical: 40, gap: 8 },
+  brandLogo: { fontSize: 24, fontWeight: '900', letterSpacing: -0.5, color: '#fff' },
+  brandSub:  { fontSize: 12, fontWeight: '300', color: 'rgba(226,232,240,0.45)', letterSpacing: 0.3 },
 });
