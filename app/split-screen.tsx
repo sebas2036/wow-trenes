@@ -21,12 +21,13 @@ import {
   Pressable,
   Linking,
   Animated as RNAnimated,
-  Modal,
+
   TextInput,
   ScrollView,
   ActivityIndicator,
   SafeAreaView,
   Image,
+  Keyboard,
 } from 'react-native';
 import Constants from 'expo-constants';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -53,6 +54,7 @@ import AffiliateWebView  from '../components/AffiliateWebView';
 
 import { useTrainSchedules }          from '../hooks/useTrainSchedules';
 import { useLocation }                from '../hooks/useLocation';
+import * as Location                  from 'expo-location';
 import { useLiveTrainPosition }       from '../services/liveTrainPosition';
 import { findNearestStation, getStationById, getFirstStation, getMainStation, searchStations, detectCountryFromCoords, setActiveCountry } from '../services/gtfsDatabase';
 import { translateStationQuery } from '../services/stationTranslations';
@@ -359,6 +361,14 @@ export default function SplitScreen() {
     setMapMode('hidden');
   }, [mapHeight]);
 
+  // Al cambiar de estación (picker manual) → cerrar mapa para evitar área negra huérfana
+  useEffect(() => {
+    if (!selectedStation) return;
+    mapHeight.value = 0;
+    setMapMode('hidden');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedStation?.id]);
+
   // Checkout — affiliate WebView (primary)
   const [affiliateVisible,  setAffiliateVisible]  = useState(false);
   const [scenicVisible,     setScenicVisible]     = useState<string | null>(null);
@@ -401,20 +411,50 @@ export default function SplitScreen() {
           if (st) { setSelectedStation(st); return; }
         } catch { /* fall through to GPS fallback */ }
       }
-      // Country mode — si el usuario eligió un país explícitamente,
-      // intentar GPS solo si las coordenadas caen dentro de ese país.
-      // Si el GPS está en otro país (ej: fake Madrid → Alemania), ignorar GPS
-      // y usar la estación principal del país seleccionado.
-      if (userCoords) {
-        const gpsCountry = detectCountryFromCoords(userCoords);
+
+      // Obtener coordenadas GPS: usar las de params si vienen, sino pedir GPS activamente
+      let coords: Coordinates | null = userCoords;
+      if (!coords) {
+        try {
+          const { status } = await Location.getForegroundPermissionsAsync();
+          if (status === 'granted') {
+            // Cascada Balanced → Low → Lowest (misma lógica que salidas/index)
+            for (const accuracy of [
+              Location.Accuracy.Balanced,
+              Location.Accuracy.Low,
+              Location.Accuracy.Lowest,
+            ]) {
+              try {
+                const res = await Promise.race([
+                  Location.getCurrentPositionAsync({ accuracy }),
+                  new Promise<null>(r => setTimeout(() => r(null), 3000)),
+                ]);
+                if (res) {
+                  coords = { latitude: res.coords.latitude, longitude: res.coords.longitude };
+                  break;
+                }
+              } catch {}
+            }
+            // Último recurso: lastKnown
+            if (!coords) {
+              const last = await Location.getLastKnownPositionAsync();
+              if (last) coords = { latitude: last.coords.latitude, longitude: last.coords.longitude };
+            }
+          }
+        } catch {}
+      }
+
+      // Country mode — usar GPS solo si coincide con el país seleccionado
+      if (coords) {
+        const gpsCountry = detectCountryFromCoords(coords);
         const selectedCountry = params.country?.split('_')[0] ?? null;
-        // Solo usar GPS si coincide con el país seleccionado
         if (!selectedCountry || gpsCountry === selectedCountry || gpsCountry === params.country) {
-          const station = await findNearestStation(userCoords);
+          const station = await findNearestStation(coords);
           if (station) { setSelectedStation(station); return; }
         }
       }
-      // GPS no coincide con el país → estación principal hardcodeada del país
+
+      // GPS no disponible o no coincide con el país → estación principal del país
       if (params.country) {
         await setActiveCountry(params.country as any).catch(() => {});
       }
@@ -722,7 +762,7 @@ export default function SplitScreen() {
         fadeDuration={0}
       />
       <LinearGradient
-        colors={['rgba(10,8,30,0.20)', 'rgba(14,14,46,0.55)', 'rgba(14,14,46,0.75)']}
+        colors={['rgba(10,8,30,0.20)', 'rgba(14,14,46,0.45)', 'rgba(14,14,46,0.65)']}
         style={StyleSheet.absoluteFillObject}
         pointerEvents="none"
       />
@@ -749,9 +789,10 @@ export default function SplitScreen() {
           {/* Origin station pill — muestra estación actual, tappeable para cambiar */}
           <Pressable
             style={[styles.stationPill, { backgroundColor: 'rgba(14,14,46,0.45)', borderColor: 'rgba(139,92,246,0.65)' }]}
-            onPress={() => { setStationQuery(''); setStationSuggestions([]); setShowStationPicker(true); }}
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setStationQuery(''); setStationSuggestions([]); setShowStationPicker(true); }}
             accessibilityLabel="Cambiar estación"
             accessibilityHint="Toca para buscar otra estación"
+            hitSlop={8}
           >
             <Ionicons name="location" size={13} color={colors.brand.primary} />
             <Text style={[styles.stationPillText, { color: selectedStation ? colors.text.primary : colors.text.muted }]} numberOfLines={1}>
@@ -799,8 +840,11 @@ export default function SplitScreen() {
                   {isMetro ? params.metroCity : t('split_where_going')}
                 </Text>
               </View>
-              <Pressable onPress={() => setShowDestSearch(false)} hitSlop={8}>
-                <Ionicons name="close" size={16} color={colors.text.secondary} />
+              <Pressable
+                onPress={() => setShowDestSearch(false)}
+                hitSlop={12}
+              >
+                <Text style={{ fontSize: 15, fontWeight: '600', color: '#C4B5FD' }}>{t('close')}</Text>
               </Pressable>
             </View>
             <DestinationSearch
@@ -1024,92 +1068,128 @@ export default function SplitScreen() {
         />
       )}
 
-      {/* ── Modal PARA TU VIAJE — full screen ── */}
-      <Modal visible={showTravelModal} animationType="slide" transparent={false} onRequestClose={() => setShowTravelModal(false)}>
-        <LinearGradient colors={[...Gradients.screenBg]} style={styles.travelModalRoot}>
-          {/* Header */}
-          <View style={[styles.travelModalHeader, { borderBottomColor: 'rgba(255,255,255,0.08)' }]}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Ionicons name="sparkles" size={18} color="#F59E0B" />
-              <Text style={[styles.travelModalTitle, { color: colors.text.primary }]}>{t('split_discover')}</Text>
+      {/* ── DISCOVER — overlay absoluto (igual que station picker, evita bugs Modal Android) ── */}
+      {showTravelModal && (
+        <View style={[StyleSheet.absoluteFillObject, { zIndex: 998, backgroundColor: 'transparent' }]}>
+          <LinearGradient colors={[...Gradients.screenBg]} style={[StyleSheet.absoluteFillObject, styles.travelModalRoot]}>
+            {/* Header */}
+            <View style={[styles.travelModalHeader, { borderBottomColor: 'rgba(255,255,255,0.08)', paddingTop: 50 }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Ionicons name="sparkles" size={18} color="#F59E0B" />
+                <Text style={[styles.travelModalTitle, { color: colors.text.primary }]}>{t('split_discover')}</Text>
+              </View>
+              <Pressable onPress={() => setShowTravelModal(false)} hitSlop={12}>
+                <Ionicons name="close" size={22} color={colors.text.muted} />
+              </Pressable>
             </View>
-            <Pressable onPress={() => setShowTravelModal(false)} hitSlop={12}>
-              <Ionicons name="close" size={22} color={colors.text.muted} />
-            </Pressable>
-          </View>
 
-          <TrainSceneBg />
-          <ScrollView style={{ flex: 1 }} contentContainerStyle={[styles.travelModalContent, { minHeight: 500 }]} showsVerticalScrollIndicator={false}>
+            <TrainSceneBg />
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={[styles.travelModalContent, { minHeight: 500 }]} showsVerticalScrollIndicator={false}>
 
-            {/* Trenes escénicos */}
-            {params.country && getScenicByCountry(params.country).length > 0 && (
-              <>
-                <Text style={[styles.travelModalSection, { color: colors.text.muted }]}>EXPERIENCIAS ESPECIALES</Text>
-                {getScenicByCountry(params.country).map((train) => (
+              {/* Trenes escénicos — país actual primero, luego el resto */}
+              {(() => {
+                const currentCode = params.country?.split('_')[0] ?? '';
+                const local  = SCENIC_TRAINS.filter(t => t.country === currentCode);
+                const others = SCENIC_TRAINS.filter(t => t.country !== currentCode);
+                const renderCard = (train: typeof SCENIC_TRAINS[0]) => (
                   <Pressable
                     key={train.id}
                     style={[styles.scenicCard, { backgroundColor: 'rgba(255,255,255,0.07)', borderColor: train.colors[0] + '66' }]}
                     onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setShowTravelModal(false); setScenicVisible(train.id); }}
                   >
-                    <LinearGradient
-                      colors={train.colors}
-                      style={styles.scenicIconBadge}
-                      start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                    >
+                    <LinearGradient colors={train.colors} style={styles.scenicIconBadge} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
                       <Ionicons name="train" size={22} color="#fff" />
                     </LinearGradient>
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.scenicTitle, { color: colors.text.primary }]}>{train.name}</Text>
                       <Text style={[styles.scenicSub, { color: colors.text.muted }]}>{train.route} · {train.duration}</Text>
-                      {train.description && (
-                        <Text style={[styles.scenicDesc, { color: colors.text.secondary }]}>{train.description}</Text>
-                      )}
+                      {train.description && <Text style={[styles.scenicDesc, { color: colors.text.secondary }]}>{t(('scenic_' + train.id.replace(/-/g, '_') + '_desc') as any)}</Text>}
                     </View>
-                    <View style={[styles.scenicBadge, { backgroundColor: '#7C3AED' }]}>
-                      <Text style={styles.scenicBadgeText}>Reservar</Text>
-                    </View>
+                    <View style={[styles.scenicBadge, { backgroundColor: '#7C3AED' }]}><Text style={styles.scenicBadgeText}>{t('intl_book')}</Text></View>
                   </Pressable>
-                ))}
-              </>
-            )}
+                );
+                return (
+                  <>
+                    {local.length > 0 && (
+                      <>
+                        <Text style={[styles.travelModalSection, { color: colors.text.muted }]}>{t('intl_scenic')}</Text>
+                        {local.map(renderCard)}
+                      </>
+                    )}
+                    {others.length > 0 && (
+                      <>
+                        <Text style={[styles.travelModalSection, { color: colors.text.muted, marginTop: local.length > 0 ? 16 : 0 }]}>
+                          {local.length > 0 ? t('discover_other') : t('intl_scenic')}
+                        </Text>
+                        {others.map(renderCard)}
+                      </>
+                    )}
+                  </>
+                );
+              })()}
 
-            {/* Partners por ciudad */}
-            {selectedStation && (() => {
-              const cityOffers = getCityOffers(selectedStation.name);
-              if (cityOffers.length === 0) return null;
-              return (
-                <>
-                  <Text style={[styles.travelModalSection, { color: colors.text.muted }]}>SERVICIOS</Text>
-                  {cityOffers.map((offer, i) => (
-                    <View key={`partner-modal-${i}`} style={{ marginBottom: 10 }}>
-                      <PartnerCard {...offer} />
-                    </View>
-                  ))}
-                </>
-              );
-            })()}
+              {/* Partners por ciudad */}
+              {selectedStation && (() => {
+                const cityOffers = getCityOffers(selectedStation.name);
+                if (cityOffers.length === 0) return null;
+                return (
+                  <>
+                    <Text style={[styles.travelModalSection, { color: colors.text.muted }]}>{t('discover_services')}</Text>
+                    {cityOffers.map((offer, i) => (
+                      <View key={`partner-modal-${i}`} style={{ marginBottom: 10 }}>
+                        <PartnerCard {...offer} />
+                      </View>
+                    ))}
+                  </>
+                );
+              })()}
 
-          </ScrollView>
-        </LinearGradient>
-      </Modal>
+            </ScrollView>
+          </LinearGradient>
+        </View>
+      )}
 
-      {/* ── Modal picker de estación manual ── */}
-      <Modal visible={showStationPicker} animationType="slide" transparent onRequestClose={() => setShowStationPicker(false)}>
+      {/* ── Picker de estación manual — overlay absoluto (evita bugs de Modal transparent en Android) ── */}
+      {showStationPicker && (
         <View style={styles.pickerOverlay}>
+          {/* Backdrop: toca fuera para cerrar */}
+          <Pressable style={StyleSheet.absoluteFillObject} onPress={() => { Keyboard.dismiss(); setShowStationPicker(false); }} />
           <View style={[styles.pickerSheet, { backgroundColor: '#13133A' }]}>
-            {/* Header */}
+
+            {/* ── Header explicativo ── */}
             <View style={styles.pickerHeader}>
-              <Text style={[styles.pickerTitle, { color: colors.text.primary }]}>Cambiar estación</Text>
-              <Pressable onPress={() => setShowStationPicker(false)}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.pickerTitle, { color: colors.text.primary }]}>Estación de salida</Text>
+                <Text style={[styles.pickerSubtitle, { color: colors.text.muted }]}>
+                  Cambia desde dónde salen tus trenes
+                </Text>
+              </View>
+              <Pressable onPress={() => { Keyboard.dismiss(); setShowStationPicker(false); }} hitSlop={8}>
                 <Ionicons name="close" size={22} color={colors.text.muted} />
               </Pressable>
             </View>
-            {/* Search input */}
+
+            {/* ── Estación actual seleccionada ── */}
+            {selectedStation && (
+              <View style={[styles.pickerCurrentRow, { backgroundColor: 'rgba(139,92,246,0.12)', borderColor: 'rgba(139,92,246,0.35)' }]}>
+                <Ionicons name="location" size={16} color={colors.brand.primary} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.pickerCurrentLabel, { color: colors.text.muted }]}>Saliendo desde</Text>
+                  <Text style={[styles.pickerCurrentName, { color: colors.text.primary }]}>{selectedStation.name}</Text>
+                </View>
+                <View style={[styles.pickerGpsBadge, { borderColor: 'rgba(139,92,246,0.40)' }]}>
+                  <Ionicons name="navigate-circle-outline" size={11} color={colors.brand.primary} />
+                  <Text style={[styles.pickerGpsText, { color: colors.brand.primary }]}>GPS</Text>
+                </View>
+              </View>
+            )}
+
+            {/* ── Buscador ── */}
             <View style={[styles.pickerInputRow, { backgroundColor: colors.bg.elevated, borderColor: colors.border.subtle }]}>
               <Ionicons name="search-outline" size={16} color={colors.text.muted} />
               <TextInput
                 style={[styles.pickerInput, { color: colors.text.primary }]}
-                placeholder="Buscar estación..."
+                placeholder="Buscar otra ciudad o estación…"
                 placeholderTextColor={colors.text.muted}
                 value={stationQuery}
                 onChangeText={setStationQuery}
@@ -1118,6 +1198,7 @@ export default function SplitScreen() {
                 returnKeyType="search"
                 onSubmitEditing={() => {
                   if (stationSuggestions.length > 0) {
+                    Keyboard.dismiss();
                     setSelectedStation(stationSuggestions[0]);
                     setShowStationPicker(false);
                   }
@@ -1127,17 +1208,30 @@ export default function SplitScreen() {
             </View>
             {/* Sugerencias */}
             <ScrollView keyboardShouldPersistTaps="handled" style={{ flex: 1 }}>
-              {stationSuggestions.map(s => (
+              {stationSuggestions.map((s, i) => (
                 <Pressable
                   key={s.id}
-                  style={[styles.pickerItem, { borderBottomColor: colors.border.subtle }]}
+                  style={({ pressed }) => [
+                    styles.pickerItem,
+                    { borderBottomColor: colors.border.subtle },
+                    i === 0 && styles.pickerItemMain,
+                    pressed && { backgroundColor: 'rgba(139,92,246,0.12)' },
+                  ]}
                   onPress={() => {
+                    Keyboard.dismiss();
                     setSelectedStation(s);
                     setShowStationPicker(false);
                   }}
                 >
-                  <Ionicons name="train-outline" size={15} color={colors.brand.primary} />
-                  <Text style={[styles.pickerItemText, { color: colors.text.primary }]} numberOfLines={1}>{s.name}</Text>
+                  <Ionicons name="train-outline" size={15} color={i === 0 ? colors.brand.primary : colors.text.muted} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.pickerItemText, { color: i === 0 ? colors.text.primary : colors.text.secondary }]} numberOfLines={1}>{s.name}</Text>
+                    {i === 0 && <Text style={styles.pickerItemSub}>{t('main_station_sub')}</Text>}
+                  </View>
+                  {i === 0
+                    ? <View style={styles.pickerMainBadge}><Text style={styles.pickerMainBadgeText}>{t('main_station')}</Text></View>
+                    : <Ionicons name="chevron-forward" size={12} color={colors.text.muted} />
+                  }
                 </Pressable>
               ))}
               {stationQuery.length >= 2 && !stationSearching && stationSuggestions.length === 0 && (
@@ -1146,7 +1240,7 @@ export default function SplitScreen() {
             </ScrollView>
           </View>
         </View>
-      </Modal>
+      )}
 
       {/* ── Affiliate WebView checkout (primary) ── */}
       {selectedService && (
@@ -1252,10 +1346,27 @@ const styles = StyleSheet.create({
   },
 
   // Station picker modal
-  pickerOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
-  pickerSheet: { borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '80%' },
-  pickerHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-  pickerTitle: { fontSize: Typography.size.base, fontWeight: Typography.weight.bold },
+  pickerOverlay: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'flex-end',
+    zIndex: 999,
+  },
+  pickerSheet: { borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '80%', minHeight: 300 },
+  pickerHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 },
+  pickerTitle:    { fontSize: Typography.size.base, fontWeight: Typography.weight.bold },
+  pickerSubtitle: { fontSize: Typography.size.xs, marginTop: 2 },
+  pickerCurrentRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    borderRadius: 12, borderWidth: 1,
+    paddingHorizontal: 14, paddingVertical: 12, marginBottom: 12,
+  },
+  pickerCurrentLabel: { fontSize: 10, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 },
+  pickerCurrentName:  { fontSize: Typography.size.sm, fontWeight: Typography.weight.semibold },
+  pickerGpsBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 3,
+    borderWidth: 1, borderRadius: 8, paddingHorizontal: 7, paddingVertical: 3,
+  },
+  pickerGpsText: { fontSize: 10, fontWeight: '700' as const },
   pickerInputRow: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     borderRadius: 12, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 12,
@@ -1265,7 +1376,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 10,
     paddingVertical: 14, borderBottomWidth: 1,
   },
+  pickerItemMain: {
+    backgroundColor: 'rgba(139,92,246,0.08)',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    marginHorizontal: -8,
+    borderBottomWidth: 0,
+    marginBottom: 4,
+  },
   pickerItemText: { fontSize: Typography.size.sm, flex: 1 },
+  pickerItemSub:  { fontSize: 11, color: 'rgba(196,181,253,0.70)', marginTop: 2 },
+  pickerMainBadge: {
+    backgroundColor: 'rgba(139,92,246,0.20)',
+    borderRadius: 8,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(139,92,246,0.50)',
+  },
+  pickerMainBadgeText: { fontSize: 10, fontWeight: '700' as const, color: '#C4B5FD' },
   pickerEmpty: { textAlign: 'center', marginTop: 30, fontSize: Typography.size.sm },
   refreshBtn: {
     width:          44,
@@ -1309,12 +1438,12 @@ const styles = StyleSheet.create({
     gap:               Spacing['2'],
     marginHorizontal:  Spacing['4'],
     marginBottom:      Spacing['2'],
-    paddingVertical:   10,
+    paddingVertical:   12,
     paddingHorizontal: Spacing['3'],
-    backgroundColor:   'rgba(8,8,32,0.65)',
+    backgroundColor:   'rgba(255,255,255,0.07)',
     borderRadius:      Radius.xl,
     borderWidth:       1,
-    borderColor:       'rgba(255,255,255,0.25)',
+    borderColor:       'rgba(139,92,246,0.30)',
   },
   reopenSearchIcon: { fontSize: 13 },
   reopenSearchText: {

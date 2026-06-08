@@ -6,7 +6,7 @@
  * Sin gradientes recargados — fondo sólido elevado.
  */
 import React, { useEffect, useRef, useState, memo, useCallback } from 'react';
-import { t } from '../services/i18n';
+import { t, getLanguage } from '../services/i18n';
 import {
   View,
   Text,
@@ -111,11 +111,12 @@ export default memo(function TrainCountdown({
           const today = new Date();
           const isToday = d.getDate() === today.getDate() && d.getMonth() === today.getMonth();
           const isTomorrow = d.getDate() === today.getDate() + 1 && d.getMonth() === today.getMonth();
+          const loc = getLanguage();
           const label = isToday
-            ? `Hoy ${d.getDate()} ${d.toLocaleDateString('es', { month: 'short' })}`
+            ? `${t('search_today')} ${d.getDate()} ${d.toLocaleDateString(loc, { month: 'short' })}`
             : isTomorrow
-            ? `Mañana ${d.getDate()} ${d.toLocaleDateString('es', { month: 'short' })}`
-            : d.toLocaleDateString('es', { weekday: 'short', day: 'numeric', month: 'short' });
+            ? `${t('search_tomorrow')} ${d.getDate()} ${d.toLocaleDateString(loc, { month: 'short' })}`
+            : d.toLocaleDateString(loc, { weekday: 'short', day: 'numeric', month: 'short' });
           return (
             <Text style={styles.dateLabel}>{label}</Text>
           );
@@ -140,7 +141,7 @@ export default memo(function TrainCountdown({
             const showDateSep = !isToday && prevIsToday;
             const dateLabel = dep.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' });
             return (
-              <React.Fragment key={clock.train.serviceId}>
+              <React.Fragment key={`${clock.train.serviceId}-${i}`}>
                 {showDateSep && (
                   <View style={styles.dateSep}>
                     <View style={styles.dateSepLine} />
@@ -161,16 +162,28 @@ export default memo(function TrainCountdown({
             );
           })}
 
-          {/* Card fin de servicio — rellena espacio cuando hay pocos trenes */}
-          {clocks.length < 4 && (
-            <View style={styles.endOfServiceCard}>
-              <Text style={styles.endOfServiceIcon}>🌙</Text>
-              <View>
-                <Text style={styles.endOfServiceTitle}>Fin de servicio nocturno</Text>
-                <Text style={styles.endOfServiceSub}>Próximas salidas · mañana desde las 05:00</Text>
+          {/* Card fin de servicio — solo cuando los trenes visibles son los últimos de HOY
+               (hay pocos Y ninguno es de mañana → realmente es fin de servicio nocturno) */}
+          {(() => {
+            if (clocks.length >= 4) return null;
+            const today = new Date();
+            const allToday = clocks.every(c => {
+              const d = c.train.departureTime;
+              return d.getDate()     === today.getDate()  &&
+                     d.getMonth()    === today.getMonth() &&
+                     d.getFullYear() === today.getFullYear();
+            });
+            if (!allToday) return null; // ya hay trenes de mañana → no mostrar fin de servicio
+            return (
+              <View style={styles.endOfServiceCard}>
+                <Text style={styles.endOfServiceIcon}>🌙</Text>
+                <View>
+                  <Text style={styles.endOfServiceTitle}>Fin de servicio nocturno</Text>
+                  <Text style={styles.endOfServiceSub}>Próximas salidas · mañana desde las 05:00</Text>
+                </View>
               </View>
-            </View>
-          )}
+            );
+          })()}
         </View>
       )}
     </View>
@@ -281,7 +294,7 @@ function TrainCard({
                 <Text style={styles.trainNum}>{train.trainNumber}</Text>
                 {index === 0 && !isDestMatch && (
                   <View style={styles.nextBadge}>
-                    <Text style={styles.nextBadgeText}>PRÓXIMO</Text>
+                    <Text style={styles.nextBadgeText}>{t('board_next')}</Text>
                   </View>
                 )}
                 {isDestMatch && (
@@ -358,16 +371,28 @@ function TrainCard({
       {expanded && (
         <View style={styles.expandPanel}>
           <View style={styles.expandRow}>
+            {/* Salida */}
             <View style={styles.expandStat}>
               <Text style={styles.expandStatLabel}>{t('split_departs')}</Text>
               <Text style={styles.expandStatValue}>{fmt(train.departureTime)}</Text>
             </View>
+            {/* Línea de viaje */}
             <View style={styles.expandArrow}>
-              <Text style={styles.expandArrowText}>──────›</Text>
+              <View style={styles.expandLine}>
+                <View style={styles.expandLineDot} />
+                <View style={styles.expandLineBar} />
+                <View style={[styles.expandLineDot, { backgroundColor: Colors.brand.primary }]} />
+              </View>
+              <Text style={styles.expandDuration}>
+                {Math.round((train.arrivalTime.getTime() - train.departureTime.getTime()) / 60_000) > 59
+                  ? `${Math.floor((train.arrivalTime.getTime() - train.departureTime.getTime()) / 3_600_000)}h ${Math.round(((train.arrivalTime.getTime() - train.departureTime.getTime()) % 3_600_000) / 60_000)}m`
+                  : `${Math.round((train.arrivalTime.getTime() - train.departureTime.getTime()) / 60_000)} min`}
+              </Text>
             </View>
-            <View style={styles.expandStat}>
+            {/* Llegada */}
+            <View style={[styles.expandStat, { alignItems: 'flex-end' }]}>
               <Text style={styles.expandStatLabel}>{t('split_arrives')}</Text>
-              <Text style={styles.expandStatValue}>{fmt(train.arrivalTime)}</Text>
+              <Text style={[styles.expandStatValue, { color: '#C4B5FD' }]}>{fmt(train.arrivalTime)}</Text>
             </View>
           </View>
         </View>
@@ -503,7 +528,6 @@ const styles = StyleSheet.create({
   },
   cardFirst: {
     borderColor:  Colors.border.default,
-    // glow sutil morado en la primera tarjeta
     shadowColor:  Colors.brand.primary,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity:0.25,
@@ -696,39 +720,60 @@ const styles = StyleSheet.create({
 
   // Expand panel
   expandPanel: {
-    backgroundColor: Colors.bg.elevated,
-    marginTop:       -Spacing['1'],
-    paddingHorizontal: Spacing['3'],
-    paddingTop:      Spacing['2'],
-    paddingBottom:   Spacing['3'],
-    borderBottomLeftRadius:  8,
-    borderBottomRightRadius: 8,
-    borderTopWidth:  0.5,
-    borderTopColor:  Colors.border.subtle,
-    gap:             Spacing['2'],
+    backgroundColor:      'rgba(139,92,246,0.06)',
+    marginTop:            -Spacing['1'],
+    paddingHorizontal:    Spacing['4'],
+    paddingTop:           Spacing['3'],
+    paddingBottom:        Spacing['3'],
+    borderBottomLeftRadius:  10,
+    borderBottomRightRadius: 10,
+    borderTopWidth:       1,
+    borderTopColor:       'rgba(139,92,246,0.20)',
+    borderLeftWidth:      1,
+    borderRightWidth:     1,
+    borderBottomWidth:    1,
+    borderLeftColor:      'rgba(139,92,246,0.15)',
+    borderRightColor:     'rgba(139,92,246,0.15)',
+    borderBottomColor:    'rgba(139,92,246,0.15)',
   },
   expandRow: {
     flexDirection:  'row',
     alignItems:     'center',
     justifyContent: 'space-between',
   },
-  expandStat: { alignItems: 'center', gap: 2 },
+  expandStat: { alignItems: 'flex-start', gap: 2 },
   expandStatLabel: {
-    fontSize:      9,
-    fontWeight:    Typography.weight.bold,
-    color:         'rgba(255,255,255,0.70)',
-    letterSpacing: 1.2,
+    fontSize:      10,
+    fontWeight:    '700' as const,
+    color:         '#A78BFA',
+    letterSpacing: 1.8,
+    textTransform: 'uppercase' as const,
   },
   expandStatValue: {
-    fontSize:   17,
-    fontWeight: Typography.weight.bold,
-    color:      Colors.text.primary,
-    fontVariant:['tabular-nums'],
+    fontSize:    26,
+    fontWeight:  '800' as const,
+    color:       '#FFFFFF',
+    fontVariant: ['tabular-nums'],
+    letterSpacing: -0.5,
   },
-  expandArrow: { flex: 1, alignItems: 'center' },
-  expandArrowText: {
-    fontSize: 11,
-    color:    Colors.text.muted,
+  expandArrow: { flex: 1, alignItems: 'center', gap: 6, paddingHorizontal: 8 },
+  expandLine: {
+    flexDirection: 'row', alignItems: 'center', gap: 0, width: '100%',
+  },
+  expandLineDot: {
+    width: 10, height: 10, borderRadius: 5,
+    backgroundColor: '#C4B5FD',
+    borderWidth: 2, borderColor: 'rgba(139,92,246,0.40)',
+  },
+  expandLineBar: {
+    flex: 1, height: 3,
+    backgroundColor: '#7C3AED',
+  },
+  expandDuration: {
+    fontSize:        13,
+    color:           '#E9D5FF',
+    fontWeight:      '800' as const,
+    letterSpacing:   0.3,
   },
   buyBtn: {
     borderRadius:  Radius.full,

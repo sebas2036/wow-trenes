@@ -380,6 +380,31 @@ export default function HomeScreen() {
   const [filter,     setFilter]     = useState<FilterTab>('trenes');
   const [gpsLoading, setGpsLoading] = useState(false);
   const [userCoords, setUserCoords] = useState<Coordinates | null>(null);
+
+  // ── GPS instantáneo al montar ────────────────────────────────────────────────
+  // 1) getLastKnownPositionAsync → inmediato si hay caché
+  // 2) getCurrentPositionAsync (Lowest accuracy) → fallback si no hay caché,
+  //    o si el usuario usa GPS falso (mock) que solo aparece en current, no en lastKnown.
+  useEffect(() => {
+    (async () => {
+      try {
+        const { status } = await Location.getForegroundPermissionsAsync();
+        if (status !== 'granted') return;
+
+        // Intento 1: posición cacheada (gratis, 0ms)
+        const cached = await Location.getLastKnownPositionAsync();
+        if (cached) {
+          setUserCoords({ latitude: cached.coords.latitude, longitude: cached.coords.longitude });
+        }
+
+        // Intento 2: fix rápido con precisión baja (~300-800ms, cubre GPS falso y restart)
+        const fresh = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Lowest,
+        });
+        setUserCoords({ latitude: fresh.coords.latitude, longitude: fresh.coords.longitude });
+      } catch { /* sin GPS — ok, fallback a estación principal del país */ }
+    })();
+  }, []);
   // Internacional
   const [intlOrigin,   setIntlOrigin]   = useState('');
   const [intlDest,     setIntlDest]     = useState('');
@@ -436,19 +461,21 @@ export default function HomeScreen() {
   useEffect(() => {
     const timer = setTimeout(async () => {
       try {
-        // Detectar país del usuario via GPS (sin pedir permiso extra — usa cache si existe)
-        let detectedCountry: CountryCode | null = null;
+        // Actualizar coords con posición más reciente si hay una nueva disponible
         try {
           const { status } = await Location.getForegroundPermissionsAsync();
           if (status === 'granted') {
             const loc = await Location.getLastKnownPositionAsync();
             if (loc) {
-              const c = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
-              detectedCountry = detectCountryFromCoords(c);
-              setUserCoords(c);
+              setUserCoords(c => {
+                const fresh = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
+                // Solo actualizar si cambió significativamente (>500m)
+                if (c && Math.abs(c.latitude - fresh.latitude) < 0.005 && Math.abs(c.longitude - fresh.longitude) < 0.005) return c;
+                return fresh;
+              });
             }
           }
-        } catch { /* GPS no disponible — usar prioridad por defecto */ }
+        } catch { /* GPS no disponible */ }
 
         // Siempre descargar del más liviano al más pesado — AT(37MB) → BE(164MB) → FR(196MB)
         // El orden garantiza que si el usuario toca un país vecino, ya está listo
@@ -495,8 +522,26 @@ export default function HomeScreen() {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') { setGpsLoading(false); return; }
-      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-      const coords: Coordinates = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
+
+      // Cascada de precisión: Balanced → Low → Lowest → cache del mount effect
+      // Balanced: rápido (~1-2s), suficiente para ciudad. High tarda mucho y puede fallar.
+      let resolved: Coordinates | null = null;
+      for (const accuracy of [
+        Location.Accuracy.Balanced,
+        Location.Accuracy.Low,
+        Location.Accuracy.Lowest,
+      ]) {
+        try {
+          const loc = await Location.getCurrentPositionAsync({ accuracy });
+          resolved = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
+          break;
+        } catch {}
+      }
+      // Último recurso: usar las coords ya obtenidas al arrancar la app
+      if (!resolved && userCoords) resolved = userCoords;
+      if (!resolved) { setGpsLoading(false); return; }
+
+      const coords: Coordinates = resolved;
       setUserCoords(coords);
 
       // Detectar si el usuario está en zona de cobertura europea/soportada
@@ -539,7 +584,7 @@ export default function HomeScreen() {
       console.warn('[GPS] Error:', e);
     }
     finally { setGpsLoading(false); }
-  }, [router]);
+  }, [router, userCoords]);
 
   // Países ordenados: favoritos primero
   const sortedCountries = [...COUNTRIES]
@@ -567,7 +612,7 @@ export default function HomeScreen() {
         fadeDuration={0}
       />
       <LinearGradient
-        colors={['rgba(10,8,30,0.35)', 'rgba(14,14,46,0.60)', 'rgba(14,14,46,0.80)']}
+        colors={['rgba(10,8,30,0.20)', 'rgba(14,14,46,0.45)', 'rgba(14,14,46,0.65)']}
         style={StyleSheet.absoluteFillObject}
         pointerEvents="none"
       />

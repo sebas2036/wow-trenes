@@ -47,7 +47,7 @@ const LAZY_COUNTRIES = new Set<CountryCode>(['FR', 'BE', 'AT']);
 
 // ── Países disponibles ────────────────────────────────────────────────────────
 const DESTINATIONS = [
-  { code: 'ES'     as CountryCode, iso: 'es', name: 'España',       sub: 'AVE · Renfe'      },
+  { code: 'ES'     as CountryCode, iso: 'es', name: 'Spain',        sub: 'AVE · Renfe'      },
   { code: 'IT'     as CountryCode, iso: 'it', name: 'Italy',         sub: 'Frecciarossa'     },
   { code: 'FR'     as CountryCode, iso: 'fr', name: 'France',        sub: 'TGV · SNCF'       },
   { code: 'DE'     as CountryCode, iso: 'de', name: 'Germany',       sub: 'ICE · DB'         },
@@ -181,9 +181,9 @@ function BoardRow({
           color: entry.status === 'cancelled' ? '#FF453A'
             : entry.status === 'delayed' ? '#FAB432' : '#34D399',
         }]}>
-          {entry.status === 'cancelled' ? 'Cancelado'
+          {entry.status === 'cancelled' ? t('board_cancelled')
             : entry.delay ? entry.delay
-            : 'En horario'}
+            : t('status_safe')}
         </Text>
       </View>
       {/* Botón Comprar */}
@@ -192,7 +192,7 @@ function BoardRow({
         onPress={handleBuy}
         hitSlop={6}
       >
-        <Text style={styles.buyBtnText}>Comprar</Text>
+        <Text style={styles.buyBtnText}>{t('split_buy')}</Text>
       </Pressable>
     </View>
   );
@@ -238,23 +238,32 @@ function StationPicker({
         style={styles.pickerOverlay}
       >
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        <View style={[styles.pickerSheet, { backgroundColor: '#13133A' }]}>
+        <View style={[styles.pickerSheet, { backgroundColor: 'rgba(20,12,45,0.96)' }]}>
 
           {/* Handle */}
-          <View style={[styles.pickerHandle, { backgroundColor: colors.border.subtle }]} />
+          <View style={[styles.pickerHandle, { backgroundColor: 'rgba(255,255,255,0.20)' }]} />
 
-          {/* Título */}
-          <Text style={[styles.pickerTitle, { color: colors.text.primary }]}>
-            {t('board_change_station')}
-          </Text>
+          {/* Header: título + X */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: 20, marginBottom: 14 }}>
+            <Text style={[styles.pickerTitle, { color: '#FFFFFF', marginHorizontal: 0, marginBottom: 0 }]}>
+              {t('board_change_station')}
+            </Text>
+            <Pressable
+              onPress={onClose}
+              hitSlop={12}
+              style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Ionicons name="close" size={20} color="rgba(255,255,255,0.80)" />
+            </Pressable>
+          </View>
 
           {/* Input búsqueda */}
-          <View style={[styles.searchRow, { backgroundColor: colors.bg.elevated, borderColor: colors.border.subtle }]}>
-            <Ionicons name="search-outline" size={16} color={colors.text.muted} />
+          <View style={[styles.searchRow, { backgroundColor: '#FFFFFF', borderColor: '#FFFFFF' }]}>
+            <Ionicons name="search-outline" size={16} color="rgba(0,0,0,0.40)" />
             <TextInput
-              style={[styles.searchInput, { color: colors.text.primary }]}
-              placeholder="Buscar estación…"
-              placeholderTextColor={colors.text.muted}
+              style={[styles.searchInput, { color: '#000000' }]}
+              placeholder={t('board_search_station')}
+              placeholderTextColor="rgba(0,0,0,0.35)"
               value={query}
               onChangeText={handleQuery}
               autoFocus
@@ -263,7 +272,7 @@ function StationPicker({
             {loading && <ActivityIndicator size="small" color={colors.brand.primary} />}
             {query.length > 0 && !loading && (
               <Pressable onPress={() => handleQuery('')}>
-                <Ionicons name="close-circle" size={16} color={colors.text.muted} />
+                <Ionicons name="close-circle" size={16} color="rgba(0,0,0,0.35)" />
               </Pressable>
             )}
           </View>
@@ -276,21 +285,36 @@ function StationPicker({
             keyboardShouldPersistTaps="handled"
             ListEmptyComponent={
               query.length >= 2 && !loading ? (
-                <Text style={[styles.pickerEmpty, { color: colors.text.muted }]}>
-                  Sin resultados para "{query}"
+                <Text style={[styles.pickerEmpty, { color: 'rgba(255,255,255,0.40)' }]}>
+                  {t('board_no_results', { q: query })}
                 </Text>
               ) : null
             }
-            renderItem={({ item }) => (
+            renderItem={({ item, index }) => (
               <Pressable
-                style={[styles.pickerItem, { borderColor: colors.border.subtle }]}
+                style={[
+                  styles.pickerItem,
+                  { borderColor: 'rgba(255,255,255,0.12)', backgroundColor: 'rgba(255,255,255,0.07)' },
+                ]}
                 onPress={() => { Haptics.selectionAsync(); onSelect(item.id, item.name); }}
               >
-                <Ionicons name="location-outline" size={16} color={colors.brand.primary} />
-                <Text style={[styles.pickerItemText, { color: colors.text.primary }]} numberOfLines={1}>
-                  {item.name}
-                </Text>
-                <Ionicons name="chevron-forward" size={14} color={colors.text.muted} />
+                <Ionicons name="train-outline" size={16} color="rgba(255,255,255,0.60)" />
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.pickerItemText, { color: '#FFFFFF' }]} numberOfLines={1}>
+                    {item.name}
+                  </Text>
+                  {index === 0 && (
+                    <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>
+                      {t('main_station_sub')}
+                    </Text>
+                  )}
+                </View>
+                {index === 0
+                  ? <View style={{ backgroundColor: 'rgba(139,92,246,0.25)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: 'rgba(139,92,246,0.45)' }}>
+                      <Text style={{ fontSize: 10, fontWeight: '700', color: '#C4B5FD' }}>{t('main_station')}</Text>
+                    </View>
+                  : <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.30)" />
+                }
               </Pressable>
             )}
           />
@@ -333,16 +357,27 @@ export default function SalidasScreen() {
 
     (async () => {
       setGpsStatus('loading');
-      // Timeout global — nunca queda colgado más de 12 segundos
-      const safetyTimer = setTimeout(() => setGpsStatus('notfound'), 12000);
+      // Timeout global — nunca queda colgado más de 15 segundos
+      const safetyTimer = setTimeout(() => setGpsStatus('notfound'), 15000);
       try {
-        // Usar GPS real del dispositivo (evita DEV_LOCATION hardcodeado en useLocation)
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') { setGpsStatus('notfound'); return; }
-        let loc = await Promise.race([
-          Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
-          new Promise<null>(r => setTimeout(() => r(null), 8000)),
-        ]);
+
+        // Cascada de precisión: Balanced → Low → Lowest → lastKnown
+        let loc: Location.LocationObject | null = null;
+        for (const accuracy of [
+          Location.Accuracy.Balanced,
+          Location.Accuracy.Low,
+          Location.Accuracy.Lowest,
+        ]) {
+          try {
+            const res = await Promise.race([
+              Location.getCurrentPositionAsync({ accuracy }),
+              new Promise<null>(r => setTimeout(() => r(null), 4000)),
+            ]);
+            if (res) { loc = res; break; }
+          } catch {}
+        }
         if (!loc) loc = await Location.getLastKnownPositionAsync() ?? null;
         if (!loc) { setGpsStatus('notfound'); return; }
         const coords = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
@@ -593,10 +628,22 @@ export default function SalidasScreen() {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') { setGpsStatus('notfound'); return; }
-      let loc2 = await Promise.race([
-        Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
-        new Promise<null>(r => setTimeout(() => r(null), 10000)),
-      ]);
+
+      // Cascada de precisión: Balanced → Low → Lowest → lastKnown
+      let loc2: Location.LocationObject | null = null;
+      for (const accuracy of [
+        Location.Accuracy.Balanced,
+        Location.Accuracy.Low,
+        Location.Accuracy.Lowest,
+      ]) {
+        try {
+          const res = await Promise.race([
+            Location.getCurrentPositionAsync({ accuracy }),
+            new Promise<null>(r => setTimeout(() => r(null), 4000)),
+          ]);
+          if (res) { loc2 = res; break; }
+        } catch {}
+      }
       if (!loc2) loc2 = await Location.getLastKnownPositionAsync() ?? null;
       if (!loc2) { setGpsStatus('notfound'); return; }
       const coords = { latitude: loc2.coords.latitude, longitude: loc2.coords.longitude };
@@ -689,7 +736,7 @@ export default function SalidasScreen() {
               {displayStation}
             </Text>
             <Text style={[styles.subtitle, { color: 'rgba(255,255,255,0.80)' }]}>
-              {selected.name} · {displayCountrySub}
+              {displayStation !== selected.name ? `${selected.name} · ` : ''}{displayCountrySub}
               {isOffline ? ' · offline' : ''}
             </Text>
           </View>
@@ -727,7 +774,7 @@ export default function SalidasScreen() {
                   />
                   <View style={[StyleSheet.absoluteFillObject, {
                     margin: 1.2, borderRadius: Radius.sm - 1,
-                    backgroundColor: colors.bg.card,
+                    backgroundColor: 'rgba(88,28,135,0.75)',
                   }]} pointerEvents="none" />
                 </>
               )}
@@ -797,10 +844,10 @@ export default function SalidasScreen() {
       {/* ── Board header ── */}
       <View style={styles.boardHeader}>
         <Text style={[styles.boardLabel, { color: 'rgba(255,255,255,0.75)' }]}>
-          {mode === 'salidas' ? t('board_departures') : t('board_arrivals')} · {selected.name.toUpperCase()}
+          {mode === 'salidas' ? t('board_departures') : t('board_arrivals')} · {displayStation.toUpperCase()}
         </Text>
         <Pressable onPress={handleBoardTap} hitSlop={8}>
-          <Text style={[styles.boardMore, { color: colors.brand.primary }]}>Ver todo ›</Text>
+          <Text style={[styles.boardMore, { color: colors.brand.primary }]}>{t('board_see_all')}</Text>
         </Pressable>
       </View>
 
