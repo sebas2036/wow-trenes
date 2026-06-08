@@ -398,13 +398,89 @@ const COUNTRY_BOUNDS: { code: CountryCode; latMin: number; latMax: number; lonMi
   { code: 'DK',  latMin: 54.5, latMax: 57.8, lonMin:  8.0,  lonMax: 15.2  },
   { code: 'DE',  latMin: 47.3, latMax: 55.1, lonMin:  5.9,  lonMax: 15.1  },
   { code: 'ES',  latMin: 35.9, latMax: 43.8, lonMin: -9.3,  lonMax:  4.4  },
-  { code: 'IT',  latMin: 36.6, latMax: 47.1, lonMin:  6.6,  lonMax: 18.6  },
-  { code: 'FR',  latMin: 41.3, latMax: 51.1, lonMin: -5.2,  lonMax:  9.6  },
+  { code: 'IT',  latMin: 36.6, latMax: 47.1, lonMin:  7.2,  lonMax: 18.6  },
+  { code: 'FR',  latMin: 42.5, latMax: 51.1, lonMin: -5.2,  lonMax:  9.6  },
   { code: 'GB',  latMin: 49.9, latMax: 58.7, lonMin: -8.2,  lonMax:  1.8  },
   { code: 'NO',  latMin: 57.9, latMax: 71.2, lonMin:  4.6,  lonMax: 31.1  },
   { code: 'JP',  latMin: 30.9, latMax: 45.6, lonMin: 129.5, lonMax: 145.8 },
   { code: 'US',  latMin: 24.4, latMax: 49.4, lonMin:-124.8, lonMax: -66.9 },
 ];
+
+/**
+ * Fallback de estaciones principales por ciudad cuando el GTFS no encuentra resultado.
+ * Cubre las ciudades más comunes donde el GPS puede detectar al usuario.
+ */
+const CITY_STATION_FALLBACK: {
+  id: string; name: string; country: CountryCode;
+  lat: number; lon: number;
+}[] = [
+  // España
+  { id: 'es-valencia',   name: 'Valencia Nord',          country: 'ES', lat: 39.4676, lon: -0.3772 },
+  { id: 'es-madrid',     name: 'Madrid Puerta de Atocha', country: 'ES', lat: 40.4065, lon: -3.6892 },
+  { id: 'es-barcelona',  name: 'Barcelona Sants',         country: 'ES', lat: 41.3791, lon:  2.1401 },
+  { id: 'es-sevilla',    name: 'Sevilla Santa Justa',     country: 'ES', lat: 37.3923, lon: -5.9763 },
+  { id: 'es-malaga',     name: 'Málaga María Zambrano',   country: 'ES', lat: 36.7139, lon: -4.4311 },
+  { id: 'es-bilbao',     name: 'Bilbao Abando',           country: 'ES', lat: 43.2573, lon: -2.9248 },
+  { id: 'es-zaragoza',   name: 'Zaragoza Delicias',       country: 'ES', lat: 41.6559, lon: -0.9090 },
+  { id: 'es-alicante',   name: 'Alicante Terminal',       country: 'ES', lat: 38.3453, lon: -0.4915 },
+  { id: 'es-murcia',     name: 'Murcia del Carmen',       country: 'ES', lat: 37.9842, lon: -1.1302 },
+  { id: 'es-cordoba',    name: 'Córdoba',                 country: 'ES', lat: 37.8915, lon: -4.7887 },
+  { id: 'es-granada',    name: 'Granada',                 country: 'ES', lat: 37.1774, lon: -3.6094 },
+  { id: 'es-cadiz',      name: 'Cádiz',                   country: 'ES', lat: 36.5297, lon: -6.2922 },
+  { id: 'es-valladolid', name: 'Valladolid Campo Grande', country: 'ES', lat: 41.6527, lon: -4.7286 },
+  { id: 'es-vigo',       name: 'Vigo Guixar',             country: 'ES', lat: 42.2283, lon: -8.7141 },
+  { id: 'es-almerialm',  name: 'Almería',                 country: 'ES', lat: 36.8467, lon: -2.4570 },
+  // Francia
+  { id: 'fr-paris',      name: 'Paris Gare de Lyon',      country: 'FR', lat: 48.8448, lon:  2.3739 },
+  { id: 'fr-lyon',       name: 'Lyon Part-Dieu',          country: 'FR', lat: 45.7606, lon:  4.8597 },
+  { id: 'fr-marseille',  name: 'Marseille Saint-Charles', country: 'FR', lat: 43.3030, lon:  5.3806 },
+  { id: 'fr-nice',       name: 'Nice Ville',              country: 'FR', lat: 43.7044, lon:  7.2621 },
+  { id: 'fr-bordeaux',   name: 'Bordeaux Saint-Jean',     country: 'FR', lat: 44.8255, lon: -0.5560 },
+  // Alemania
+  { id: 'de-berlin',     name: 'Berlin Hauptbahnhof',     country: 'DE', lat: 52.5251, lon: 13.3694 },
+  { id: 'de-munich',     name: 'München Hauptbahnhof',    country: 'DE', lat: 48.1402, lon: 11.5600 },
+  { id: 'de-frankfurt',  name: 'Frankfurt(Main)Hbf',      country: 'DE', lat: 50.1071, lon:  8.6634 },
+  { id: 'de-cologne',    name: 'Köln Hauptbahnhof',       country: 'DE', lat: 50.9430, lon:  6.9590 },
+  { id: 'de-hamburg',    name: 'Hamburg Hauptbahnhof',    country: 'DE', lat: 53.5530, lon: 10.0065 },
+  // Italia
+  { id: 'it-rome',       name: 'Roma Termini',            country: 'IT', lat: 41.9009, lon: 12.5012 },
+  { id: 'it-milan',      name: 'Milano Centrale',         country: 'IT', lat: 45.4862, lon:  9.2045 },
+  { id: 'it-florence',   name: 'Firenze Santa Maria Novella', country: 'IT', lat: 43.7769, lon: 11.2479 },
+  { id: 'it-venice',     name: 'Venezia Santa Lucia',     country: 'IT', lat: 45.4414, lon: 12.3210 },
+  { id: 'it-naples',     name: 'Napoli Centrale',         country: 'IT', lat: 40.8536, lon: 14.2729 },
+  // Portugal
+  { id: 'pt-lisbon',     name: 'Lisboa Santa Apolónia',   country: 'PT', lat: 38.7141, lon: -9.1237 },
+  { id: 'pt-porto',      name: 'Porto Campanhã',          country: 'PT', lat: 41.1496, lon: -8.5855 },
+  // Austria
+  { id: 'at-vienna',     name: 'Wien Hauptbahnhof',       country: 'AT', lat: 48.1850, lon: 16.3763 },
+  // Países Bajos
+  { id: 'nl-amsterdam',  name: 'Amsterdam Centraal',      country: 'NL', lat: 52.3791, lon:  4.8997 },
+  // Bélgica
+  { id: 'be-brussels',   name: 'Bruxelles-Midi',          country: 'BE', lat: 50.8355, lon:  4.3360 },
+  // Suiza
+  { id: 'ch-zurich',     name: 'Zürich Hauptbahnhof',     country: 'CH', lat: 47.3784, lon:  8.5395 },
+  { id: 'ch-bern',       name: 'Bern',                    country: 'CH', lat: 46.9489, lon:  7.4390 },
+  { id: 'ch-geneva',     name: 'Genève',                  country: 'CH', lat: 46.2105, lon:  6.1432 },
+];
+
+function findCityFallback(coords: Coordinates): Station | null {
+  const { latitude: lat, longitude: lon } = coords;
+  let best: typeof CITY_STATION_FALLBACK[0] | null = null;
+  let bestDist = Infinity;
+  for (const c of CITY_STATION_FALLBACK) {
+    const d = (lat - c.lat) ** 2 + (lon - c.lon) ** 2;
+    if (d < bestDist) { bestDist = d; best = c; }
+  }
+  if (!best || bestDist > 4) return null; // > ~222 km → no hay ciudad cercana
+  return {
+    id:          best.id,
+    name:        best.name,
+    nameLocal:   best.name,
+    country:     best.country,
+    coordinates: { latitude: best.lat, longitude: best.lon },
+    platforms:   [],
+  };
+}
 
 /**
  * Detecta el país basándose en coordenadas GPS.
@@ -476,7 +552,6 @@ export async function findNearestMainStation(coords: Coordinates): Promise<Stati
 
 export async function findNearestStation(coords: Coordinates): Promise<Station | null> {
   const { latitude: lat, longitude: lon } = coords;
-  const DELTA = 1.0; // ~111 km por grado
 
   // Detectar país por GPS y cambiar el DB activo automáticamente
   const detectedCountry = detectCountryFromCoords(coords);
@@ -489,30 +564,59 @@ export async function findNearestStation(coords: Coordinates): Promise<Station |
 
   const conn = await db();
 
-  const row = await conn.getFirstAsync<{
-    stop_id:      string;
-    stop_name:    string;
-    stop_lat:     number;
-    stop_lon:     number;
-    country_code: string;
-  }>(`
-    SELECT
-      stop_id, stop_name,
-      AVG(stop_lat) AS stop_lat,
-      AVG(stop_lon) AS stop_lon,
-      country_code,
-      (AVG(stop_lat) - ?) * (AVG(stop_lat) - ?) +
-      (AVG(stop_lon) - ?) * (AVG(stop_lon) - ?) AS dist_sq
-    FROM stops
-    WHERE stop_lat BETWEEN ? AND ?
-      AND stop_lon BETWEEN ? AND ?
-    GROUP BY COALESCE(NULLIF(parent_station,''), stop_id)
-    ORDER BY dist_sq ASC
-    LIMIT 1
-  `, [lat, lat, lon, lon, lat - DELTA, lat + DELTA, lon - DELTA, lon + DELTA]);
+  // Intentar con radio creciente: 1° (~111km) → 2° → 4°
+  // Garantiza encontrar la estación más cercana incluso en zonas poco densas (ej: Valencia)
+  let gtfsStation: Station | null = null;
+  let gtfsDist = Infinity;
 
-  if (!row) return null;
-  return rowToStation(row);
+  for (const DELTA of [1.0, 2.0, 4.0]) {
+    const row = await conn.getFirstAsync<{
+      stop_id:      string;
+      stop_name:    string;
+      stop_lat:     number;
+      stop_lon:     number;
+      country_code: string;
+    }>(`
+      SELECT
+        stop_id, stop_name,
+        AVG(stop_lat) AS stop_lat,
+        AVG(stop_lon) AS stop_lon,
+        country_code,
+        (AVG(stop_lat) - ?) * (AVG(stop_lat) - ?) +
+        (AVG(stop_lon) - ?) * (AVG(stop_lon) - ?) AS dist_sq
+      FROM stops
+      WHERE stop_lat BETWEEN ? AND ?
+        AND stop_lon BETWEEN ? AND ?
+      GROUP BY COALESCE(NULLIF(parent_station,''), stop_id)
+      ORDER BY dist_sq ASC
+      LIMIT 1
+    `, [lat, lat, lon, lon, lat - DELTA, lat + DELTA, lon - DELTA, lon + DELTA]);
+
+    if (row) {
+      gtfsStation = rowToStation(row);
+      gtfsDist = (row.stop_lat - lat) ** 2 + (row.stop_lon - lon) ** 2;
+      break;
+    }
+  }
+
+  // Comparar con fallback de ciudades conocidas.
+  // Si el fallback está claramente más cerca (2x más próximo) → preferirlo.
+  // Esto cubre casos donde el GTFS no tiene datos de una región (ej: Nápoles en gtfs_italy).
+  const cityFallback = findCityFallback(coords);
+  if (cityFallback) {
+    const cityDist =
+      (cityFallback.coordinates.latitude  - lat) ** 2 +
+      (cityFallback.coordinates.longitude - lon) ** 2;
+    if (!gtfsStation || cityDist < gtfsDist * 0.5) {
+      console.log(`[GPS] Usando city fallback: ${cityFallback.name} (dist²=${cityDist.toFixed(4)} vs GTFS dist²=${gtfsDist.toFixed(4)})`);
+      return cityFallback;
+    }
+  }
+
+  if (gtfsStation) return gtfsStation;
+
+  // GTFS no tiene datos para estas coords → fallback a lista de ciudades conocidas
+  return null;
 }
 
 // ── Query: upcoming trains ────────────────────────────────────────────────────
@@ -660,7 +764,7 @@ export async function queryUpcomingTrains(
             )
           )
       )` : ''}
-    GROUP BY st.trip_id
+    GROUP BY SUBSTR(st.departure_time, 1, 5), COALESCE(dest_s.stop_name,''), COALESCE(r.route_short_name, r.route_long_name,'')
     ORDER BY st.departure_time ASC
     LIMIT ?
   `, [
@@ -675,6 +779,7 @@ export async function queryUpcomingTrains(
   ]);
 
   const results = rows.map((row) => gtfsRowToTrainService(row, now));
+  let gtfsTrains: TrainService[] = results;
 
   // Si hay pocos trenes hoy → completar con los primeros del día siguiente
   if (results.length < limit) {
@@ -747,10 +852,94 @@ export async function queryUpcomingTrains(
       limit - results.length,
     ]);
 
-    return [...results, ...nextRows.map((row) => gtfsRowToTrainService(row, tomorrow))];
+    gtfsTrains = [...results, ...nextRows.map((row) => gtfsRowToTrainService(row, tomorrow))];
   }
 
-  return results;
+  // ── Fallback real-time ────────────────────────────────────────────────────
+  // Si el GTFS local no tiene datos para esta estación (ej: Nápoles, que no está
+  // en gtfs_italy) y el país tiene API real-time, traer las salidas del board RT
+  // (vía proxy HTTPS) y convertirlas a TrainService para "Próximos trenes".
+  if (gtfsTrains.length === 0) {
+    const rt = await rtUpcomingFallback(stationId, limit, now);
+    if (rt.length > 0) return rt;
+  }
+
+  return gtfsTrains;
+}
+
+/**
+ * rtUpcomingFallback — usa el board real-time (ViaggiaTreno vía proxy) cuando el
+ * GTFS local no tiene la estación. Hoy cubre Italia (GTFS incompleto: solo
+ * Lombardía/Roma/Toscana). El resto de países tienen GTFS completo para sus hubs.
+ */
+async function rtUpcomingFallback(
+  stationId: string,
+  limit: number,
+  baseDate: Date,
+): Promise<TrainService[]> {
+  if (activeCountry !== 'IT') return [];
+
+  // Resolver el nombre de la estación para buscar su ID real en ViaggiaTreno
+  let origin = CITY_STATION_FALLBACK.find(c => c.id === stationId) ?? null;
+  let originName = origin?.name ?? null;
+  let originLat = origin?.lat ?? 0;
+  let originLon = origin?.lon ?? 0;
+  if (!originName) {
+    const st = await getStationById(stationId).catch(() => null);
+    if (st) {
+      originName = st.name;
+      originLat = st.coordinates.latitude;
+      originLon = st.coordinates.longitude;
+    }
+  }
+  if (!originName) return [];
+
+  // Resolver el ID real de ViaggiaTreno y fijar la estación activa de Italia
+  try {
+    const found = await searchItalyStations(originName);
+    if (found.length > 0) setActiveItalyStation(found[0]);
+  } catch { /* el board usará su default si falla */ }
+
+  // Traer salidas del board real-time (usa la estación activa recién fijada)
+  let entries: BoardEntry[] = [];
+  try {
+    entries = await getCountryBoard('IT', 'salidas', limit, undefined);
+  } catch { return []; }
+
+  return entries.map(e => boardEntryToTrainService(e, baseDate, originName!, originLat, originLon));
+}
+
+/** Convierte una entrada del board real-time a TrainService para "Próximos trenes". */
+function boardEntryToTrainService(
+  e: BoardEntry,
+  baseDate: Date,
+  originName: string,
+  originLat: number,
+  originLon: number,
+): TrainService {
+  const timeStr = e.time.length === 5 ? `${e.time}:00` : e.time;
+  const dep = gtfsTimeToDate(timeStr, baseDate);
+  const delayMin = e.delay ? (parseInt(e.delay.replace(/[^0-9]/g, ''), 10) || 0) : 0;
+  return {
+    serviceId:    `rt-${e.tripId ?? `${e.time}-${e.endpoint}`}`,
+    operator:     'trenitalia',
+    trainType:    deriveTrainType(e.train),
+    trainNumber:  e.train || '—',
+    origin: {
+      id: '', name: originName, nameLocal: originName, country: activeCountry,
+      coordinates: { latitude: originLat, longitude: originLon }, platforms: [],
+    },
+    destination: {
+      id: '', name: e.endpoint || '—', nameLocal: e.endpoint || '—', country: activeCountry,
+      coordinates: { latitude: 0, longitude: 0 }, platforms: [],
+    },
+    departureTime: dep,
+    arrivalTime:   dep,
+    platform:      e.platform,
+    delayMinutes:  delayMin,
+    status:        e.status === 'cancelled' ? 'cancelled' : e.status === 'delayed' ? 'delayed' : 'on-time',
+    classes:       [],
+  };
 }
 
 // ── Query: all stations for geofencing ───────────────────────────────────────
@@ -1383,7 +1572,18 @@ export async function searchStations(query: string, limit = 20, country?: Countr
        AND s.stop_name NOT LIKE '%Cercanías%'
        AND s.stop_name NOT LIKE '%Cercanias%'
      GROUP BY s.stop_id
-     ORDER BY COUNT(st.trip_id) DESC
+     ORDER BY
+       -- Nivel 3: tipo GTFS alta velocidad (101) o larga distancia (102) — universal, cualquier país
+       MAX(CASE WHEN ro.route_type IN (101, 102) THEN 3 ELSE 0 END) DESC,
+       -- Nivel 2: nombre de ruta conocido — AVE/TGV/ICE/Eurostar/Frecciarossa…
+       MAX(CASE WHEN ro.route_short_name IN (
+             'AVE','AVE INT','AVLO','ALVIA','AVANT','EUROMED',
+             'TGV','INOUI','OUIGO','LYRIA',
+             'ICE','EC','IC','RJ','NJ','EN','EXT',
+             'Eurostar','THALYS','FRECCIAROSSA','FRECCIARGENTO','ITALO'
+           ) THEN 2 ELSE 0 END) DESC,
+       -- Nivel 1: más viajes totales (volumen de servicio)
+       COUNT(st.trip_id) DESC
      LIMIT ?`,
     [nq, limit],
   );

@@ -12,7 +12,12 @@
  *   /andamentoTreno/{orig}/{num}/{ts}→ estado de un tren específico
  */
 
-const BASE = 'http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno';
+// Proxy HTTPS en Railway → reenvía a ViaggiaTreno (que solo habla HTTP).
+// Así funciona en Expo Go y en producción iOS/Android sin excepciones cleartext.
+const PROXY_BASE = (process.env.EXPO_PUBLIC_AFFILIATE_PROXY
+  ?? 'https://voxa-production-dc15.up.railway.app/affiliate/redirect')
+  .replace(/\/affiliate.*$/, '');
+const BASE = `${PROXY_BASE}/viaggiatreno`;
 const CACHE_TTL_MS = 90_000; // 90 segundos
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
@@ -50,7 +55,7 @@ export function setActiveItalyStation(s: ItalyStation): void {
   boardCache = null; // invalidar cache al cambiar de estación
 }
 export function getActiveItalyStationName(): string {
-  return activeStation?.name ?? 'Milano Centrale';
+  return activeStation?.name ?? 'Roma Termini';
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -74,13 +79,20 @@ function parseTime(ts: number | null): string {
   return `${h}:${m}`;
 }
 
-async function vt<T>(path: string): Promise<T> {
+async function vt<T>(path: string, timeoutMs = 6000): Promise<T> {
   const url = `${BASE}/${path}`;
-  const resp = await fetch(url, {
-    headers: { 'User-Agent': 'WoW-Trenes-App/1.0' },
-  });
-  if (!resp.ok) throw new Error(`ViaggiaTreno HTTP ${resp.status}: ${path}`);
-  return resp.json() as Promise<T>;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const resp = await fetch(url, {
+      headers: { 'User-Agent': 'WoW-Trenes-App/1.0' },
+      signal: ctrl.signal,
+    });
+    if (!resp.ok) throw new Error(`ViaggiaTreno HTTP ${resp.status}: ${path}`);
+    return resp.json() as Promise<T>;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 // ── API pública ───────────────────────────────────────────────────────────────
@@ -116,17 +128,27 @@ export async function fetchItalyBoard(
   if (
     boardCache &&
     boardCache.mode === mode &&
-    boardCache.stationId === (activeStation?.id ?? 'S01700') &&
+    boardCache.stationId === (activeStation?.id ?? 'S08409') &&
     (now - boardCache.fetchedAt) < CACHE_TTL_MS
   ) {
     return boardCache.entries;
   }
 
-  // Default: Milano Centrale
-  let station = activeStation;
+  // Validar que el ID de la estación sea un ID real de ViaggiaTreno (formato: S + dígitos).
+  // Los IDs sintéticos como 'it-naples' no funcionan con la API y deben resolverse por nombre.
+  const isRealVtId = (id: string) => /^S\d+$/.test(id);
+
+  let station = (activeStation && isRealVtId(activeStation.id)) ? activeStation : null;
   if (!station) {
-    const results = await searchItalyStations('Milano Centrale');
-    station = results[0] ?? { id: 'S01700', name: 'MILANO CENTRALE' };
+    const query = activeStation?.name ?? 'Roma Termini';
+    try {
+      const results = await searchItalyStations(query);
+      station = results[0] ?? { id: 'S08409', name: 'ROMA TERMINI' };
+    } catch {
+      station = { id: 'S08409', name: 'ROMA TERMINI' };
+    }
+    // Cachear el ID real para evitar repetir la búsqueda
+    activeStation = station;
   }
 
   const dateStr = formatDateTimeIT(new Date());
@@ -152,7 +174,7 @@ export async function fetchItalyBoard(
         platform:      t.binarioEffettivoPartenzaDescrizione
                     ?? t.binarioProgrammatoPartenzaDescrizione
                     ?? '',
-        stationName:   station!.name,
+        stationName:   station.name,
       };
     });
 
@@ -174,5 +196,11 @@ export async function fetchItalyBoard(
 
 /** Invalida el caché (pull-to-refresh) */
 export function invalidateItalyRT(): void {
+  boardCache = null;
+}
+
+/** Resetea la estación activa (llamar al cambiar de país) */
+export function resetItalyStation(): void {
+  activeStation = null;
   boardCache = null;
 }
