@@ -1,205 +1,174 @@
 /**
- * WoW Train — Onboarding
- * 3 slides · Swipe horizontal · Detecta idioma del teléfono automáticamente
+ * WoW Train — Onboarding (rediseño premium)
+ * 3 slides · Swipe horizontal · Fondo de noche compartido + violeta de marca.
+ * Entrada animada por slide con el Animated API nativo (sin Reanimated → sin crashes).
  * Solo se muestra en el primer arranque (AsyncStorage flag).
  */
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, FlatList,
-  Dimensions,
+  Dimensions, Animated, Easing, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Svg, { Path, Circle, Rect, Line, Polyline, G } from 'react-native-svg';
+import Svg, { Path, Circle, Rect, Line, Polyline } from 'react-native-svg';
 
-import { useTheme } from '../context/ThemeContext';
 import { t } from '../services/i18n';
 
 const { width: W } = Dimensions.get('window');
 export const ONBOARDING_KEY = '@wow_onboarding_done';
 
-// ── SVG Icons ─────────────────────────────────────────────────────────────────
+// Paleta de marca (violeta) — unificada en los 3 slides
+const VIOLET       = '#A78BFA';
+const VIOLET_DEEP  = '#7C3AED';
 
+// ── SVG Icons ─────────────────────────────────────────────────────────────────
 function IconTrain({ color }: { color: string }) {
   return (
-    <Svg width={72} height={72} viewBox="0 0 24 24" fill="none">
-      {/* Cuerpo del tren */}
+    <Svg width={64} height={64} viewBox="0 0 24 24" fill="none">
       <Rect x="3" y="4" width="18" height="13" rx="3" stroke={color} strokeWidth="1.5" />
-      {/* Ventanas */}
       <Rect x="5.5" y="7" width="4" height="3.5" rx="1" stroke={color} strokeWidth="1.3" />
       <Rect x="14.5" y="7" width="4" height="3.5" rx="1" stroke={color} strokeWidth="1.3" />
-      {/* Línea central */}
       <Line x1="3" y1="13" x2="21" y2="13" stroke={color} strokeWidth="1.3" />
-      {/* Ruedas */}
       <Circle cx="7.5" cy="19" r="2" stroke={color} strokeWidth="1.5" />
       <Circle cx="16.5" cy="19" r="2" stroke={color} strokeWidth="1.5" />
-      {/* Eje */}
       <Line x1="9.5" y1="17" x2="14.5" y2="17" stroke={color} strokeWidth="1.3" />
-      {/* Vías */}
       <Line x1="1" y1="22" x2="23" y2="22" stroke={color} strokeWidth="1.3" strokeDasharray="2 2" />
     </Svg>
   );
 }
-
 function IconScenic({ color }: { color: string }) {
   return (
-    <Svg width={72} height={72} viewBox="0 0 24 24" fill="none">
-      {/* Montaña izquierda */}
+    <Svg width={64} height={64} viewBox="0 0 24 24" fill="none">
       <Path d="M2 20 L8 8 L14 20" stroke={color} strokeWidth="1.5" strokeLinejoin="round" />
-      {/* Montaña derecha (más alta) */}
       <Path d="M10 20 L17 5 L24 20" stroke={color} strokeWidth="1.5" strokeLinejoin="round" />
-      {/* Nieve pico */}
       <Path d="M14.5 9 L17 5 L19.5 9" stroke={color} strokeWidth="1.3" strokeLinejoin="round" />
-      {/* Vías en primer plano */}
       <Line x1="0" y1="21.5" x2="24" y2="21.5" stroke={color} strokeWidth="1.5" />
-      <Line x1="3" y1="20" x2="3" y2="23" stroke={color} strokeWidth="1.3" />
-      <Line x1="8" y1="20" x2="8" y2="23" stroke={color} strokeWidth="1.3" />
-      <Line x1="13" y1="20" x2="13" y2="23" stroke={color} strokeWidth="1.3" />
-      <Line x1="18" y1="20" x2="18" y2="23" stroke={color} strokeWidth="1.3" />
-      {/* Sol */}
       <Circle cx="5" cy="6" r="2" stroke={color} strokeWidth="1.3" />
-      <Line x1="5" y1="2.5" x2="5" y2="3.5" stroke={color} strokeWidth="1.2" />
-      <Line x1="5" y1="8.5" x2="5" y2="9.5" stroke={color} strokeWidth="1.2" />
-      <Line x1="1.5" y1="6" x2="2.5" y2="6" stroke={color} strokeWidth="1.2" />
-      <Line x1="7.5" y1="6" x2="8.5" y2="6" stroke={color} strokeWidth="1.2" />
     </Svg>
   );
 }
-
 function IconPrivacy({ color }: { color: string }) {
   return (
-    <Svg width={72} height={72} viewBox="0 0 24 24" fill="none">
-      {/* Escudo */}
+    <Svg width={64} height={64} viewBox="0 0 24 24" fill="none">
       <Path
         d="M12 2 L20 5.5 L20 12 C20 16.4 16.4 20.4 12 22 C7.6 20.4 4 16.4 4 12 L4 5.5 Z"
         stroke={color} strokeWidth="1.5" strokeLinejoin="round"
       />
-      {/* Check */}
-      <Polyline
-        points="8,12 11,15 16,9"
-        stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
-      />
+      <Polyline points="8,12 11,15 16,9" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </Svg>
   );
 }
 
-// ── Datos de slides ───────────────────────────────────────────────────────────
-function getSlides() {
-  return [
-    {
-      id: '1',
-      gradient: ['#1a1a2e', '#16213e', '#0f3460'] as const,
-      accent:   '#6C63FF',
-    },
-    {
-      id: '2',
-      gradient: ['#1a2a1a', '#1e3a1e', '#0f4a2a'] as const,
-      accent:   '#34D399',
-    },
-    {
-      id: '3',
-      gradient: ['#1a1a2e', '#2a1a3e', '#1a0f40'] as const,
-      accent:   '#A78BFA',
-    },
-  ] as const;
-}
+const SLIDES = [
+  { id: '1', titleKey: 'ob1_title', subKey: 'ob1_sub', cta: 'ob_next'  },
+  { id: '2', titleKey: 'ob2_title', subKey: 'ob2_sub', cta: 'ob_next'  },
+  { id: '3', titleKey: 'ob3_title', subKey: 'ob3_sub', cta: 'ob_start' },
+] as const;
 
-// ── Componente slide individual ───────────────────────────────────────────────
+// ── Slide ───────────────────────────────────────────────────────────────────
 function Slide({
-  item,
-  isLast,
-  onFinish,
-  onSkip,
+  item, index, isActive, isLast, onFinish, onSkip,
 }: {
-  item: ReturnType<typeof getSlides>[number];
+  item: typeof SLIDES[number];
+  index: number;
+  isActive: boolean;
   isLast: boolean;
   onFinish: () => void;
   onSkip: () => void;
 }) {
-  const { colors } = useTheme();
+  // Entrada animada: cuando el slide se vuelve activo
+  const enter = useRef(new Animated.Value(0)).current;   // 0 → 1
+  const pulse = useRef(new Animated.Value(1)).current;    // CTA del último slide
 
-  // Mapeo de texto por slide id
-  const content = {
-    '1': {
-      title: t('ob1_title'),
-      sub:   t('ob1_sub'),
-      cta:   t('ob_next'),
-    },
-    '2': {
-      title: t('ob2_title'),
-      sub:   t('ob2_sub'),
-      cta:   t('ob_next'),
-    },
-    '3': {
-      title: t('ob3_title'),
-      sub:   t('ob3_sub'),
-      cta:   t('ob_start'),
-    },
-  }[item.id]!;
+  useEffect(() => {
+    if (isActive) {
+      enter.setValue(0);
+      Animated.timing(enter, {
+        toValue: 1, duration: 620, delay: 60,
+        easing: Easing.out(Easing.cubic), useNativeDriver: true,
+      }).start();
+    }
+  }, [isActive, enter]);
+
+  // Pulso suave del CTA en el último slide
+  useEffect(() => {
+    if (isActive && isLast) {
+      const loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulse, { toValue: 1.05, duration: 900, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+          Animated.timing(pulse, { toValue: 1,    duration: 900, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+        ]),
+      );
+      loop.start();
+      return () => loop.stop();
+    }
+  }, [isActive, isLast, pulse]);
+
+  const fade = enter;
+  const rise = enter.interpolate({ inputRange: [0, 1], outputRange: [26, 0] });
+  const riseSlow = enter.interpolate({ inputRange: [0, 1], outputRange: [40, 0] });
+  const iconScale = enter.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] });
 
   return (
-    <LinearGradient
-      colors={[...item.gradient]}
-      style={styles.slide}
-    >
-      {/* Icono SVG */}
-      <View style={styles.iconWrap}>
-        <View style={[styles.iconGlow, { borderColor: item.accent + '40' }]} />
-        {item.id === '1' && <IconTrain  color={item.accent} />}
-        {item.id === '2' && <IconScenic color={item.accent} />}
-        {item.id === '3' && <IconPrivacy color={item.accent} />}
-      </View>
+    <View style={styles.slide}>
+      {/* Ícono en círculo glass con glow violeta */}
+      <Animated.View style={[styles.iconOuter, { opacity: fade, transform: [{ scale: iconScale }] }]}>
+        <View style={styles.iconGlow} />
+        <View style={styles.iconGlass}>
+          {item.id === '1' && <IconTrain   color={VIOLET} />}
+          {item.id === '2' && <IconScenic  color={VIOLET} />}
+          {item.id === '3' && <IconPrivacy color={VIOLET} />}
+        </View>
+      </Animated.View>
 
-      {/* Accent line */}
-      <View style={[styles.accentLine, { backgroundColor: item.accent }]} />
+      {/* Línea de acento */}
+      <Animated.View style={[styles.accentLine, { opacity: fade }]} />
 
       {/* Texto */}
-      <View style={styles.textWrap}>
-        <Text style={styles.title}>{content.title}</Text>
-        <Text style={[styles.sub, { color: 'rgba(255,255,255,0.65)' }]}>{content.sub}</Text>
-      </View>
+      <Animated.View style={[styles.textWrap, { opacity: fade, transform: [{ translateY: rise }] }]}>
+        <Text style={styles.title}>{t(item.titleKey as any)}</Text>
+        <Text style={styles.sub}>{t(item.subKey as any)}</Text>
+      </Animated.View>
 
       {/* CTA */}
-      <Pressable
-        style={({ pressed }) => [
-          styles.ctaBtn,
-          { backgroundColor: item.accent, opacity: pressed ? 0.85 : 1 },
-        ]}
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          onFinish();
-        }}
-        accessibilityRole="button"
-      >
-        <Text style={styles.ctaText}>{content.cta}</Text>
-      </Pressable>
+      <Animated.View style={{ opacity: fade, transform: [{ translateY: riseSlow }, { scale: isLast ? pulse : 1 }] }}>
+        <Pressable
+          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onFinish(); }}
+          accessibilityRole="button"
+        >
+          <LinearGradient
+            colors={[VIOLET_DEEP, '#4F46E5']}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+            style={styles.ctaBtn}
+          >
+            <Text style={styles.ctaText}>{t(item.cta as any)}</Text>
+          </LinearGradient>
+        </Pressable>
+      </Animated.View>
 
-      {/* Saltar — solo slides 1 y 2 */}
+      {/* Saltar — slides 1 y 2 */}
       {!isLast && (
         <Pressable
           style={styles.skipBtn}
-          onPress={() => {
-            Haptics.selectionAsync();
-            onSkip();
-          }}
+          onPress={() => { Haptics.selectionAsync(); onSkip(); }}
           hitSlop={12}
         >
           <Text style={styles.skipText}>{t('ob_skip')}</Text>
         </Pressable>
       )}
-    </LinearGradient>
+    </View>
   );
 }
 
-// ── Pantalla principal ────────────────────────────────────────────────────────
+// ── Pantalla ──────────────────────────────────────────────────────────────────
 export default function OnboardingScreen() {
-  const router   = useRouter();
-  const listRef  = useRef<FlatList>(null);
+  const router  = useRouter();
+  const listRef = useRef<FlatList>(null);
   const [current, setCurrent] = useState(0);
-  const slides = getSlides();
 
   const finish = async () => {
     await AsyncStorage.setItem(ONBOARDING_KEY, '1');
@@ -207,7 +176,7 @@ export default function OnboardingScreen() {
   };
 
   const goNext = () => {
-    if (current < slides.length - 1) {
+    if (current < SLIDES.length - 1) {
       const next = current + 1;
       listRef.current?.scrollToIndex({ index: next, animated: true });
       setCurrent(next);
@@ -217,42 +186,58 @@ export default function OnboardingScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.root} edges={[]}>
+    <View style={styles.root}>
+      {/* Fondo de noche compartido (mismo que la app) */}
+      <Image
+        source={require('../assets/images/bg-hero.png')}
+        style={[StyleSheet.absoluteFillObject, { top: -120 }]}
+        resizeMode="cover"
+        fadeDuration={0}
+      />
+      <LinearGradient
+        colors={['rgba(10,8,30,0.55)', 'rgba(14,14,46,0.82)', 'rgba(10,8,26,0.96)']}
+        style={StyleSheet.absoluteFillObject}
+        pointerEvents="none"
+      />
+      {/* Orbes de glow violeta */}
+      <View style={[styles.orb, styles.orbTop]} pointerEvents="none" />
+      <View style={[styles.orb, styles.orbBottom]} pointerEvents="none" />
+
+      {/* Logo WoW TRAIN */}
+      <SafeAreaView style={styles.logoSafe} edges={['top']} pointerEvents="none">
+        <View style={styles.logoRow}>
+          <Text style={styles.logoWow}>WoW</Text>
+          <Text style={styles.logoTrain}> TRAIN</Text>
+        </View>
+      </SafeAreaView>
+
       <FlatList
         ref={listRef}
-        data={slides}
+        data={SLIDES}
         keyExtractor={(s) => s.id}
         horizontal
         pagingEnabled
-        scrollEnabled
         showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={(e) => {
-          const idx = Math.round(e.nativeEvent.contentOffset.x / W);
-          setCurrent(idx);
-        }}
+        onMomentumScrollEnd={(e) => setCurrent(Math.round(e.nativeEvent.contentOffset.x / W))}
         renderItem={({ item, index }) => (
           <Slide
             item={item}
-            isLast={index === slides.length - 1}
+            index={index}
+            isActive={index === current}
+            isLast={index === SLIDES.length - 1}
             onFinish={goNext}
             onSkip={finish}
           />
         )}
       />
 
-      {/* Dots indicator */}
+      {/* Dots */}
       <View style={styles.dots}>
-        {slides.map((_, i) => (
-          <View
-            key={i}
-            style={[
-              styles.dot,
-              i === current ? styles.dotActive : styles.dotInactive,
-            ]}
-          />
+        {SLIDES.map((_, i) => (
+          <View key={i} style={[styles.dot, i === current ? styles.dotActive : styles.dotInactive]} />
         ))}
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -260,103 +245,69 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#0a0a12' },
 
-  slide: {
-    width:           W,
-    flex:            1,
-    alignItems:      'center',
-    justifyContent:  'center',
-    paddingHorizontal: 36,
-    paddingBottom:   120, // espacio para los dots
+  orb: { position: 'absolute', borderRadius: 9999 },
+  orbTop: {
+    width: 320, height: 320, top: -80, right: -90,
+    backgroundColor: 'rgba(124,58,237,0.20)',
+  },
+  orbBottom: {
+    width: 380, height: 380, bottom: -120, left: -120,
+    backgroundColor: 'rgba(79,70,229,0.16)',
   },
 
-  iconWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 32,
+  logoSafe: { position: 'absolute', top: 0, left: 0, right: 0, alignItems: 'center', zIndex: 5 },
+  logoRow:  { flexDirection: 'row', alignItems: 'baseline', marginTop: 14 },
+  logoWow:  { fontSize: 26, fontWeight: '900', fontStyle: 'italic', letterSpacing: -1, color: VIOLET },
+  logoTrain:{ fontSize: 26, fontWeight: '300', letterSpacing: 4, color: '#fff' },
+
+  slide: {
+    width: W, flex: 1,
+    alignItems: 'center', justifyContent: 'center',
+    paddingHorizontal: 36, paddingBottom: 110,
   },
+
+  iconOuter: { alignItems: 'center', justifyContent: 'center', marginBottom: 36 },
   iconGlow: {
-    position:     'absolute',
-    width:        130,
-    height:       130,
-    borderRadius: 65,
-    borderWidth:  1.5,
+    position: 'absolute', width: 168, height: 168, borderRadius: 84,
+    backgroundColor: 'rgba(124,58,237,0.22)',
+  },
+  iconGlass: {
+    width: 120, height: 120, borderRadius: 36,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1, borderColor: 'rgba(167,139,250,0.35)',
   },
 
   accentLine: {
-    width:        48,
-    height:       3,
-    borderRadius: 2,
-    marginBottom: 28,
+    width: 44, height: 3, borderRadius: 2,
+    backgroundColor: VIOLET, marginBottom: 26,
   },
 
-  textWrap: {
-    alignItems: 'center',
-    gap:        14,
-    marginBottom: 48,
-  },
+  textWrap: { alignItems: 'center', gap: 14, marginBottom: 44 },
   title: {
-    fontSize:      32,
-    fontWeight:    '800',
-    color:         '#ffffff',
-    textAlign:     'center',
-    letterSpacing: -0.5,
-    lineHeight:    38,
+    fontSize: 33, fontWeight: '800', color: '#fff',
+    textAlign: 'center', letterSpacing: -0.8, lineHeight: 39,
   },
   sub: {
-    fontSize:   16,
-    lineHeight: 24,
-    textAlign:  'center',
-    maxWidth:   280,
+    fontSize: 16, lineHeight: 24, textAlign: 'center',
+    color: 'rgba(255,255,255,0.68)', maxWidth: 300,
   },
 
   ctaBtn: {
-    paddingVertical:   16,
-    paddingHorizontal: 56,
-    borderRadius:      50,
-    shadowColor:       '#000',
-    shadowOffset:      { width: 0, height: 4 },
-    shadowOpacity:     0.3,
-    shadowRadius:      8,
-    elevation:         6,
+    paddingVertical: 16, paddingHorizontal: 60, borderRadius: 50,
+    shadowColor: VIOLET_DEEP, shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.55, shadowRadius: 18, elevation: 8,
   },
-  ctaText: {
-    fontSize:      17,
-    fontWeight:    '700',
-    color:         '#ffffff',
-    letterSpacing: 0.3,
-  },
+  ctaText: { fontSize: 17, fontWeight: '700', color: '#fff', letterSpacing: 0.3 },
 
-  skipBtn: {
-    position:   'absolute',
-    top:        56,
-    right:      28,
-  },
-  skipText: {
-    fontSize:   15,
-    color:      'rgba(255,255,255,0.5)',
-    fontWeight: '500',
-  },
+  skipBtn:  { position: 'absolute', top: 56, right: 28 },
+  skipText: { fontSize: 15, color: 'rgba(255,255,255,0.5)', fontWeight: '500' },
 
   dots: {
-    position:       'absolute',
-    bottom:         48,
-    left:           0,
-    right:          0,
-    flexDirection:  'row',
-    justifyContent: 'center',
-    alignItems:     'center',
-    gap:            8,
+    position: 'absolute', bottom: 46, left: 0, right: 0,
+    flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8,
   },
-  dot: {
-    height:       6,
-    borderRadius: 3,
-  },
-  dotActive: {
-    width:           24,
-    backgroundColor: '#ffffff',
-  },
-  dotInactive: {
-    width:           6,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-  },
+  dot: { height: 6, borderRadius: 3 },
+  dotActive:   { width: 24, backgroundColor: VIOLET },
+  dotInactive: { width: 6,  backgroundColor: 'rgba(255,255,255,0.28)' },
 });
