@@ -25,13 +25,13 @@ import type { Station, CountryCode } from '../types';
 import { t } from '../services/i18n';
 
 const D = {
-  bg:        '#2C2C2E',
-  bgOverlay: 'rgba(0,0,0,0.6)',
-  border:    'rgba(255,255,255,0.09)',
+  bg:        'rgba(255,255,255,0.07)',   // glass translúcido — no negro sólido
+  bgOverlay: 'rgba(0,0,0,0.4)',
+  border:    'rgba(139,92,246,0.28)',    // borde violeta sutil
   primary:   '#8B5CF6',
   text:      '#FFFFFF',
-  muted:     'rgba(235,235,245,0.30)',
-  secondary: 'rgba(235,235,245,0.60)',
+  muted:     'rgba(235,235,245,0.60)',
+  secondary: 'rgba(235,235,245,0.85)',
   brand:     '#C4B5FD',
   danger:    '#FF453A',
 } as const;
@@ -159,11 +159,11 @@ function StationSearch({ onStationFound, countryHint, placeholder }: {
                     {station.name}
                   </Text>
                   {i === 0 && (
-                    <Text style={styles.listItemSub}>Estación principal · más trenes</Text>
+                    <Text style={styles.listItemSub}>{t('main_station_sub')}</Text>
                   )}
                 </View>
                 {i === 0
-                  ? <View style={styles.mainBadge}><Text style={styles.mainBadgeText}>⭐ Principal</Text></View>
+                  ? <View style={styles.mainBadge}><Text style={styles.mainBadgeText}>{t('main_station')}</Text></View>
                   : <Ionicons name="chevron-forward" size={12} color={D.muted} />
                 }
               </Pressable>
@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
     borderColor: D.border, paddingHorizontal: Spacing['3'],
     paddingVertical: Platform.OS === 'ios' ? Spacing['3'] : Spacing['1'],
   },
-  input: { flex: 1, fontSize: Typography.size.sm, color: D.text, minHeight: 44 },
+  input: { flex: 1, fontSize: Typography.size.base, fontWeight: '600', color: '#FFFFFF', minHeight: 44 },
   spinner: { marginHorizontal: Spacing['1'] },
   clearBtn: {
     width: 28, height: 28, alignItems: 'center', justifyContent: 'center',

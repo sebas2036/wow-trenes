@@ -69,7 +69,7 @@ export default function PartnerCard({
         </Text>
       </View>
 
-      <View style={[styles.ctaPill, { backgroundColor: gradColors[0] }]}>
+      <View style={[styles.ctaPill, { backgroundColor: '#7C3AED' }]}>
         <Text style={styles.ctaText}>{cta}</Text>
       </View>
     </Pressable>

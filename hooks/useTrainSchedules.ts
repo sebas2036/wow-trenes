@@ -106,7 +106,16 @@ export function useTrainSchedules({
       // PHASE 1 — instant offline data from SQLite
       const rawServices = await queryUpcomingTrains(stationId, maxResults * 3, destStationId);
       // Descartar trenes que ya partieron (margen de 2 min para "en curso")
-      const services = rawServices.filter(s => s.departureTime.getTime() > Date.now() - 2 * 60_000);
+      // + Deduplicar por minuto+destino+tipo — GTFS duplica trips por variantes de calendario
+      const seenTrips = new Set<string>();
+      const services = rawServices
+        .filter(s => s.departureTime.getTime() > Date.now() - 2 * 60_000)
+        .filter(s => {
+          const key = `${Math.floor(s.departureTime.getTime() / 60_000)}|${s.destination.name}|${s.trainNumber}`;
+          if (seenTrips.has(key)) return false;
+          seenTrips.add(key);
+          return true;
+        });
       if (token !== refreshToken.current) return;
 
       const initialClocks = await buildClocks(services, new Map());

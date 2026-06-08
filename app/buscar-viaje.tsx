@@ -323,10 +323,21 @@ export default function BuscarViaje() {
         {showSuggestions && (
           <View style={styles.dropdown}>
             <ScrollView keyboardShouldPersistTaps="handled" style={{ maxHeight: 220 }}>
-              {suggestions.map(s => (
-                <Pressable key={s.id} style={styles.dropdownItem} onPress={() => selectStation(s)}>
-                  <Ionicons name="train-outline" size={14} color={Colors.text.muted} />
-                  <Text style={styles.dropdownText} numberOfLines={1}>{s.name}</Text>
+              {suggestions.map((s, i) => (
+                <Pressable
+                  key={s.id}
+                  style={[styles.dropdownItem, i === 0 && styles.dropdownItemMain]}
+                  onPress={() => selectStation(s)}
+                >
+                  <Ionicons name="train-outline" size={14} color={i === 0 ? '#8B5CF6' : Colors.text.muted} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.dropdownText, i === 0 && { color: '#FFFFFF' }]} numberOfLines={1}>{s.name}</Text>
+                    {i === 0 && <Text style={styles.dropdownSubText}>{t('main_station_sub')}</Text>}
+                  </View>
+                  {i === 0
+                    ? <View style={styles.dropdownBadge}><Text style={styles.dropdownBadgeText}>{t('main_station')}</Text></View>
+                    : <Ionicons name="chevron-forward" size={12} color={Colors.text.muted} />
+                  }
                 </Pressable>
               ))}
             </ScrollView>
@@ -357,7 +368,7 @@ export default function BuscarViaje() {
         {/* Destinos populares — visible cuando hay origen pero no destino */}
         {originStation && !destStation && !showSuggestions && popularDests.length > 0 && (
           <View style={styles.popularWrap}>
-            <Text style={styles.popularTitle}>DESTINOS POPULARES DESDE {originStation.name.split(/[-–,]/)[0].trim().toUpperCase()}</Text>
+            <Text style={styles.popularTitle}>{t('search_popular_from').replace('{city}', originStation.name.split(/[-–,]/)[0].trim().toUpperCase())}</Text>
             <View style={styles.popularGrid}>
               {popularDests.map((dest) => (
                 <Pressable
@@ -551,7 +562,15 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing['3'], paddingHorizontal: Spacing['3'],
     borderBottomWidth: 1, borderBottomColor: Colors.border.subtle,
   },
+  dropdownItemMain: { backgroundColor: 'rgba(139,92,246,0.08)' },
   dropdownText: { fontSize: Typography.size.sm, color: Colors.text.primary, flex: 1 },
+  dropdownSubText: { fontSize: 11, color: 'rgba(167,139,250,0.70)', marginTop: 1 },
+  dropdownBadge: {
+    backgroundColor: 'rgba(139,92,246,0.20)', borderRadius: 8,
+    paddingHorizontal: 7, paddingVertical: 3,
+    borderWidth: 1, borderColor: 'rgba(139,92,246,0.40)',
+  },
+  dropdownBadgeText: { fontSize: 10, fontWeight: '700', color: '#C4B5FD' },
 
   dayRow: { flexDirection: 'row', gap: Spacing['2'], paddingHorizontal: Spacing['4'], marginBottom: Spacing['2'] },
   dayBtn: {
