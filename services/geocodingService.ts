@@ -1,14 +1,19 @@
 /**
  * geocodingService — Reverse geocoding con Google Geocoding API
- * Convierte coordenadas GPS en nombre de lugar legible.
- * "40.4234, -3.6821" → "Puerta del Sol, Madrid"
+ * Convierte coordenadas GPS en un lugar legible y detecta con precisión el país/ciudad.
  */
 
 const API_KEY = 'AIzaSyDmuX0_mdkwyyzHnlPXYr9xb7erUzRsc2M';
 const BASE    = 'https://maps.googleapis.com/maps/api/geocode/json';
 
-// Caché en memoria — evita llamadas repetidas si el usuario no se movió
-let cache: { lat: number; lon: number; result: string; ts: number } | null = null;
+interface LocationContext {
+  placeName: string;
+  city: string;
+  country: string;
+}
+
+// Caché en memoria para evitar llamadas repetidas
+let cache: { lat: number; lon: number; result: LocationContext; ts: number } | null = null;
 const CACHE_TTL_MS  = 60_000; // 1 minuto
 const CACHE_DIST_M  = 50;     // si se movió menos de 50m, usar caché
 
@@ -23,17 +28,9 @@ function distanceM(lat1: number, lon1: number, lat2: number, lon2: number): numb
 }
 
 /**
- * getPlaceName — devuelve el nombre del lugar donde está el usuario.
- * Prioriza: establecimiento > punto de interés > calle + ciudad
- *
- * Ejemplos:
- *   "Hotel Marriott Valencia"
- *   "Puerto de Valencia"
- *   "Calle Colón 12, Valencia"
- *   "Hauptbahnhof, Bern"
+ * getLocationContext — Obtiene el nombre del lugar, la ciudad y el país exacto.
  */
-export async function getPlaceName(lat: number, lon: number): Promise<string> {
-  // Usar caché si el usuario no se movió significativamente
+export async function getLocationContext(lat: number, lon: number): Promise<LocationContext> {
   const now = Date.now();
   if (cache && (now - cache.ts) < CACHE_TTL_MS) {
     const dist = distanceM(lat, lon, cache.lat, cache.lon);
@@ -41,58 +38,99 @@ export async function getPlaceName(lat: number, lon: number): Promise<string> {
   }
 
   try {
-    const url = `${BASE}?latlng=${lat},${lon}&key=${API_KEY}&language=es&result_type=establishment|point_of_interest|street_address`;
+    // Ampliamos el result_type para incluir datos políticos y geográficos más amplios en fronteras
+    const url = `${BASE}?latlng=${lat},${lon}&key=${API_KEY}&language=es&result_type=establishment|point_of_interest|street_address|locality|political`;
     const resp = await fetch(url);
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
 
     const data = await resp.json();
     if (data.status !== 'OK' || !data.results?.length) {
-      return formatFallback(lat, lon);
+      return fallbackContext(lat, lon);
     }
 
-    // Buscar el nombre más descriptivo
-    const name = extractBestName(data.results);
-
-    cache = { lat, lon, result: name, ts: now };
-    return name;
+    // Procesar todos los componentes para no errar de país/ciudad
+    const context = extractLocationContext(data.results);
+    
+    cache = { lat, lon, result: context, ts: now };
+    return context;
   } catch (e) {
     console.warn('[Geocoding] Error:', e);
-    return formatFallback(lat, lon);
+    return fallbackContext(lat, lon);
   }
 }
 
-function extractBestName(results: any[]): string {
-  // 1. Establecimiento con nombre propio (hotel, restaurante, estación)
+/**
+ * Mantenemos la función vieja adaptada para no romper ninguna pantalla que dependa de ella
+ */
+export async function getPlaceName(lat: number, lon: number): Promise<string> {
+  const context = await getLocationContext(lat, lon);
+  return context.placeName;
+}
+
+function extractLocationContext(results: any[]): LocationContext {
+  let country = '';
+  let city = '';
+  let placeName = '';
+
+  // 1. Buscar país y ciudad recorriendo los componentes de dirección de Google
+  for (const r of results) {
+    const components = r.address_components ?? [];
+    
+    if (!country) {
+      const cComp = components.find((c: any) => c.types.includes('country'));
+      if (cComp) country = cComp.long_name;
+    }
+    
+    if (!city) {
+      const cityComp = components.find((c: any) => 
+        c.types.includes('locality') || 
+        c.types.includes('administrative_area_level_2') ||
+        c.types.includes('administrative_area_level_1')
+      );
+      if (cityComp) city = cityComp.long_name;
+    }
+  }
+
+  // 2. Buscar el nombre comercial o de interés más descriptivo para mostrar en la barra
   for (const r of results) {
     const types: string[] = r.types ?? [];
     if (
       types.includes('establishment') ||
-      types.includes('lodging') ||
       types.includes('point_of_interest') ||
       types.includes('transit_station')
     ) {
       const name = r.address_components?.[0]?.long_name;
-      if (name && name.length > 3) return name;
+      if (name && name.length > 3) {
+        placeName = name;
+        break;
+      }
     }
   }
 
-  // 2. Dirección de calle + ciudad
-  const street = results[0];
-  if (street) {
-    const components = street.address_components ?? [];
-    const streetNum  = components.find((c: any) => c.types.includes('street_number'))?.long_name ?? '';
+  // Si no hay nombre de fantasía, armar Calle + Ciudad
+  if (!placeName && results[0]) {
+    const components = results[0].address_components ?? [];
     const streetName = components.find((c: any) => c.types.includes('route'))?.long_name ?? '';
-    const city       = components.find((c: any) =>
-      c.types.includes('locality') || c.types.includes('administrative_area_level_2')
-    )?.long_name ?? '';
-
-    if (streetName && city) return `${streetName}${streetNum ? ' ' + streetNum : ''}, ${city}`;
-    if (city) return city;
+    const streetNum  = components.find((c: any) => c.types.includes('street_number'))?.long_name ?? '';
+    if (streetName) {
+      placeName = `${streetName}${streetNum ? ' ' + streetNum : ''}`;
+    } else {
+      placeName = city || 'Tu ubicación';
+    }
   }
 
-  return results[0]?.formatted_address?.split(',')[0] ?? 'Tu ubicación';
+  return {
+    placeName: placeName || 'Tu ubicación',
+    city: city || 'Desconocido',
+    country: country || 'Desconocido'
+  };
 }
 
-function formatFallback(lat: number, lon: number): string {
-  return `${lat.toFixed(4)}°N, ${lon.toFixed(4)}°E`;
+function fallbackContext(lat: number, lon: number): LocationContext {
+  const coordString = `${lat.toFixed(4)}°N, ${lon.toFixed(4)}°E`;
+  return {
+    placeName: coordString,
+    city: '',
+    country: ''
+  };
 }
