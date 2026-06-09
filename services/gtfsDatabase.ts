@@ -393,7 +393,9 @@ const COUNTRY_BOUNDS: { code: CountryCode; latMin: number; latMax: number; lonMi
   { code: 'CH',  latMin: 45.8, latMax: 47.9, lonMin:  5.9,  lonMax: 10.5  },
   { code: 'BE',  latMin: 49.5, latMax: 51.5, lonMin:  2.5,  lonMax:  6.4  },
   { code: 'NL',  latMin: 50.7, latMax: 53.6, lonMin:  3.3,  lonMax:  7.2  },
-  { code: 'AT',  latMin: 46.4, latMax: 49.0, lonMin:  9.5,  lonMax: 17.2  },
+  // Austria es diagonal (oeste=sur, este=norte). Dos cajas para no invadir Baviera.
+  { code: 'AT',  latMin: 46.4, latMax: 47.9, lonMin:  9.5,  lonMax: 13.5  }, // oeste: Tirol/Salzburgo
+  { code: 'AT',  latMin: 46.4, latMax: 49.0, lonMin: 13.5,  lonMax: 17.2  }, // este: Viena/Estiria
   { code: 'PT',  latMin: 36.9, latMax: 42.2, lonMin: -9.5,  lonMax: -6.2  },
   { code: 'DK',  latMin: 54.5, latMax: 57.8, lonMin:  8.0,  lonMax: 15.2  },
   { code: 'DE',  latMin: 47.3, latMax: 55.1, lonMin:  5.9,  lonMax: 15.1  },
