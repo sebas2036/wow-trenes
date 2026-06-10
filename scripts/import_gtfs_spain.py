@@ -42,9 +42,12 @@ RAIL_TYPES = {
 }
 
 def read_csv(path):
+    # Renfe rellena las líneas con espacios → strip de claves y valores,
+    # si no 'end_date' queda como 'end_date   ...' y se pierden los calendarios.
     try:
         with open(path, encoding="utf-8-sig", newline="") as f:
-            return list(csv.DictReader(f))
+            return [{(k or "").strip(): (v or "").strip() for k, v in r.items()}
+                    for r in csv.DictReader(f)]
     except FileNotFoundError:
         print(f"  WARN: {path} not found, skipping")
         return []

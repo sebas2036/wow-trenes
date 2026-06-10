@@ -103,6 +103,7 @@ import { isDbReady, downloadDb, getDownloadStatus } from './dbDownloadService';
 import { fetchTmbBoard, setActiveTmbStop, getActiveTmbStopName, searchTmbStops } from './tmbRealtime';
 import { fetchMadridBoard, setActiveMadridStop, getActiveMadridStopName, searchMadridStops } from './madridRealTime';
 import { fetchGermanyBoard, setActiveGermanyStation, getActiveGermanyStationName, searchGermanyStations, type GermanyStation } from './germanyBoard';
+import { overlaySpainDelays } from './spainRealTime';
 
 // ── Asset map ────────────────────────────────────────────────────────────────
 // 'bundled' → require() embeds the DB in the JS bundle (use solo para el país
@@ -1233,6 +1234,12 @@ async function _getCountryBoardInner(
     return overlayGermanyDelays(gtfsEntries);
   }
 
+  // España: GTFS estático + overlay GTFS-RT Renfe (retrasos/cancelaciones en vivo)
+  if (country === 'ES') {
+    const gtfsEntries = await getCountryBoardGTFS('ES', mode, limit, stationId);
+    return overlaySpainDelays(gtfsEntries);
+  }
+
   // Italia: ViaggiaTreno real-time (API pública Trenitalia), fallback GTFS
   if (country === 'IT') {
     try {
@@ -1607,6 +1614,7 @@ export interface TripResult {
 // ── Re-exports Suiza real-time para uso en buscar-viaje.tsx ──────────────────
 export { fetchSwissConnections, searchSwissStations, nearestSwissStation };
 export { getGermanyAlerts, invalidateGermanyRT } from './germanyRealTime';
+export { invalidateSpainRT } from './spainRealTime';
 export { searchItalyStations, setActiveItalyStation, getActiveItalyStationName, invalidateItalyRT } from './italyRealTime';
 export { searchBelgiumStations, setActiveBelgiumStation, getActiveBelgiumStationName, getBelgiumDisturbances, invalidateBelgiumRT } from './belgiumRealTime';
 export { searchFranceStations, setActiveFranceStation, getActiveFranceStationName, invalidateFranceRT, searchFranceJourneys, type FranceJourney } from './franceRealTime';
