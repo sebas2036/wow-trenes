@@ -66,7 +66,10 @@ const RT_STATION_COUNTRIES: Partial<Record<CountryCode, true>> = {
 type BoardMode = 'salidas' | 'arribos';
 
 // ── Helpers de estación por país ──────────────────────────────────────────────
-async function searchForCountry(code: CountryCode, query: string): Promise<{ id: string; name: string }[]> {
+async function searchForCountry(
+  code: CountryCode, query: string,
+  coords?: { latitude: number; longitude: number },
+): Promise<{ id: string; name: string }[]> {
   if (!query.trim()) return [];
   let results: { id: string; name: string }[] = [];
   try {
@@ -84,7 +87,16 @@ async function searchForCountry(code: CountryCode, query: string): Promise<{ id:
   } catch { /* fallback abajo */ }
   // Fallback a GTFS local si la API no devolvió nada
   if (results.length === 0) {
-    const gtfs = await searchStations(query, 10, code);
+    let gtfs = await searchStations(query, 10, code);
+    // Si tenemos la coordenada del GPS, ordenamos por cercanía para desambiguar
+    // nombres repetidos (ej: "Ostbahnhof" existe en Múnich, Berlín y Frankfurt).
+    // Así el [0] es la estación correcta, no la primera que devuelva la base.
+    if (coords) {
+      gtfs = [...gtfs].sort((a, b) =>
+        ((a.coordinates.latitude - coords.latitude) ** 2 + (a.coordinates.longitude - coords.longitude) ** 2) -
+        ((b.coordinates.latitude - coords.latitude) ** 2 + (b.coordinates.longitude - coords.longitude) ** 2)
+      );
+    }
     results = gtfs.map(s => ({ id: s.id, name: s.name }));
   }
   return results;
@@ -117,6 +129,30 @@ function getStationNameForCountry(code: CountryCode): string {
     case 'DE':     return getActiveGermanyStationName();
     default:       return '';
   }
+}
+
+// ── Elegir el resultado RT más cercano a una coordenada ───────────────────────
+// Los resultados alemanes traen sus coords embebidas en el id (formato
+// "...@X=<lon*1e6>@Y=<lat*1e6>@..."). Para nombres ambiguos (ej: "Ostbahnhof",
+// que existe en Múnich, Berlín y Frankfurt) elegimos el que está físicamente más
+// cerca del GPS, en vez del primero a ciegas. Si ningún resultado trae coords
+// parseables, devuelve null y el llamador usa el primero (cero regresión).
+function pickNearestRtStation(
+  results: { id: string; name: string }[],
+  coords: { latitude: number; longitude: number },
+): { id: string; name: string } | null {
+  let best: { id: string; name: string } | null = null;
+  let bestDist = Infinity;
+  for (const r of results) {
+    const mx = r.id.match(/@X=(-?\d+)/);
+    const my = r.id.match(/@Y=(-?\d+)/);
+    if (!mx || !my) continue;
+    const lon = parseInt(mx[1], 10) / 1e6;
+    const lat = parseInt(my[1], 10) / 1e6;
+    const dist = (lat - coords.latitude) ** 2 + (lon - coords.longitude) ** 2;
+    if (dist < bestDist) { bestDist = dist; best = r; }
+  }
+  return best;
 }
 
 // ── Obtener info de país por code ─────────────────────────────────────────────
@@ -404,8 +440,8 @@ export default function SalidasScreen() {
             // Para países con API real-time, buscar el ID correcto del API por nombre
             // (el ID de GTFS no coincide con el formato del API real-time)
             try {
-              const rtResults = await searchForCountry(countryCode, station.name);
-              const rtStation = rtResults[0];
+              const rtResults = await searchForCountry(countryCode, station.name, station.coordinates);
+              const rtStation = pickNearestRtStation(rtResults, station.coordinates) ?? rtResults[0];
               if (rtStation) {
                 setStationForCountry(countryCode, rtStation.id, rtStation.name);
                 setGpsStationName(rtStation.name);
@@ -656,8 +692,8 @@ export default function SalidasScreen() {
         setCurrentStationId(station.id);
         if (RT_STATION_COUNTRIES[countryCode]) {
           try {
-            const rtResults = await searchForCountry(countryCode, station.name);
-            const rtStation = rtResults[0];
+            const rtResults = await searchForCountry(countryCode, station.name, station.coordinates);
+            const rtStation = pickNearestRtStation(rtResults, station.coordinates) ?? rtResults[0];
             if (rtStation) {
               setStationForCountry(countryCode, rtStation.id, rtStation.name);
               setGpsStationName(rtStation.name);
