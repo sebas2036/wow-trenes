@@ -22,5 +22,6 @@ echo "🔒 Encriptando .env → .env.enc (te va a pedir una passphrase, dos vece
 openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -in .env -out .env.enc
 
 echo "✅ Listo: .env.enc creado ($(wc -c < .env.enc) bytes)."
-echo "   Ahora podés commitearlo y pushearlo (está encriptado, es seguro)."
-echo "   Y guardá la PASSPHRASE en tu gestor de contraseñas."
+echo "   ⚠️ El repo es PÚBLICO: NO lo commitees (.env.enc está gitignored)."
+echo "   Guardá .env.enc en nube PRIVADA (iCloud/Drive) o tu gestor de contraseñas."
+echo "   Y guardá la PASSPHRASE aparte, en tu gestor."

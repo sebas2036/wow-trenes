@@ -55,3 +55,6 @@ assets/test_write.txt
 
 expo-env.d.ts
 # @end expo-cli
+
+# Respaldo cifrado del .env — guardar en nube PRIVADA, nunca en este repo público
+.env.enc
