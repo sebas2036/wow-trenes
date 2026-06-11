@@ -1,3 +1,4 @@
+if (!AbortSignal.timeout) { AbortSignal.timeout = (ms: number) => { const controller = new AbortController(); setTimeout(() => controller.abort(), ms); return controller.signal; }; }
 /**
  * WoW Train — Split-Screen 50/50 (STEP 2 + Tourist v2)
  *
@@ -58,7 +59,7 @@ import * as Location                  from 'expo-location';
 import { useLiveTrainPosition }       from '../services/liveTrainPosition';
 import { findNearestStation, getStationById, getFirstStation, getMainStation, searchStations, detectCountryFromCoords, setActiveCountry } from '../services/gtfsDatabase';
 import { translateStationQuery } from '../services/stationTranslations';
-import { buildTrainlineByName } from '../services/affiliateEngine';
+import { buildTrainlineByName, buildBestBookingUrl } from '../services/affiliateEngine';
 import { SCENIC_TRAINS, getScenicByCountry } from '../data/scenicTrains';
 import PartnerCard from '../components/PartnerCard';
 import AnimatedTrain from '../components/AnimatedTrain';
@@ -661,8 +662,17 @@ export default function SplitScreen() {
     const svc = clock.train;
     setSelectedService(svc);
     startPlatformMonitoring(svc);
-    setAffiliateVisible(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    // Redirige al navegador externo, igual que el tablero de salidas.
+    // (El AffiliateWebView interno no renderiza dentro del Modal en Android.)
+    const departure = new Date(svc.departureTime);
+    const url = buildBestBookingUrl(
+      svc.origin.name,
+      svc.destination.name,
+      departure,
+      svc.origin.country,
+    );
+    Linking.openURL(url).catch(() => {});
   }, []);
 
   // ── Purchase success ──────────────────────────────────────────────────
