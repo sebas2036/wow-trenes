@@ -15,7 +15,7 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { Colors, Typography, Spacing, Radius, Gradients } from '../theme';
-import { t } from '../services/i18n';
+import { t, getLanguage } from '../services/i18n';
 import { searchStations, searchTrips, getPopularDestinations, setActiveCountry, detectCountryFromCoords, searchFranceStations, searchFranceJourneys, type TripResult, type FranceJourney } from '../services/gtfsDatabase';
 import { buildBestBookingUrl } from '../services/affiliateEngine';
 import type { Station, CountryCode } from '../types';
@@ -75,16 +75,6 @@ function buildPurchaseUrl(origin: string, dest: string, date: Date, countryCode 
   return buildBestBookingUrl(origin, dest, date, countryCode);
 }
 
-// Precio estimado según tipo de tren y duración
-function estimatePrice(trainName: string, durationMin: number): string {
-  const name = trainName.toUpperCase();
-  let rate = 0.08; // €/min base
-  if (['AVE','AVE INT','AVLO','TGV','ICE','FR','FRECCIAROSSA'].some(t => name.includes(t))) rate = 0.18;
-  else if (['ALVIA','AVANT','EUROMED','IC','ICD'].some(t => name.includes(t))) rate = 0.12;
-  else if (['REGIONAL','REG','MD','RE','RB','SPR'].some(t => name.includes(t))) rate = 0.05;
-  const price = Math.max(8, Math.round(durationMin * rate));
-  return `~€${price}`;
-}
 
 type ActiveField = 'origin' | 'dest' | null;
 
@@ -292,7 +282,7 @@ export default function BuscarViaje() {
           <View style={styles.midRow}>
             <View style={styles.routeLine} />
             <Pressable style={styles.swapBtn} onPress={swap}>
-              <Ionicons name="swap-vertical" size={16} color={Colors.brand.glow} />
+              <Ionicons name="swap-vertical" size={22} color="#FFFFFF" />
             </Pressable>
           </View>
 
@@ -356,6 +346,13 @@ export default function BuscarViaje() {
             </Pressable>
           ))}
         </View>
+        <Text style={styles.dayDate}>
+          {(() => {
+            const d = new Date();
+            d.setDate(d.getDate() + dayOffset);
+            return d.toLocaleDateString(getLanguage(), { weekday: 'short', day: 'numeric', month: 'short' });
+          })()}
+        </Text>
 
         {/* Botón buscar — visible cuando ambos campos están llenos */}
         {originStation && destStation && !loading && (
@@ -476,10 +473,9 @@ export default function BuscarViaje() {
                       </View>
                     </View>
 
-                    {/* Precio estimado + botón comprar */}
+                    {/* Precio real en el checkout del partner + botón comprar */}
                     <View style={styles.buyRow}>
-                      <View>
-                        <Text style={styles.priceEstimate}>{estimatePrice(trip.trainNumber, trip.durationMin)}</Text>
+                      <View style={{ flexShrink: 1 }}>
                         <Text style={styles.buyHint}>{t('search_price_hint')}</Text>
                       </View>
                       <View style={styles.buyBtn}>
@@ -543,9 +539,11 @@ const styles = StyleSheet.create({
   midRow: { flexDirection: 'row', alignItems: 'center', marginLeft: 3, gap: Spacing['3'], marginVertical: 2 },
   routeLine: { width: 2, height: 18, backgroundColor: Colors.border.default },
   swapBtn: {
-    width: 30, height: 30, borderRadius: 15, backgroundColor: Colors.brand.primary + '22',
-    borderWidth: 1, borderColor: Colors.brand.primary + '55',
+    width: 42, height: 42, borderRadius: 21, backgroundColor: Colors.brand.primary,
+    borderWidth: 2, borderColor: 'rgba(255,255,255,0.18)',
     alignItems: 'center', justifyContent: 'center',
+    shadowColor: Colors.brand.primary, shadowOpacity: 0.55, shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 }, elevation: 5,
   },
 
   dropdown: {
@@ -579,9 +577,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.07)',
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
   },
-  dayBtnActive: { backgroundColor: 'rgba(139,92,246,0.25)', borderColor: '#8B5CF6' },
-  dayBtnText: { fontSize: Typography.size.xs, fontWeight: Typography.weight.semibold, color: '#FFFFFF' },
-  dayBtnTextActive: { color: Colors.brand.glow },
+  dayBtnActive: { backgroundColor: '#7C3AED', borderColor: '#8B5CF6' },
+  dayBtnText: { fontSize: Typography.size.xs, fontWeight: Typography.weight.semibold, color: 'rgba(255,255,255,0.65)' },
+  dayBtnTextActive: { color: '#FFFFFF', fontWeight: Typography.weight.bold },
+  dayDate: {
+    textAlign: 'center', textTransform: 'capitalize',
+    fontSize: Typography.size.xs, color: 'rgba(255,255,255,0.55)',
+    marginTop: Spacing['1'], marginBottom: Spacing['2'],
+  },
 
   searchBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing['2'],
