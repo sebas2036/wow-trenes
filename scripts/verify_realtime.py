@@ -218,7 +218,24 @@ def macheo_portugal():
     except Exception as e:
         print(f"  ❌ CP API caída ({e})"); return 0, 1
 
+# ─── Backend Railway · infra de real-time (proxy ViaggiaTreno + health) ───────
+def macheo_backend():
+    base = re.sub(r"/affiliate.*$", "",
+                  load_env().get("EXPO_PUBLIC_AFFILIATE_PROXY",
+                                 "https://voxa-production-dc15.up.railway.app/affiliate/redirect"))
+    p = 0; checks = [
+        ("/health", lambda d: d.get("status") == "ok"),
+        ("/viaggiatreno/cercaStazione/ROMA", lambda d: isinstance(d, list) and len(d) > 0),
+    ]
+    for path, ok_fn in checks:
+        try:
+            d = http_json(base + path); ok = ok_fn(d)
+        except Exception: ok = False
+        p += ok; print(f"  {'✅' if ok else '❌'} {path}")
+    return p, len(checks)
+
 COUNTRIES = {
+    "backend":     macheo_backend,
     "suiza":       macheo_suiza,
     "belgica":     macheo_belgica,
     "renfe":       macheo_renfe,
