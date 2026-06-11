@@ -49,26 +49,26 @@ const TRAIN_META: Record<string, { color: string; label: string }> = {
   'ALVIA':     { color: '#005f9e', label: 'ALVIA' },
   'EUROMED':   { color: '#6d4c9e', label: 'EUROMED' },
   'Intercity': { color: '#2a7d4f', label: 'IC' },
-  'MD':        { color: '#555', label: 'MD' },
-  'REGIONAL':  { color: '#555', label: 'REG' },
-  'REG.EXP.':  { color: '#555', label: 'R.EXP' },
+  'MD':        { color: '#AEB6C8', label: 'MD' },
+  'REGIONAL':  { color: '#AEB6C8', label: 'REG' },
+  'REG.EXP.':  { color: '#AEB6C8', label: 'R.EXP' },
   // Internacional / otros países
   'IC':        { color: '#2a7d4f', label: 'IC' },
   'TGV':       { color: '#c00030', label: 'TGV' },
-  'RE':        { color: '#666', label: 'RE' },
+  'RE':        { color: '#AEB6C8', label: 'RE' },
   'GL':        { color: '#8b5e00', label: 'Glacier' },
   'FR':        { color: '#c00030', label: 'Frecciarossa' },
   'ICD':       { color: '#005f9e', label: 'IC Direct' },
-  'SPR':       { color: '#555', label: 'Sprinter' },
+  'SPR':       { color: '#AEB6C8', label: 'Sprinter' },
   // Alemania DB
   'ICE':       { color: '#C00', label: 'ICE' },
   'ICE sprinter': { color: '#C00', label: 'ICE-S' },
-  'RB':        { color: '#777', label: 'RB' },
+  'RB':        { color: '#AEB6C8', label: 'RB' },
   'S':         { color: '#006ab3', label: 'S' },
   'FLX':       { color: '#00b251', label: 'FlixTrain' },
 };
 function trainMeta(name: string) {
-  return TRAIN_META[name] ?? { color: '#555', label: name.slice(0, 6) };
+  return TRAIN_META[name] ?? { color: '#C4B5FD', label: name.slice(0, 6) };
 }
 
 function buildPurchaseUrl(origin: string, dest: string, date: Date, countryCode = 'ES'): string {
@@ -251,7 +251,7 @@ export default function BuscarViaje() {
   return (
     <View style={styles.rootGradient}>
       <Image source={require('../assets/images/bg-hero.png')} style={[StyleSheet.absoluteFillObject, { top: -280, bottom: 280 }]} resizeMode="cover" fadeDuration={0} />
-      <LinearGradient colors={['rgba(10,8,30,0.35)', 'rgba(14,14,46,0.60)', 'rgba(14,14,46,0.80)']} style={StyleSheet.absoluteFillObject} pointerEvents="none" />
+      <LinearGradient colors={['rgba(10,8,30,0.55)', 'rgba(14,14,46,0.80)', 'rgba(14,14,46,0.93)']} style={StyleSheet.absoluteFillObject} pointerEvents="none" />
     <SafeAreaView style={styles.root} edges={['top']}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
 
@@ -525,7 +525,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.08)',
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
   },
-  headerTitle: { fontSize: Typography.size.md, fontWeight: '800', color: Colors.text.primary, letterSpacing: -0.3 },
+  headerTitle: { fontSize: Typography.size.md, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.3 },
 
   form: {
     margin: Spacing['4'],
@@ -538,8 +538,8 @@ const styles = StyleSheet.create({
   dotOrigin: { width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.brand.primary, marginLeft: 3 },
   dotDest:   { width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.status.danger,  marginLeft: 3 },
   fieldWrap: { flex: 1 },
-  fieldLabel: { fontSize: 8, fontWeight: Typography.weight.bold, color: Colors.text.muted, letterSpacing: 1.5, marginBottom: 2 },
-  fieldInput: { fontSize: Typography.size.sm, fontWeight: Typography.weight.semibold, color: Colors.text.primary, padding: 0 },
+  fieldLabel: { fontSize: 8, fontWeight: Typography.weight.bold, color: '#FFFFFF', letterSpacing: 1.5, marginBottom: 2 },
+  fieldInput: { fontSize: Typography.size.sm, fontWeight: Typography.weight.semibold, color: '#FFFFFF', padding: 0 },
   midRow: { flexDirection: 'row', alignItems: 'center', marginLeft: 3, gap: Spacing['3'], marginVertical: 2 },
   routeLine: { width: 2, height: 18, backgroundColor: Colors.border.default },
   swapBtn: {
@@ -563,7 +563,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: Colors.border.subtle,
   },
   dropdownItemMain: { backgroundColor: 'rgba(139,92,246,0.08)' },
-  dropdownText: { fontSize: Typography.size.sm, color: Colors.text.primary, flex: 1 },
+  dropdownText: { fontSize: Typography.size.sm, color: '#FFFFFF', flex: 1 },
   dropdownSubText: { fontSize: 11, color: 'rgba(167,139,250,0.70)', marginTop: 1 },
   dropdownBadge: {
     backgroundColor: 'rgba(139,92,246,0.20)', borderRadius: 8,
@@ -580,7 +580,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
   },
   dayBtnActive: { backgroundColor: 'rgba(139,92,246,0.25)', borderColor: '#8B5CF6' },
-  dayBtnText: { fontSize: Typography.size.xs, fontWeight: Typography.weight.semibold, color: Colors.text.secondary },
+  dayBtnText: { fontSize: Typography.size.xs, fontWeight: Typography.weight.semibold, color: '#FFFFFF' },
   dayBtnTextActive: { color: Colors.brand.glow },
 
   searchBtn: {
@@ -597,7 +597,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'flex-start', gap: 5,
     marginBottom: Spacing['2'], paddingHorizontal: 2,
   },
-  listHeaderText: { fontSize: 11, color: Colors.text.muted, flex: 1, lineHeight: 16 },
+  listHeaderText: { fontSize: 11, color: '#FFFFFF', flex: 1, lineHeight: 16 },
 
   card: {
     backgroundColor: 'rgba(255,255,255,0.07)',
@@ -615,7 +615,7 @@ const styles = StyleSheet.create({
     borderRadius: 5, borderWidth: 1,
   },
   trainBadgeText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
-  directoText: { fontSize: Typography.size.xs, color: Colors.text.muted, flex: 1 },
+  directoText: { fontSize: Typography.size.xs, color: '#FFFFFF', flex: 1 },
   fastBadge: {
     backgroundColor: Colors.brand.primary + '22',
     borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2,
@@ -626,11 +626,11 @@ const styles = StyleSheet.create({
   timeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   timeBlock: { flex: 1 },
   timeVal: { fontSize: 28, fontWeight: '900', color: '#FFFFFF', fontVariant: ['tabular-nums'], letterSpacing: -1 },
-  timeLabel: { fontSize: 11, color: Colors.text.muted, marginTop: 2, fontWeight: '300' },
+  timeLabel: { fontSize: 11, color: '#FFFFFF', marginTop: 2, fontWeight: '300' },
 
   // Duración central
   durationBlock: { alignItems: 'center', paddingHorizontal: Spacing['2'], gap: 4 },
-  durationVal: { fontSize: Typography.size.xs, fontWeight: Typography.weight.semibold, color: Colors.text.secondary },
+  durationVal: { fontSize: Typography.size.xs, fontWeight: Typography.weight.semibold, color: '#FFFFFF' },
   durationLine: { flexDirection: 'row', alignItems: 'center', gap: 3, width: 70 },
   durationLineInner: { flex: 1, height: 1, backgroundColor: Colors.border.default },
   durationDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: Colors.border.default },
@@ -642,10 +642,10 @@ const styles = StyleSheet.create({
     paddingTop: Spacing['3'], marginTop: -Spacing['1'],
   },
   priceEstimate: { fontSize: 22, fontWeight: '900', color: '#C4B5FD', letterSpacing: -0.5 },
-  buyHint: { fontSize: Typography.size.xs, color: Colors.text.muted, fontWeight: '300' },
+  buyHint: { fontSize: Typography.size.xs, color: '#FFFFFF', fontWeight: '300' },
 
   popularWrap: { paddingHorizontal: Spacing['4'], marginBottom: Spacing['2'] },
-  popularTitle: { fontSize: 10, fontWeight: '700', color: Colors.text.muted, letterSpacing: 1.2, marginBottom: Spacing['2'] },
+  popularTitle: { fontSize: 10, fontWeight: '700', color: '#FFFFFF', letterSpacing: 1.2, marginBottom: Spacing['2'] },
   popularGrid: { gap: Spacing['2'] },
   popularChip: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing['2'],
@@ -654,8 +654,8 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.13)',
     paddingVertical: 12, paddingHorizontal: Spacing['3'],
   },
-  popularName: { fontSize: Typography.size.sm, fontWeight: '600', color: Colors.text.primary },
-  popularDur:  { fontSize: 11, color: Colors.text.muted, marginTop: 1 },
+  popularName: { fontSize: Typography.size.sm, fontWeight: '600', color: '#FFFFFF' },
+  popularDur:  { fontSize: 11, color: '#FFFFFF', marginTop: 1 },
   buyBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
     backgroundColor: Colors.brand.primary, borderRadius: Radius.md,
@@ -664,9 +664,9 @@ const styles = StyleSheet.create({
   buyBtnText: { fontSize: Typography.size.xs, fontWeight: Typography.weight.bold, color: '#fff' },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing['3'], padding: Spacing['8'] },
-  loadingText: { fontSize: Typography.size.sm, color: Colors.text.secondary },
-  errorText: { fontSize: Typography.size.sm, color: Colors.text.secondary, textAlign: 'center', lineHeight: 20 },
-  hintText: { fontSize: Typography.size.sm, color: Colors.text.muted, textAlign: 'center' },
+  loadingText: { fontSize: Typography.size.sm, color: '#FFFFFF' },
+  errorText: { fontSize: Typography.size.sm, color: '#FFFFFF', textAlign: 'center', lineHeight: 20 },
+  hintText: { fontSize: Typography.size.sm, color: '#FFFFFF', textAlign: 'center' },
 
   // Panel misma ciudad
   sameCityBox: {
@@ -674,11 +674,11 @@ const styles = StyleSheet.create({
     padding: Spacing['8'], gap: Spacing['3'],
   },
   sameCityTitle: {
-    fontSize: 17, fontWeight: '700', color: Colors.text.primary,
+    fontSize: 17, fontWeight: '700', color: '#FFFFFF',
     textAlign: 'center',
   },
   sameCitySubtitle: {
-    fontSize: 13, color: Colors.text.secondary,
+    fontSize: 13, color: '#FFFFFF',
     textAlign: 'center', lineHeight: 20,
   },
   sameCityBtn: {

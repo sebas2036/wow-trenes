@@ -54,7 +54,8 @@
         "android.permission.FOREGROUND_SERVICE_LOCATION",
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.VIBRATE",
-        "android.permission.POST_NOTIFICATIONS"
+        "android.permission.POST_NOTIFICATIONS",
+        "INTERNET"
       ],
       "config": {
         "googleMaps": {
@@ -85,7 +86,8 @@
         }
       ],
       "expo-sqlite",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-asset"
     ],
     "newArchEnabled": true,
     "experiments": {

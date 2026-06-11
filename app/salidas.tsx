@@ -274,7 +274,9 @@ function StationPicker({
         style={styles.pickerOverlay}
       >
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        <View style={[styles.pickerSheet, { backgroundColor: 'rgba(20,12,45,0.96)' }]}>
+        <View style={[styles.pickerSheet, { overflow: 'hidden' }]}>
+          {/* Fondo: mismo tono unificado de la app (Gradients.screenBg) */}
+          <LinearGradient colors={[...Gradients.screenBg]} style={StyleSheet.absoluteFill} pointerEvents="none" />
 
           {/* Handle */}
           <View style={[styles.pickerHandle, { backgroundColor: 'rgba(255,255,255,0.20)' }]} />
