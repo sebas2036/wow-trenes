@@ -3,7 +3,9 @@
  * Convierte coordenadas GPS en un lugar legible y detecta con precisión el país/ciudad.
  */
 
-const API_KEY = 'AIzaSyDmuX0_mdkwyyzHnlPXYr9xb7erUzRsc2M';
+// Clave desde el .env (gitignored). El fallback vacío evita romper si falta:
+// la geocodificación cae a su fallback interno. NO hardcodear claves en el fuente.
+const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_KEY ?? '';
 const BASE    = 'https://maps.googleapis.com/maps/api/geocode/json';
 
 interface LocationContext {
