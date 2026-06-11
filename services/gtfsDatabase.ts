@@ -43,6 +43,7 @@
 import * as SQLite from 'expo-sqlite';
 import * as FileSystem from 'expo-file-system';
 import { Asset } from 'expo-asset';
+import { getLocationContext } from './geocodingService';
 import type { Station, TrainService, Coordinates, CountryCode } from '../types';
 import {
   fetchSwissStationboard,
@@ -553,11 +554,39 @@ export async function findNearestMainStation(coords: Coordinates): Promise<Stati
   return rowToStation(row);
 }
 
+// ── Países que el reverse geocoder puede mapear a un DB del proyecto ──────────
+const GEOCODER_SUPPORTED: ReadonlySet<string> = new Set([
+  'CH', 'DE', 'FR', 'BE', 'IT', 'ES', 'NL', 'AT', 'PT', 'GB', 'NO', 'DK', 'US', 'JP',
+]);
+
+/**
+ * País preciso: reverse geocoding (autoritativo — no se contamina con estaciones
+ * de frontera mal etiquetadas en los DBs) → fallback a bounding box si el geocoder
+ * falla, está offline o el país no está soportado. Timeout corto para no colgar.
+ */
+async function detectCountryPrecise(coords: Coordinates): Promise<CountryCode | null> {
+  try {
+    const ctx = await Promise.race([
+      getLocationContext(coords.latitude, coords.longitude),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('geocode timeout')), 3000),
+      ),
+    ]);
+    const iso = ctx.countryCode?.toUpperCase();
+    if (iso && GEOCODER_SUPPORTED.has(iso)) {
+      return iso as CountryCode;
+    }
+  } catch (e) {
+    console.warn('[GPS] geocoding falló — uso bounding box:', e);
+  }
+  return detectCountryFromCoords(coords);
+}
+
 export async function findNearestStation(coords: Coordinates): Promise<Station | null> {
   const { latitude: lat, longitude: lon } = coords;
 
-  // Detectar país por GPS y cambiar el DB activo automáticamente
-  const detectedCountry = detectCountryFromCoords(coords);
+  // Detectar país por reverse geocoding (autoritativo) → fallback bounding box.
+  const detectedCountry = await detectCountryPrecise(coords);
   if (detectedCountry) {
     await setActiveCountry(detectedCountry);
     console.log(`[GPS] País detectado: ${detectedCountry}`);
@@ -567,38 +596,72 @@ export async function findNearestStation(coords: Coordinates): Promise<Station |
 
   const conn = await db();
 
-  // Intentar con radio creciente: 1° (~111km) → 2° → 4°
-  // Garantiza encontrar la estación más cercana incluso en zonas poco densas (ej: Valencia)
   let gtfsStation: Station | null = null;
   let gtfsDist = Infinity;
 
-  for (const DELTA of [1.0, 2.0, 4.0]) {
-    const row = await conn.getFirstAsync<{
-      stop_id:      string;
-      stop_name:    string;
-      stop_lat:     number;
-      stop_lon:     number;
-      country_code: string;
-    }>(`
-      SELECT
-        stop_id, stop_name,
-        AVG(stop_lat) AS stop_lat,
-        AVG(stop_lon) AS stop_lon,
-        country_code,
-        (AVG(stop_lat) - ?) * (AVG(stop_lat) - ?) +
-        (AVG(stop_lon) - ?) * (AVG(stop_lon) - ?) AS dist_sq
-      FROM stops
-      WHERE stop_lat BETWEEN ? AND ?
-        AND stop_lon BETWEEN ? AND ?
-      GROUP BY COALESCE(NULLIF(parent_station,''), stop_id)
-      ORDER BY dist_sq ASC
-      LIMIT 1
-    `, [lat, lat, lon, lon, lat - DELTA, lat + DELTA, lon - DELTA, lon + DELTA]);
+  // 1) Estación CENTRAL de la ciudad: dentro de ~25 km, la de MÁS salidas.
+  //    Parado en un suburbio igual caés en el hub (ej: München Hbf), no en una
+  //    parada chica. El tope de ~25 km impide saltar a otra ciudad (ej: Berlín).
+  const CITY_DELTA = 0.25; // ~25 km
+  const hub = await conn.getFirstAsync<{
+    stop_id:      string;
+    stop_name:    string;
+    stop_lat:     number;
+    stop_lon:     number;
+    country_code: string;
+    departures:   number;
+  }>(`
+    SELECT
+      s.stop_id, s.stop_name,
+      AVG(s.stop_lat) AS stop_lat,
+      AVG(s.stop_lon) AS stop_lon,
+      s.country_code,
+      COUNT(st.trip_id) AS departures
+    FROM stops s
+    JOIN stop_times st ON st.stop_id = s.stop_id
+    WHERE s.stop_lat BETWEEN ? AND ?
+      AND s.stop_lon BETWEEN ? AND ?
+    GROUP BY COALESCE(NULLIF(s.parent_station, ''), s.stop_id)
+    ORDER BY departures DESC
+    LIMIT 1
+  `, [lat - CITY_DELTA, lat + CITY_DELTA, lon - CITY_DELTA, lon + CITY_DELTA]);
 
-    if (row) {
-      gtfsStation = rowToStation(row);
-      gtfsDist = (row.stop_lat - lat) ** 2 + (row.stop_lon - lon) ** 2;
-      break;
+  if (hub) {
+    gtfsStation = rowToStation(hub);
+    gtfsDist = (hub.stop_lat - lat) ** 2 + (hub.stop_lon - lon) ** 2;
+  }
+
+  // 2) Sin estaciones en ~25 km (zona rural) → la más cercana por distancia,
+  //    con radio creciente: 1° (~111km) → 2° → 4°.
+  if (!gtfsStation) {
+    for (const DELTA of [1.0, 2.0, 4.0]) {
+      const row = await conn.getFirstAsync<{
+        stop_id:      string;
+        stop_name:    string;
+        stop_lat:     number;
+        stop_lon:     number;
+        country_code: string;
+      }>(`
+        SELECT
+          stop_id, stop_name,
+          AVG(stop_lat) AS stop_lat,
+          AVG(stop_lon) AS stop_lon,
+          country_code,
+          (AVG(stop_lat) - ?) * (AVG(stop_lat) - ?) +
+          (AVG(stop_lon) - ?) * (AVG(stop_lon) - ?) AS dist_sq
+        FROM stops
+        WHERE stop_lat BETWEEN ? AND ?
+          AND stop_lon BETWEEN ? AND ?
+        GROUP BY COALESCE(NULLIF(parent_station,''), stop_id)
+        ORDER BY dist_sq ASC
+        LIMIT 1
+      `, [lat, lat, lon, lon, lat - DELTA, lat + DELTA, lon - DELTA, lon + DELTA]);
+
+      if (row) {
+        gtfsStation = rowToStation(row);
+        gtfsDist = (row.stop_lat - lat) ** 2 + (row.stop_lon - lon) ** 2;
+        break;
+      }
     }
   }
 

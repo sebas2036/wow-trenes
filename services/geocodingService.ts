@@ -10,6 +10,7 @@ interface LocationContext {
   placeName: string;
   city: string;
   country: string;
+  countryCode: string;   // ISO-2 (short_name de Google), ej. "DE" — detección precisa de país
 }
 
 // Caché en memoria para evitar llamadas repetidas
@@ -69,6 +70,7 @@ export async function getPlaceName(lat: number, lon: number): Promise<string> {
 
 function extractLocationContext(results: any[]): LocationContext {
   let country = '';
+  let countryCode = '';
   let city = '';
   let placeName = '';
 
@@ -78,7 +80,7 @@ function extractLocationContext(results: any[]): LocationContext {
     
     if (!country) {
       const cComp = components.find((c: any) => c.types.includes('country'));
-      if (cComp) country = cComp.long_name;
+      if (cComp) { country = cComp.long_name; countryCode = cComp.short_name ?? ''; }
     }
     
     if (!city) {
@@ -122,7 +124,8 @@ function extractLocationContext(results: any[]): LocationContext {
   return {
     placeName: placeName || 'Tu ubicación',
     city: city || 'Desconocido',
-    country: country || 'Desconocido'
+    country: country || 'Desconocido',
+    countryCode,
   };
 }
 
@@ -131,6 +134,7 @@ function fallbackContext(lat: number, lon: number): LocationContext {
   return {
     placeName: coordString,
     city: '',
-    country: ''
+    country: '',
+    countryCode: ''
   };
 }
