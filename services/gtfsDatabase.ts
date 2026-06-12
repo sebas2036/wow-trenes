@@ -1657,9 +1657,22 @@ export async function searchStations(query: string, limit = 20, country?: Countr
        -- Nivel 1: más viajes totales (volumen de servicio)
        COUNT(st.trip_id) DESC
      LIMIT ?`,
-    [nq, limit],
+    [nq, country ? limit * 5 : limit],
   );
-  return rows.map(rowToStation);
+  let stations = rows.map(rowToStation);
+  // Filtrar al país real por bounding box: los DBs contienen estaciones de países
+  // vecinos (rutas internacionales) y todas quedan etiquetadas con el código del DB,
+  // así que country_code no sirve — filtramos por coordenadas.
+  if (country) {
+    const bounds = COUNTRY_BOUNDS.filter(b => b.code === country);
+    if (bounds.length > 0) {
+      stations = stations.filter(s => bounds.some(b =>
+        s.coordinates.latitude  >= b.latMin && s.coordinates.latitude  <= b.latMax &&
+        s.coordinates.longitude >= b.lonMin && s.coordinates.longitude <= b.lonMax,
+      ));
+    }
+  }
+  return stations.slice(0, limit);
 }
 
 // ── TripResult — resultado del buscador ──────────────────────────────────────

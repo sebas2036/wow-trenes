@@ -528,7 +528,7 @@ export default function SalidasScreen() {
     });
   }, [selected.code]);
 
-  const BOARD_CACHE_KEY = (code: string, m: string) => `@board_cache_${code}_${m}`;
+  const BOARD_CACHE_KEY = (code: string, m: string, st?: string) => `@board_cache_${code}_${m}_${st ?? 'gps'}`;
 
   const dedupeAndFilter = (raw: BoardEntry[], countryCode: string): BoardEntry[] => {
     const seen   = new Set<string>();
@@ -553,7 +553,7 @@ export default function SalidasScreen() {
     // Stale-While-Revalidate: mostrar caché inmediatamente mientras se busca fresco
     if (!silent) {
       try {
-        const cached = await AsyncStorage.getItem(BOARD_CACHE_KEY(dest.code, m));
+        const cached = await AsyncStorage.getItem(BOARD_CACHE_KEY(dest.code, m, stId));
         if (cached) {
           const { entries, ts } = JSON.parse(cached) as { entries: BoardEntry[]; ts: number };
           const stale = dedupeAndFilter(entries, dest.code);
@@ -583,7 +583,7 @@ export default function SalidasScreen() {
       setBoard(entries);
       // Guardar en caché solo si hay datos útiles
       if (entries.length > 0) {
-        AsyncStorage.setItem(BOARD_CACHE_KEY(dest.code, m), JSON.stringify({ entries, ts: Date.now() })).catch(() => {});
+        AsyncStorage.setItem(BOARD_CACHE_KEY(dest.code, m, stId), JSON.stringify({ entries, ts: Date.now() })).catch(() => {});
       }
     } catch (e) {
       console.warn('[salidas] getCountryBoard error:', e);
@@ -865,17 +865,18 @@ export default function SalidasScreen() {
         })}
       </ScrollView>
 
-      {/* ── Selector de estación (solo países con RT) ── */}
+
+      {/* ── Cambiar estación de salida (solo países con RT) ── */}
       {hasStationPicker && (
         <Pressable
           style={[styles.stationPill, { backgroundColor: 'rgba(14,14,46,0.40)', borderColor: 'rgba(255,255,255,0.18)' }]}
           onPress={() => setPickerOpen(true)}
         >
-          <Ionicons name="location-outline" size={14} color={colors.brand.primary} />
+          <Ionicons name="swap-horizontal" size={14} color={colors.brand.primary} />
           <Text style={[styles.stationPillText, { color: colors.text.primary }]} numberOfLines={1}>
-            {stationName || getStationNameForCountry(selected.code)}
+            {t('board_change_dep_station')}
           </Text>
-          <Ionicons name="chevron-down" size={14} color={colors.text.muted} />
+          <Ionicons name="chevron-forward" size={14} color={colors.text.muted} />
         </Pressable>
       )}
 

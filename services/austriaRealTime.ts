@@ -76,7 +76,7 @@ async function oebb<T>(path: string, params: Record<string, string>): Promise<T>
  */
 export async function searchAustriaStations(query: string): Promise<AustriaStation[]> {
   try {
-    const url  = `${BASE}/bin/ajax-getstop.exe/dn?S=${encodeURIComponent(query)}&js=true&max=10`;
+    const url  = `${BASE}/bin/ajax-getstop.exe/dn?S=${encodeURIComponent(query)}&js=true&max=25`;
     const resp = await fetch(url, { headers: { 'User-Agent': 'WoW-Trenes-App/1.0' } });
     const text = await resp.text();
     // Hafas devuelve: SLs.sls = {"suggestions":[...]}
@@ -85,10 +85,18 @@ export async function searchAustriaStations(query: string): Promise<AustriaStati
     const data = JSON.parse(match[0]);
     return (data.suggestions ?? [])
       .filter((s: any) => s.extId && s.value)
+      // HAFAS trae estaciones de toda Europa — filtrar al bounding box de Austria.
+      // xcoord/ycoord en HAFAS = grados × 1e6.
+      .filter((s: any) => {
+        const lon = parseInt(s.xcoord, 10) / 1e6;
+        const lat = parseInt(s.ycoord, 10) / 1e6;
+        return lat >= 46.3 && lat <= 49.1 && lon >= 9.4 && lon <= 17.2;
+      })
       .map((s: any) => ({
         extId: s.extId,
         name:  s.value,
-      }));
+      }))
+      .slice(0, 12);
   } catch (e) {
     console.warn('[AT RT] searchAustriaStations error:', e);
     return [];
