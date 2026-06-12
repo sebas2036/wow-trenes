@@ -622,9 +622,15 @@ export async function findNearestStation(coords: Coordinates): Promise<Station |
     WHERE s.stop_lat BETWEEN ? AND ?
       AND s.stop_lon BETWEEN ? AND ?
     GROUP BY COALESCE(NULLIF(s.parent_station, ''), s.stop_id)
-    ORDER BY departures DESC
+    -- Score = salidas ponderadas por cercanía: una estación cercana le gana a una
+    -- lejana salvo que ésta sea MUCHO más importante. Evita saltar a la estación
+    -- más transitada de otra ciudad (ej: Toledo→Illescas, Múnich→Berlín).
+    ORDER BY COUNT(st.trip_id) / (1.0 +
+      ((AVG(s.stop_lat) - ?) * (AVG(s.stop_lat) - ?) +
+       (AVG(s.stop_lon) - ?) * (AVG(s.stop_lon) - ?)) / 0.01) DESC
     LIMIT 1
-  `, [lat - CITY_DELTA, lat + CITY_DELTA, lon - CITY_DELTA, lon + CITY_DELTA]);
+  `, [lat - CITY_DELTA, lat + CITY_DELTA, lon - CITY_DELTA, lon + CITY_DELTA,
+      lat, lat, lon, lon]);
 
   if (hub) {
     gtfsStation = rowToStation(hub);

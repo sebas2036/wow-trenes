@@ -31,7 +31,9 @@ def norm(s):
     return " ".join(s.split())
 
 def central_of_city(country, lat, lon):
-    """Estación con más salidas dentro de ~25 km (la central de la ciudad)."""
+    """Estación central: salidas ponderadas por cercanía dentro de ~25 km.
+    score = salidas / (1 + dist²/0.01) → la cercana le gana a una lejana salvo
+    que ésta sea MUCHO más importante (evita saltar a la estación de otra ciudad)."""
     f = ASSETS / DBS[country]
     if not f.exists(): return None
     con = sqlite3.connect(str(f))
@@ -43,8 +45,11 @@ def central_of_city(country, lat, lon):
             WHERE s.stop_lat BETWEEN ?-{RADIUS_DEG} AND ?+{RADIUS_DEG}
               AND s.stop_lon BETWEEN ?-{RADIUS_DEG} AND ?+{RADIUS_DEG}
             GROUP BY COALESCE(NULLIF(s.parent_station,''), s.stop_id)
-            ORDER BY salidas DESC LIMIT 1
-        """, (lat, lat, lon, lon)).fetchone()
+            ORDER BY COUNT(st.trip_id) / (1.0 +
+              ((AVG(s.stop_lat)-?)*(AVG(s.stop_lat)-?)+
+               (AVG(s.stop_lon)-?)*(AVG(s.stop_lon)-?))/0.01) DESC
+            LIMIT 1
+        """, (lat, lat, lon, lon, lat, lat, lon, lon)).fetchone()
     except sqlite3.OperationalError:
         row = None
     con.close()
@@ -103,6 +108,7 @@ CENTRAL = [
     ("IT", "Milán",         45.4860,  9.2050, "milano centrale"),
     ("IT", "Florencia",     43.7765, 11.2480, "firenze"),
     ("ES", "Madrid",        40.4065, -3.6906, "madrid"),
+    ("ES", "Toledo",        39.8790, -4.0320, "toledo"),
     ("ES", "Sevilla",       37.3924, -5.9749, "sevilla"),
     ("ES", "Valencia",      39.4660, -0.3776, "valencia"),
     ("NL", "Ámsterdam",     52.3791,  4.9003, "amsterdam centraal"),
