@@ -59,7 +59,7 @@ import * as Location                  from 'expo-location';
 import { useLiveTrainPosition }       from '../services/liveTrainPosition';
 import { findNearestStation, getStationById, getFirstStation, getMainStation, searchStations, detectCountryFromCoords, setActiveCountry } from '../services/gtfsDatabase';
 import { translateStationQuery } from '../services/stationTranslations';
-import { buildTrainlineByName, buildBestBookingUrl } from '../services/affiliateEngine';
+import { buildTrainlineByName, buildBestBookingUrl, buildScenicTrainUrl } from '../services/affiliateEngine';
 import { SCENIC_TRAINS, getScenicByCountry } from '../data/scenicTrains';
 import PartnerCard from '../components/PartnerCard';
 import AnimatedTrain from '../components/AnimatedTrain';
@@ -1105,7 +1105,13 @@ export default function SplitScreen() {
                   <Pressable
                     key={train.id}
                     style={[styles.scenicCard, { backgroundColor: 'rgba(255,255,255,0.07)', borderColor: train.colors[0] + '66' }]}
-                    onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setShowTravelModal(false); setScenicVisible(train.id); }}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                      setShowTravelModal(false);
+                      const dep = new Date(); dep.setHours(9, 0, 0, 0);
+                      // Navegador externo (el AffiliateWebView interno no renderiza en Android).
+                      Linking.openURL(buildScenicTrainUrl(train.origin, train.dest, dep)).catch(() => {});
+                    }}
                   >
                     <LinearGradient colors={train.colors} style={styles.scenicIconBadge} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
                       <Ionicons name="train" size={22} color="#fff" />

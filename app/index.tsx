@@ -10,7 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import {
   View, Text, StyleSheet, Pressable, ScrollView,
-  ActivityIndicator, Platform, FlatList, TextInput, Image,
+  ActivityIndicator, Platform, FlatList, TextInput, Image, Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -26,7 +26,7 @@ import { useTheme } from '../context/ThemeContext';
 import FlagCircle from '../components/FlagCircle';
 import { findNearestStation, setActiveCountry, detectCountryFromCoords } from '../services/gtfsDatabase';
 import { prefetchInBackground, onDownloadProgress } from '../services/dbDownloadService';
-import { buildTrainlineByName, buildBestBookingUrl } from '../services/affiliateEngine';
+import { buildTrainlineByName, buildBestBookingUrl, buildScenicTrainUrl } from '../services/affiliateEngine';
 import { SCENIC_TRAINS } from '../data/scenicTrains';
 import PartnerCard from '../components/PartnerCard';
 import { getYesimOffer, getTiqetsOffer, getStorageOffer, getInsuranceOffer } from '../data/partnerOffers';
@@ -806,7 +806,8 @@ export default function HomeScreen() {
                 date.setDate(date.getDate() + intlDate);
                 const url = buildBestBookingUrl(intlOrigin.trim(), intlDest.trim(), date, 'INTL');
                 setIntlUrl(url);
-                setIntlVisible(true);
+                // Abre el navegador externo (el AffiliateWebView interno no renderiza en Android).
+                Linking.openURL(url).catch(() => {});
               }}
             >
               <Ionicons name="search" size={16} color={intlOrigin && intlDest ? '#fff' : 'rgba(255,255,255,0.75)'} />
@@ -825,7 +826,11 @@ export default function HomeScreen() {
               <ScenicCard
                 key={train.id}
                 train={train}
-                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setScenicIntlId(train.id); }}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  const dep = new Date(); dep.setHours(9, 0, 0, 0);
+                  Linking.openURL(buildScenicTrainUrl(train.origin, train.dest, dep)).catch(() => {});
+                }}
               />
             ))}
 
