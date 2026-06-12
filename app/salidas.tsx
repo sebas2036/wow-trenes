@@ -372,7 +372,6 @@ export default function SalidasScreen() {
   const [selected,        setSelected]        = useState<typeof DESTINATIONS[0]>(DESTINATIONS[0]);
   const [board,           setBoard]           = useState<BoardEntry[]>([]);
   const [loading,         setLoading]         = useState(false);
-  const [pickerOpen,      setPickerOpen]      = useState(false);
   const [stationName,     setStationName]     = useState('');
   const [currentStationId, setCurrentStationId] = useState<string | undefined>(undefined);
   // GPS: null = no intentado; 'loading' = buscando; 'found' | 'notfound'
@@ -642,17 +641,6 @@ export default function SalidasScreen() {
     setSelected(dest);
   }, []);
 
-  const handleStationSelect = useCallback((id: string, name: string) => {
-    setStationForCountry(selected.code, id, name);
-    setStationName(name);
-    setGpsStationName(name);
-    setCurrentStationId(id);
-    setPickerOpen(false);
-    // Pasar el stationId directo para no depender del state que aún no actualizó
-    InteractionManager.runAfterInteractions(() => {
-      loadBoard(selected, mode, false, id);
-    });
-  }, [selected, mode, loadBoard]);
 
   const handleBoardTap = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -755,7 +743,7 @@ export default function SalidasScreen() {
       {/* ── Header con ubicación GPS ── */}
       <Pressable
         style={styles.header}
-        onPress={() => setPickerOpen(hasStationPicker)}
+        onPress={handleBoardTap}
         hitSlop={4}
       >
         <View style={styles.headerLeft}>
@@ -870,7 +858,7 @@ export default function SalidasScreen() {
       {hasStationPicker && (
         <Pressable
           style={[styles.stationPill, { backgroundColor: 'rgba(14,14,46,0.40)', borderColor: 'rgba(255,255,255,0.18)' }]}
-          onPress={() => setPickerOpen(true)}
+          onPress={handleBoardTap}
         >
           <Ionicons name="swap-horizontal" size={14} color={colors.brand.primary} />
           <Text style={[styles.stationPillText, { color: colors.text.primary }]} numberOfLines={1}>
@@ -971,13 +959,6 @@ export default function SalidasScreen() {
       <BottomTabBar active="salidas" onTranslatePress={() => setTranslator(true)} />
       <TranslatorSheet visible={translator} onClose={() => setTranslator(false)} />
 
-      {/* ── Modal selector de estación ── */}
-      <StationPicker
-        visible={pickerOpen}
-        country={selected.code}
-        onSelect={handleStationSelect}
-        onClose={() => setPickerOpen(false)}
-      />
     </SafeAreaView>
     </View>
   );
