@@ -794,11 +794,11 @@ export default function HomeScreen() {
 
             {/* Buscar */}
             <Pressable
-              style={[styles.intlBtn, {
+              style={({ pressed }) => [styles.intlBtn, {
                 backgroundColor: intlOrigin && intlDest ? colors.brand.primary : 'rgba(14,14,46,0.50)',
                 borderWidth: 1.5,
                 borderColor: intlOrigin && intlDest ? 'transparent' : 'rgba(255,255,255,0.40)',
-              }]}
+              }, pressed && { transform: [{ scale: 0.97 }], opacity: 0.9 }]}
               onPress={() => {
                 if (!intlOrigin.trim() || !intlDest.trim()) return;
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
