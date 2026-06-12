@@ -37,6 +37,7 @@ import { t } from '../services/i18n';
 // En Expo Go el mapa de Google no funciona (requiere build nativo)
 const IS_EXPO_GO = Constants.appOwnership === 'expo';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker, Polyline, Circle, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Haptics from 'expo-haptics';
 import Animated, {
@@ -308,6 +309,7 @@ export default function SplitScreen() {
   }>();
   const router     = useRouter();
   const { colors } = useTheme();
+  const insets     = useSafeAreaInsets();
   const mapRef     = useRef<MapView>(null);
   const isTourist  = params.mode === 'tourist';
   // Modo metro: país con código de ciudad (US_NYC, ES_MAD, ES_BCN…)
@@ -318,6 +320,8 @@ export default function SplitScreen() {
   // ── State ──────────────────────────────────────────────────────────────
   const [transportMode,    setTransportMode]    = useState<TransportMode>('walk');
   const [selectedStation,  setSelectedStation]  = useState<Station | null>(null);
+  // Estación GPS original (auto-detectada al entrar) — el botón ↻ vuelve a ella
+  const [gpsStation,       setGpsStation]       = useState<Station | null>(null);
   // Destino del mapa (separado de selectedStation para no recargar el tablero)
   const [mapDestination,   setMapDestination]   = useState<Station | null>(null);
   const [showStationPicker,  setShowStationPicker]  = useState(false);
@@ -409,7 +413,7 @@ export default function SplitScreen() {
         // Tourist mode — station already resolved by Home
         try {
           const st = await getStationById(params.originStationId);
-          if (st) { setSelectedStation(st); return; }
+          if (st) { setSelectedStation(st); setGpsStation(st); return; }
         } catch { /* fall through to GPS fallback */ }
       }
 
@@ -451,7 +455,7 @@ export default function SplitScreen() {
         const selectedCountry = params.country?.split('_')[0] ?? null;
         if (!selectedCountry || gpsCountry === selectedCountry || gpsCountry === params.country) {
           const station = await findNearestStation(coords);
-          if (station) { setSelectedStation(station); return; }
+          if (station) { setSelectedStation(station); setGpsStation(station); return; }
         }
       }
 
@@ -462,6 +466,7 @@ export default function SplitScreen() {
       const fallback = await getMainStation(params.country as CountryCode | undefined);
       if (fallback) {
         setSelectedStation(fallback);
+        setGpsStation(fallback);
         setTimeout(() => {
           mapRef.current?.animateToRegion({
             latitude:      fallback.coordinates.latitude,
@@ -811,7 +816,19 @@ export default function SplitScreen() {
             <Ionicons name="chevron-down" size={12} color={colors.brand.primary} />
           </Pressable>
 
-          <Pressable onPress={refresh} style={styles.refreshBtn} accessibilityLabel="Actualizar horarios">
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              // Volver a la estación GPS original (si estás viendo otra) y recargar
+              if (gpsStation && gpsStation.id !== selectedStation?.id) {
+                setSelectedStation(gpsStation);
+              } else {
+                refresh();
+              }
+            }}
+            style={styles.refreshBtn}
+            accessibilityLabel="Volver a mi ubicación y actualizar"
+          >
             <Text style={styles.refreshText}>↻</Text>
           </Pressable>
         </View>
@@ -1170,18 +1187,22 @@ export default function SplitScreen() {
         <View style={styles.pickerOverlay}>
           {/* Backdrop: toca fuera para cerrar */}
           <Pressable style={StyleSheet.absoluteFillObject} onPress={() => { Keyboard.dismiss(); setShowStationPicker(false); }} />
-          <View style={[styles.pickerSheet, { backgroundColor: '#13133A' }]}>
+          <View style={[styles.pickerSheet, { backgroundColor: '#13133A', paddingTop: insets.top + 16 }]}>
 
             {/* ── Header explicativo ── */}
             <View style={styles.pickerHeader}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.pickerTitle, { color: colors.text.primary }]}>Estación de salida</Text>
-                <Text style={[styles.pickerSubtitle, { color: colors.text.muted }]}>
-                  Cambia desde dónde salen tus trenes
+                <Text style={[styles.pickerSubtitle, { color: 'rgba(255,255,255,0.72)' }]}>
+                  Elegí desde qué estación querés ver las salidas
                 </Text>
               </View>
-              <Pressable onPress={() => { Keyboard.dismiss(); setShowStationPicker(false); }} hitSlop={8}>
-                <Ionicons name="close" size={22} color={colors.text.muted} />
+              <Pressable
+                onPress={() => { Keyboard.dismiss(); setShowStationPicker(false); }}
+                hitSlop={8}
+                style={({ pressed }) => [styles.pickerClose, pressed && { backgroundColor: 'rgba(255,255,255,0.18)' }]}
+              >
+                <Ionicons name="close" size={20} color={colors.text.primary} />
               </Pressable>
             </View>
 
@@ -1190,7 +1211,7 @@ export default function SplitScreen() {
               <View style={[styles.pickerCurrentRow, { backgroundColor: 'rgba(139,92,246,0.12)', borderColor: 'rgba(139,92,246,0.35)' }]}>
                 <Ionicons name="location" size={16} color={colors.brand.primary} />
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.pickerCurrentLabel, { color: colors.text.muted }]}>Saliendo desde</Text>
+                  <Text style={[styles.pickerCurrentLabel, { color: 'rgba(255,255,255,0.6)' }]}>Saliendo desde</Text>
                   <Text style={[styles.pickerCurrentName, { color: colors.text.primary }]}>{selectedStation.name}</Text>
                 </View>
                 <View style={[styles.pickerGpsBadge, { borderColor: 'rgba(139,92,246,0.40)' }]}>
@@ -1202,11 +1223,11 @@ export default function SplitScreen() {
 
             {/* ── Buscador ── */}
             <View style={[styles.pickerInputRow, { backgroundColor: colors.bg.elevated, borderColor: colors.border.subtle }]}>
-              <Ionicons name="search-outline" size={16} color={colors.text.muted} />
+              <Ionicons name="search-outline" size={16} color="rgba(255,255,255,0.6)" />
               <TextInput
                 style={[styles.pickerInput, { color: colors.text.primary }]}
                 placeholder="Buscar otra ciudad o estación…"
-                placeholderTextColor={colors.text.muted}
+                placeholderTextColor="rgba(255,255,255,0.6)"
                 value={stationQuery}
                 onChangeText={setStationQuery}
                 autoFocus
@@ -1367,10 +1388,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'flex-end',
     zIndex: 999,
   },
-  pickerSheet: { borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '80%', minHeight: 300 },
+  pickerSheet: { flex: 1, paddingHorizontal: 20, paddingBottom: 20 },
   pickerHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 },
-  pickerTitle:    { fontSize: Typography.size.base, fontWeight: Typography.weight.bold },
-  pickerSubtitle: { fontSize: Typography.size.xs, marginTop: 2 },
+  pickerClose: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.10)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)' },
+  pickerTitle:    { fontSize: Typography.size.lg, fontWeight: Typography.weight.bold },
+  pickerSubtitle: { fontSize: Typography.size.sm, marginTop: 3, lineHeight: 18 },
   pickerCurrentRow: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     borderRadius: 12, borderWidth: 1,
