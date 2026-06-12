@@ -9,10 +9,11 @@
 import React, { useState, useRef, useCallback } from 'react';
 import {
   View, Text, TextInput, Pressable, ActivityIndicator,
-  ScrollView, StyleSheet, Keyboard, StatusBar,
+  ScrollView, StyleSheet, Keyboard, StatusBar, Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Shadows } from '../theme';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImageManipulator from 'expo-image-manipulator';
@@ -141,7 +142,18 @@ export default function TraductorScreen() {
   // ── PANTALLA PRINCIPAL ──────────────────────────────────────────────────────
   return (
     <View style={styles.root}>
-      <LinearGradient colors={['#0E0E2E', '#0A0820', '#06040F']} style={StyleSheet.absoluteFill} />
+      {/* Fondo hero + gradiente — mismo look que Inicio/Salidas */}
+      <Image
+        source={require('../assets/images/bg-hero.png')}
+        style={[StyleSheet.absoluteFillObject, { top: -280, bottom: 280 }]}
+        resizeMode="cover"
+        fadeDuration={0}
+      />
+      <LinearGradient
+        colors={['rgba(10,8,30,0.20)', 'rgba(14,14,46,0.45)', 'rgba(14,14,46,0.65)']}
+        style={StyleSheet.absoluteFillObject}
+        pointerEvents="none"
+      />
       <StatusBar barStyle="light-content" />
 
       <ScrollView
@@ -231,7 +243,7 @@ export default function TraductorScreen() {
   );
 }
 
-const PURPLE = '#7C3AED';
+const PURPLE = '#8B5CF6'; // brand.primary (dark) — igual que el resto de la app
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#0A0820' },
@@ -241,23 +253,23 @@ const styles = StyleSheet.create({
 
   langLabel: { fontSize: 11, fontWeight: '700', color: '#A78BFA', letterSpacing: 1.5, marginBottom: 8, marginTop: 4 },
   chipRow: { marginBottom: 14 },
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.07)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', marginRight: 8 },
-  chipActive: { backgroundColor: PURPLE, borderColor: PURPLE },
+  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: 'rgba(14,14,46,0.70)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', marginRight: 8 },
+  chipActive: { backgroundColor: PURPLE, borderColor: PURPLE, ...Shadows.glow },
   chipText: { fontSize: 14, color: 'rgba(255,255,255,0.75)', fontWeight: '600' },
   chipTextActive: { color: '#fff', fontWeight: '700' },
 
-  card: { backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.10)' },
+  card: { backgroundColor: 'rgba(14,14,46,0.80)', borderRadius: 18, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', overflow: 'hidden' },
   input: { fontSize: 18, color: '#fff', minHeight: 110, textAlignVertical: 'top' },
   inputFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 },
   clearText: { color: 'rgba(255,255,255,0.6)', fontSize: 14, fontWeight: '600' },
-  cameraBtn: { width: 46, height: 46, borderRadius: 23, backgroundColor: PURPLE, alignItems: 'center', justifyContent: 'center' },
+  cameraBtn: { width: 46, height: 46, borderRadius: 23, backgroundColor: PURPLE, alignItems: 'center', justifyContent: 'center', ...Shadows.glow },
 
-  translateBtn: { flexDirection: 'row', backgroundColor: PURPLE, paddingVertical: 15, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginTop: 14 },
+  translateBtn: { flexDirection: 'row', backgroundColor: PURPLE, paddingVertical: 15, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginTop: 14, ...Shadows.glow },
   translateBtnDisabled: { backgroundColor: 'rgba(255,255,255,0.15)' },
   translateBtnText: { color: '#fff', fontSize: 16, fontWeight: '800', letterSpacing: 0.3 },
   error: { color: '#FCA5A5', fontSize: 14, marginTop: 10, textAlign: 'center' },
 
-  outputCard: { marginTop: 4, minHeight: 130, backgroundColor: 'rgba(139,92,246,0.10)', borderColor: 'rgba(139,92,246,0.30)' },
+  outputCard: { marginTop: 4, minHeight: 130, backgroundColor: 'rgba(14,14,46,0.80)', borderColor: 'rgba(139,92,246,0.40)' },
   outputText: { fontSize: 19, color: '#fff', lineHeight: 26 },
   placeholder: { fontSize: 16, color: 'rgba(255,255,255,0.45)', fontStyle: 'italic' },
 
