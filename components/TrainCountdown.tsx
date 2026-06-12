@@ -68,12 +68,6 @@ interface TrainCountdownProps {
   destStationName?: string; // nombre del destino para el badge
 }
 
-// ── Trainline ─────────────────────────────────────────────────────────────────
-// affiliate_ref = tu ID de Partnerize. Reemplazá XXXXXXXX por el ID real.
-const AFFILIATE_REF  = 'XXXXXXXX';
-const TRAINLINE_URL  = `https://www.thetrainline.com?affiliate_ref=${AFFILIATE_REF}`;
-
-
 
 export default memo(function TrainCountdown({
   clocks,
