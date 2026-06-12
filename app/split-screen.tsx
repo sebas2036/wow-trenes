@@ -38,6 +38,7 @@ import { t } from '../services/i18n';
 const IS_EXPO_GO = Constants.appOwnership === 'expo';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import MapView, { Marker, Polyline, Circle, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Haptics from 'expo-haptics';
 import Animated, {
@@ -88,6 +89,8 @@ import type {
 const { height: H, width: W } = Dimensions.get('window');
 // 38% superior scrolleable para trenes, 62% para mapa (guía GPS es función central)
 const HALF_H = H * 0.38;
+// Clave para mostrar el coachmark de cambio de estación solo la primera vez
+const COACHMARK_STATION_KEY = '@coachmark_station_pill_v1';
 
 // ── Deep links for rideshare ─────────────────────────────────────────────
 // En Android 11+ canOpenURL() siempre falla para apps de terceros sin
@@ -322,6 +325,8 @@ export default function SplitScreen() {
   const [selectedStation,  setSelectedStation]  = useState<Station | null>(null);
   // Estación GPS original (auto-detectada al entrar) — el botón ↻ vuelve a ella
   const [gpsStation,       setGpsStation]       = useState<Station | null>(null);
+  // Coachmark de una sola vez: "tocá para cambiar de estación"
+  const [showCoachmark,    setShowCoachmark]    = useState(false);
   // Destino del mapa (separado de selectedStation para no recargar el tablero)
   const [mapDestination,   setMapDestination]   = useState<Station | null>(null);
   const [showStationPicker,  setShowStationPicker]  = useState(false);
@@ -490,6 +495,28 @@ export default function SplitScreen() {
       } catch { /* non-fatal */ }
     })();
   }, [params.destStationId]);
+
+  // ── Coachmark "tocá para cambiar de estación" (solo la 1ª vez) ─────────
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const seen = await AsyncStorage.getItem(COACHMARK_STATION_KEY);
+        if (!cancelled && seen !== '1') setShowCoachmark(true);
+      } catch { /* no-op */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Abrir el picker de estación (desde la pill o desde el coachmark) y marcar visto
+  const openStationPicker = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setStationQuery('');
+    setStationSuggestions([]);
+    setShowStationPicker(true);
+    setShowCoachmark(false);
+    AsyncStorage.setItem(COACHMARK_STATION_KEY, '1').catch(() => {});
+  }, []);
 
   // ── Live train position (polling 15s, solo si hay tren seleccionado) ──
   // Activo solo cuando el tren saldrá en < 3 horas o ya partió
@@ -804,7 +831,7 @@ export default function SplitScreen() {
           {/* Origin station pill — muestra estación actual, tappeable para cambiar */}
           <Pressable
             style={[styles.stationPill, { backgroundColor: 'rgba(14,14,46,0.45)', borderColor: 'rgba(139,92,246,0.65)' }]}
-            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setStationQuery(''); setStationSuggestions([]); setShowStationPicker(true); }}
+            onPress={openStationPicker}
             accessibilityLabel="Cambiar estación"
             accessibilityHint="Toca para buscar otra estación"
             hitSlop={8}
@@ -1182,6 +1209,28 @@ export default function SplitScreen() {
         </View>
       )}
 
+      {/* ── Coachmark de una sola vez: enseña que la pill cambia de estación ── */}
+      {showCoachmark && selectedStation && !showStationPicker && (
+        <View style={[styles.coachmark, { top: insets.top + 50 }]} pointerEvents="box-none">
+          <View style={[styles.coachmarkArrow, { borderBottomColor: colors.brand.primary }]} />
+          <Pressable
+            onPress={openStationPicker}
+            style={[styles.coachmarkBubble, { backgroundColor: colors.brand.primary }]}
+            accessibilityLabel="Tocá para cambiar de estación"
+          >
+            <Ionicons name="hand-left-outline" size={15} color="#fff" />
+            <Text style={styles.coachmarkText}>Tocá acá para cambiar de estación</Text>
+            <Pressable
+              onPress={() => { setShowCoachmark(false); AsyncStorage.setItem(COACHMARK_STATION_KEY, '1').catch(() => {}); }}
+              hitSlop={10}
+              accessibilityLabel="Cerrar aviso"
+            >
+              <Ionicons name="close" size={16} color="rgba(255,255,255,0.85)" />
+            </Pressable>
+          </Pressable>
+        </View>
+      )}
+
       {/* ── Picker de estación manual — overlay absoluto (evita bugs de Modal transparent en Android) ── */}
       {showStationPicker && (
         <View style={styles.pickerOverlay}>
@@ -1391,6 +1440,10 @@ const styles = StyleSheet.create({
   pickerSheet: { flex: 1, paddingHorizontal: 20, paddingBottom: 20 },
   pickerHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 },
   pickerClose: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.10)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)' },
+  coachmark: { position: 'absolute', left: 0, right: 0, alignItems: 'center', zIndex: 60 },
+  coachmarkArrow: { width: 0, height: 0, borderLeftWidth: 8, borderRightWidth: 8, borderBottomWidth: 9, borderLeftColor: 'transparent', borderRightColor: 'transparent' },
+  coachmarkBubble: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 13, maxWidth: '88%', ...Shadows.glow },
+  coachmarkText: { color: '#fff', fontWeight: Typography.weight.semibold, fontSize: Typography.size.sm, flexShrink: 1 },
   pickerTitle:    { fontSize: Typography.size.lg, fontWeight: Typography.weight.bold },
   pickerSubtitle: { fontSize: Typography.size.sm, marginTop: 3, lineHeight: 18 },
   pickerCurrentRow: {
