@@ -29,6 +29,14 @@ interface ModeChipProps {
   etas?:        Record<TransportMode, number | null>;
 }
 
+/** Minutos → texto legible: "45 min", "1 h", "4h 55m" */
+export function formatEta(mins: number): string {
+  if (mins < 60) return `${mins} min`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m === 0 ? `${h} h` : `${h}h ${m}m`;
+}
+
 export default memo(function ModeChip({ selected, onChange, etas }: ModeChipProps) {
   const { colors } = useTheme();
 
@@ -67,7 +75,7 @@ export default memo(function ModeChip({ selected, onChange, etas }: ModeChipProp
             </Text>
             {/* ETA — siempre visible debajo del label */}
             <Text style={[styles.eta, { color: active ? colors.brand.primary : colors.text.muted }]}>
-              {etas?.[cfg.mode] != null ? `${etas[cfg.mode]} min` : '—'}
+              {(() => { const v = etas?.[cfg.mode]; return v != null ? formatEta(v) : '—'; })()}
             </Text>
           </Pressable>
         );
@@ -79,7 +87,6 @@ export default memo(function ModeChip({ selected, onChange, etas }: ModeChipProp
 const styles = StyleSheet.create({
   wrap: {
     flexDirection: 'row',
-    marginHorizontal: 40,
     marginVertical: 4,
     borderRadius: Radius.md,
     padding: 2,
@@ -95,6 +102,6 @@ const styles = StyleSheet.create({
   btnActive: {
     borderRadius: Radius.sm,
   },
-  label: { fontSize: 10, fontWeight: '500' },
-  eta:   { fontSize: 9, fontWeight: '600', marginTop: 1 },
+  label: { fontSize: 12, fontWeight: '500' },
+  eta:   { fontSize: 12, fontWeight: '700', marginTop: 1 },
 });

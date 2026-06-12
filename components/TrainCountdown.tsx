@@ -29,7 +29,7 @@ import Animated, {
   withSpring,
 
 } from 'react-native-reanimated';
-import { Colors, Typography, Spacing, Radius } from '../theme';
+import { Colors, Typography, Spacing, Radius, Shadows } from '../theme';
 import type { PredictiveClock, ArrivalStatus } from '../types';
 
 // ── Status config ─────────────────────────────────────────────────────────────
@@ -271,7 +271,7 @@ function TrainCard({
           styles.card,
           index === 0 && styles.cardFirst,
         ]}
-        onPress={() => index === 0 ? setExpanded(e => !e) : onPress()}
+        onPress={() => { if (index === 0) setExpanded(e => !e); onPress(); }}
         onPressIn={() => { pressScale.value = withSpring(0.965, { damping: 18, stiffness: 350 }); }}
         onPressOut={() => { pressScale.value = withSpring(1,     { damping: 10, stiffness: 180 }); }}
         accessibilityRole="button"
@@ -353,12 +353,13 @@ function TrainCard({
 
             {/* Comprar billete — siempre visible */}
             <Pressable
-              style={[styles.buyChip, { backgroundColor: 'transparent', borderWidth: 1, borderColor: 'rgba(167,139,250,0.6)' }]}
+              style={({ pressed }) => [styles.buyChip, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
               onPress={onBuy}
               accessibilityRole="button"
               accessibilityLabel="Comprar billete"
             >
-              <Text style={[styles.buyChipText, { color: '#A78BFA' }]}>{t('split_buy')}</Text>
+              <Ionicons name="arrow-forward" size={12} color="#fff" />
+              <Text style={styles.buyChipText}>{t('split_buy')}</Text>
             </Pressable>
           </View>
 
@@ -720,7 +721,7 @@ const styles = StyleSheet.create({
 
   // Expand panel
   expandPanel: {
-    backgroundColor:      'rgba(139,92,246,0.06)',
+    backgroundColor:      'rgba(13,12,38,0.62)',
     marginTop:            -Spacing['1'],
     paddingHorizontal:    Spacing['4'],
     paddingTop:           Spacing['3'],
@@ -743,9 +744,9 @@ const styles = StyleSheet.create({
   },
   expandStat: { alignItems: 'flex-start', gap: 2 },
   expandStatLabel: {
-    fontSize:      10,
+    fontSize:      11,
     fontWeight:    '700' as const,
-    color:         '#A78BFA',
+    color:         '#C4B5FD',
     letterSpacing: 1.8,
     textTransform: 'uppercase' as const,
   },
@@ -786,14 +787,20 @@ const styles = StyleSheet.create({
     color:      '#fff',
   },
   buyChip: {
-    paddingVertical:   5,
-    paddingHorizontal: 10,
+    flexDirection:     'row',
+    alignItems:        'center',
+    gap:               4,
+    paddingVertical:   7,
+    paddingHorizontal: 14,
     borderRadius:      Radius.full,
+    backgroundColor:   '#7C3AED',
+    ...Shadows.glow,
   },
   buyChipText: {
-    fontSize:   10,
+    fontSize:   12,
     fontWeight: Typography.weight.bold,
     color:      '#fff',
+    letterSpacing: 0.3,
   },
 
   // "Otro horario" header button

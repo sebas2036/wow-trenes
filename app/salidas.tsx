@@ -224,10 +224,13 @@ function BoardRow({
       </View>
       {/* Botón Comprar */}
       <Pressable
-        style={styles.buyBtn}
+        style={({ pressed }) => [styles.buyBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
         onPress={handleBuy}
         hitSlop={6}
+        accessibilityRole="button"
+        accessibilityLabel="Comprar billete"
       >
+        <Ionicons name="arrow-forward" size={12} color="#fff" />
         <Text style={styles.buyBtnText}>{t('split_buy')}</Text>
       </Pressable>
     </View>
@@ -1055,14 +1058,16 @@ const styles = StyleSheet.create({
 
   // Botón comprar
   buyBtn: {
-    backgroundColor: 'transparent',
-    paddingVertical: 7, paddingHorizontal: 12,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: 'rgba(139,92,246,0.7)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 7, paddingHorizontal: 14,
+    borderRadius: Radius.full,
+    backgroundColor: '#7C3AED',
+    ...Shadows.glow,
   },
   buyBtnText: {
-    fontSize: 11, fontWeight: '700', color: '#A78BFA',
+    fontSize: 12, fontWeight: '700', color: '#fff', letterSpacing: 0.3,
   },
 
   center: {

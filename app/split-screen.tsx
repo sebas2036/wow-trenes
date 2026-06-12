@@ -52,7 +52,7 @@ import { Colors, Typography, Spacing, Radius, Shadows, Gradients } from '../them
 import { useTheme } from '../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import TrainCountdown    from '../components/TrainCountdown';
-import ModeChip          from '../components/ModeChip';
+import ModeChip, { formatEta } from '../components/ModeChip';
 import AffiliateWebView  from '../components/AffiliateWebView';
 
 import { useTrainSchedules }          from '../hooks/useTrainSchedules';
@@ -875,7 +875,7 @@ export default function SplitScreen() {
                   {distToStation < 1000
                     ? `${distToStation}m de ${selectedStation.name}`
                     : `${(distToStation / 1000).toFixed(1)}km de ${selectedStation.name}`}
-                  {etas.walk !== null ? `  ·  🚶 ${etas.walk} min` : ''}
+                  {etas.walk !== null ? `  ·  🚶 ${formatEta(etas.walk)}` : ''}
                 </Text>
               )}
             </View>
@@ -897,8 +897,10 @@ export default function SplitScreen() {
               <Pressable
                 onPress={() => setShowDestSearch(false)}
                 hitSlop={12}
+                style={({ pressed }) => [styles.destCloseBtn, pressed && { backgroundColor: 'rgba(255,255,255,0.20)' }]}
+                accessibilityLabel={t('close')}
               >
-                <Text style={{ fontSize: 15, fontWeight: '600', color: '#C4B5FD' }}>{t('close')}</Text>
+                <Ionicons name="close" size={18} color="#fff" />
               </Pressable>
             </View>
             <DestinationSearch
@@ -1012,15 +1014,22 @@ export default function SplitScreen() {
         {/* Barra superior del mapa con botón cerrar */}
         {mapMode !== 'hidden' && (
           <View style={styles.mapBar}>
+            {/* Grabber: tocá para cerrar el mapa (patrón de panel deslizable) */}
+            <Pressable
+              onPress={closeMap}
+              hitSlop={10}
+              style={({ pressed }) => [styles.mapGrabberHit, pressed && { opacity: 0.6 }]}
+              accessibilityLabel="Cerrar mapa"
+              accessibilityRole="button"
+            >
+              <View style={[styles.mapGrabber, { backgroundColor: colors.brand.primary }]} />
+            </Pressable>
             <ModeChip
               selected={transportMode}
               onChange={setTransportMode}
               destination={selectedStation?.coordinates}
               etas={etas}
             />
-            <Pressable onPress={closeMap} style={styles.mapCloseBtn} hitSlop={12}>
-              <Ionicons name="chevron-down" size={18} color="rgba(255,255,255,0.5)" />
-            </Pressable>
           </View>
         )}
 
@@ -1511,6 +1520,12 @@ const styles = StyleSheet.create({
     alignItems:     'center',
     justifyContent: 'space-between',
   },
+  destCloseBtn: {
+    width: 30, height: 30, borderRadius: 15,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#7C3AED',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.30)',
+  },
   destSearchTitle: {
     fontSize:   Typography.size.sm,
     fontWeight: Typography.weight.bold,
@@ -1709,13 +1724,17 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   mapBar: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    paddingRight:   8,
+    paddingHorizontal: 8,
+    paddingTop:        5,
   },
-  mapCloseBtn: {
-    padding: 6,
-    marginLeft: -4,
+  mapGrabberHit: {
+    alignSelf:         'center',
+    paddingVertical:   5,
+    paddingHorizontal: 30,
+  },
+  mapGrabber: {
+    width: 52, height: 6, borderRadius: 3,
+    ...Shadows.glow,
   },
   map: {
     flex: 1,
