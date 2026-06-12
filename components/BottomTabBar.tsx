@@ -24,7 +24,7 @@ interface TabConfig {
 const TABS: TabConfig[] = [
   { name: 'inicio',   labelKey: 'tab_home',        icon: 'home-outline',      iconActive: 'home',      path: '/'        },
   { name: 'salidas',  labelKey: 'tab_departures',   icon: 'train-outline',     iconActive: 'train',     path: '/salidas' },
-  { name: 'traducir', labelKey: 'tab_translate',    icon: 'language-outline',  iconActive: 'language',  path: '/'        },
+  { name: 'traducir', labelKey: 'tab_translate',    icon: 'language-outline',  iconActive: 'language',  path: '/traductor' },
   { name: 'ajustes',  labelKey: 'tab_settings',     icon: 'settings-outline',  iconActive: 'settings',  path: '/ajustes' },
 ];
 
@@ -41,7 +41,6 @@ export default function BottomTabBar({ active, onTranslatePress, onHomePress }: 
 
   const handlePress = (tab: TabConfig) => {
     Haptics.selectionAsync();
-    if (tab.name === 'traducir') { onTranslatePress?.(); return; }
     if (tab.name === 'inicio' && active === 'inicio') { onHomePress?.(); return; }
     if (tab.name === active) return;
     // replace() en vez de push/navigate: los tabs nunca apilan.

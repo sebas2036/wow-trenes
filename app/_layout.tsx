@@ -51,6 +51,7 @@ function AppStack() {
         <Stack.Screen name="buscar-viaje" />
         <Stack.Screen name="split-screen" />
         <Stack.Screen name="ticket" />
+        <Stack.Screen name="traductor" />
         <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
       </Stack>
     </GestureHandlerRootView>

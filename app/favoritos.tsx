@@ -17,7 +17,6 @@ import { Radius, Shadows } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 import { setActiveCountry } from '../services/gtfsDatabase';
 import BottomTabBar from '../components/BottomTabBar';
-import TranslatorSheet from '../components/TranslatorSheet';
 import FlagCircle from '../components/FlagCircle';
 import type { CountryCode } from '../types';
 
@@ -118,7 +117,6 @@ export default function FavoritosScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const [favs,       setFavs]       = useState<CountryCode[]>([]);
-  const [translator, setTranslator] = useState(false);
 
   useEffect(() => { getFavoritos().then(setFavs); }, []);
 
@@ -184,8 +182,7 @@ export default function FavoritosScreen() {
         <View style={{ height: 8 }} />
       </ScrollView>
 
-      <BottomTabBar active="inicio" onTranslatePress={() => setTranslator(true)} />
-      <TranslatorSheet visible={translator} onClose={() => setTranslator(false)} />
+      <BottomTabBar active="inicio" />
     </SafeAreaView>
     </View>
   );

@@ -34,7 +34,6 @@ import AffiliateWebView from '../components/AffiliateWebView';
 import { t } from '../services/i18n';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ONBOARDING_KEY } from './onboarding';
-import TranslatorSheet from '../components/TranslatorSheet';
 import DownloadProgressBar from '../components/DownloadProgressBar';
 import BottomTabBar from '../components/BottomTabBar';
 import { toggleFavorito, getFavoritos } from './favoritos';
@@ -414,7 +413,6 @@ export default function HomeScreen() {
   const [scenicIntlId,   setScenicIntlId]   = useState<string | null>(null);
   const [showAllScenic,  setShowAllScenic]  = useState(false);
   const { isOffline } = useNetwork();
-  const [translator,    setTranslator]    = useState(false);
   const [notifVisible,  setNotifVisible]  = useState(false);
   const { unreadCount, addNotification }  = useNotifications();
   const prevUnread = React.useRef(unreadCount);
@@ -881,12 +879,14 @@ export default function HomeScreen() {
         onPress={handleGPS}
         disabled={gpsLoading}
       >
-        <BlurView
-          intensity={Platform.OS === 'ios' ? 45 : 18}
-          tint="dark"
-          style={StyleSheet.absoluteFillObject}
-          experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
-        />
+        {/* Blur real solo iOS. En Android, experimentalBlurMethod="dimezisBlurView"
+            monta una superficie nativa que rompe el render de los Modals abiertos
+            después (traductor → opaco). Fallback a View translúcido. */}
+        {Platform.OS === 'ios' ? (
+          <BlurView intensity={45} tint="dark" style={StyleSheet.absoluteFillObject} />
+        ) : (
+          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(18,12,50,0.72)' }]} />
+        )}
         <View style={[styles.gpsPinWrap, { backgroundColor: colors.brand.primary }]}>
           <Ionicons name="location" size={20} color="#fff" />
         </View>
@@ -911,8 +911,7 @@ export default function HomeScreen() {
       </Pressable>
       </View>
 
-      <BottomTabBar active="inicio" onTranslatePress={() => setTranslator(true)} onHomePress={() => setFilter('trenes')} />
-      <TranslatorSheet visible={translator} onClose={() => setTranslator(false)} />
+      <BottomTabBar active="inicio" onHomePress={() => setFilter('trenes')} />
       <NotificationSheet visible={notifVisible} onClose={() => setNotifVisible(false)} />
 
       {/* ── WebView internacional ── */}

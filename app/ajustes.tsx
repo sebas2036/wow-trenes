@@ -16,7 +16,6 @@ import { useTheme } from '../context/ThemeContext';
 import { t } from '../services/i18n';
 import { LinearGradient } from 'expo-linear-gradient';
 import BottomTabBar from '../components/BottomTabBar';
-import TranslatorSheet from '../components/TranslatorSheet';
 
 const APP_VERSION = '1.0.0';
 
@@ -80,7 +79,6 @@ export default function AjustesScreen() {
   const { colors } = useTheme();
   const [notifications, setNotifications] = useState(true);
   const [haptics,       setHaptics]       = useState(true);
-  const [translator,    setTranslator]    = useState(false);
 
   const goLegal = (page: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -214,8 +212,7 @@ export default function AjustesScreen() {
         <View style={{ height: 8 }} />
       </ScrollView>
 
-      <BottomTabBar active="ajustes" onTranslatePress={() => setTranslator(true)} />
-      <TranslatorSheet visible={translator} onClose={() => setTranslator(false)} />
+      <BottomTabBar active="ajustes" />
     </SafeAreaView>
     </View>
   );

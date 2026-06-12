@@ -36,7 +36,6 @@ import { buildBestBookingUrl } from '../services/affiliateEngine';
 import { useLocation } from '../hooks/useLocation';
 import * as Location from 'expo-location';
 import BottomTabBar from '../components/BottomTabBar';
-import TranslatorSheet from '../components/TranslatorSheet';
 import FlagCircle from '../components/FlagCircle';
 import { useNetwork } from '../hooks/useNetwork';
 import { isDbReady, downloadDb } from '../services/dbDownloadService';
@@ -370,7 +369,6 @@ export default function SalidasScreen() {
   const router  = useRouter();
   const { colors } = useTheme();
   const { locationState, requestLocation } = useLocation();
-  const [translator,      setTranslator]      = useState(false);
   const [mode,            setMode]            = useState<BoardMode>('salidas');
   const [selected,        setSelected]        = useState<typeof DESTINATIONS[0]>(DESTINATIONS[0]);
   const [board,           setBoard]           = useState<BoardEntry[]>([]);
@@ -959,8 +957,7 @@ export default function SalidasScreen() {
         </ScrollView>
       )}
 
-      <BottomTabBar active="salidas" onTranslatePress={() => setTranslator(true)} />
-      <TranslatorSheet visible={translator} onClose={() => setTranslator(false)} />
+      <BottomTabBar active="salidas" />
 
     </SafeAreaView>
     </View>

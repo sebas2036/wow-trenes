@@ -412,7 +412,15 @@ async function translateViaGoogle(
     const url = `${GOOGLE_TRANSLATE_URL}?client=gtx&sl=${src}&tl=${tgt}&dt=t&q=${encodeURIComponent(cleanText)}`;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-    const res = await fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timer));
+    // User-Agent de navegador: el endpoint no oficial bloquea menos las
+    // peticiones que parecen venir de un navegador real.
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+        'Accept': 'application/json, text/plain, */*',
+      },
+    }).finally(() => clearTimeout(timer));
     if (!res.ok) return null;
     const json = await res.json();
     // Resultado: array de segmentos en json[0], cada segmento tiene la traducción en [0][0]
