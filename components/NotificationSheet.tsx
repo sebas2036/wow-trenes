@@ -3,8 +3,9 @@
  */
 import React from 'react';
 import {
-  View, Text, StyleSheet, Pressable, ScrollView, SafeAreaView, Dimensions
+  View, Text, StyleSheet, Pressable, ScrollView, Dimensions
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -22,6 +23,7 @@ interface Props {
 
 export default function NotificationSheet({ visible, onClose }: Props) {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const notifCtx = useNotifications();
   const notifications = Array.isArray(notifCtx?.notifications) ? notifCtx.notifications : [];
   const clearAll = notifCtx?.clearAll ?? (() => {});
@@ -31,7 +33,7 @@ export default function NotificationSheet({ visible, onClose }: Props) {
   return (
     <View style={[styles.overlay, { backgroundColor: 'rgba(10, 10, 18, 0.95)' }]}>
       <LinearGradient colors={[...Gradients.screenBg]} style={styles.gradient}>
-        <SafeAreaView style={styles.container}>
+        <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
           
           {/* Header */}
           <View style={styles.header}>
@@ -66,7 +68,7 @@ export default function NotificationSheet({ visible, onClose }: Props) {
             </ScrollView>
           )}
 
-        </SafeAreaView>
+        </View>
       </LinearGradient>
     </View>
   );
