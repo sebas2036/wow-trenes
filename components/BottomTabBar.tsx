@@ -12,7 +12,7 @@ import { hImpact, hSelection, hNotify, ImpactStyle, NotifyType } from '../servic
 import { useTheme } from '../context/ThemeContext';
 import { t } from '../services/i18n';
 
-export type TabName = 'inicio' | 'salidas' | 'traducir' | 'ajustes';
+export type TabName = 'inicio' | 'salidas' | 'viajes' | 'traducir' | 'ajustes';
 
 interface TabConfig {
   name:       TabName;
@@ -25,6 +25,7 @@ interface TabConfig {
 const TABS: TabConfig[] = [
   { name: 'inicio',   labelKey: 'tab_home',        icon: 'home-outline',      iconActive: 'home',      path: '/'        },
   { name: 'salidas',  labelKey: 'tab_departures',   icon: 'train-outline',     iconActive: 'train',     path: '/salidas' },
+  { name: 'viajes',   labelKey: 'tab_trips',        icon: 'ticket-outline',    iconActive: 'ticket',    path: '/mis-viajes' },
   { name: 'traducir', labelKey: 'tab_translate',    icon: 'language-outline',  iconActive: 'language',  path: '/traductor' },
   { name: 'ajustes',  labelKey: 'tab_settings',     icon: 'settings-outline',  iconActive: 'settings',  path: '/ajustes' },
 ];
