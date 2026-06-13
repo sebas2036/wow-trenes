@@ -49,8 +49,12 @@ export default function SecureRedirect({ visible, url, partner = 'Trainline', on
         <Animated.View style={[styles.ring, { transform: [{ rotate: ringRotate }] }]} />
         <Animated.View style={{ transform: [{ scale }] }}>
           <LinearGradient colors={['#8B5CF6', '#7C3AED', '#6D28D9']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.lockCircle}>
-            <Ionicons name="lock-closed" size={40} color="#fff" />
+            <Ionicons name="lock-closed" size={52} color="#fff" />
           </LinearGradient>
+          {/* Check verde de "verificado" */}
+          <View style={styles.checkBadge}>
+            <Ionicons name="checkmark" size={18} color="#fff" />
+          </View>
         </Animated.View>
       </View>
 
@@ -73,18 +77,23 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(8,6,24,0.96)',
     alignItems: 'center', justifyContent: 'center', paddingHorizontal: 36,
   },
-  lockArea: { width: 130, height: 130, alignItems: 'center', justifyContent: 'center', marginBottom: 26 },
+  lockArea: { width: 168, height: 168, alignItems: 'center', justifyContent: 'center', marginBottom: 26 },
   ring: {
-    position: 'absolute', width: 124, height: 124, borderRadius: 62,
-    borderWidth: 2, borderColor: 'rgba(167,139,250,0.25)', borderTopColor: '#A78BFA',
+    position: 'absolute', width: 160, height: 160, borderRadius: 80,
+    borderWidth: 3, borderColor: 'rgba(167,139,250,0.25)', borderTopColor: '#A78BFA',
   },
-  lockCircle: { width: 86, height: 86, borderRadius: 43, alignItems: 'center', justifyContent: 'center', ...Shadows.glow },
+  lockCircle: { width: 112, height: 112, borderRadius: 56, alignItems: 'center', justifyContent: 'center', ...Shadows.glow },
+  checkBadge: {
+    position: 'absolute', right: 2, bottom: 2, width: 34, height: 34, borderRadius: 17,
+    backgroundColor: '#22C55E', alignItems: 'center', justifyContent: 'center',
+    borderWidth: 3, borderColor: 'rgba(8,6,24,0.96)',
+  },
 
   title: { fontSize: 22, fontWeight: '800', color: '#fff', marginBottom: 8 },
   sub:   { fontSize: 15, color: 'rgba(255,255,255,0.7)', textAlign: 'center', lineHeight: 21 },
 
   badge: {
-    position: 'absolute', bottom: 50, flexDirection: 'row', alignItems: 'center', gap: 8,
+    position: 'absolute', bottom: 120, flexDirection: 'row', alignItems: 'center', gap: 8,
     backgroundColor: 'rgba(139,92,246,0.12)', borderWidth: 1, borderColor: 'rgba(139,92,246,0.35)',
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
   },
