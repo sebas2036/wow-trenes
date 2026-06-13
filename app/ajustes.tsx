@@ -2,7 +2,8 @@
  * WoW Train — Ajustes
  * Diseño iOS Settings: íconos cuadrados con color + Ionicons blanco. Sin emoji.
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View, Text, StyleSheet, Pressable, Switch, ScrollView, Linking, Image,
 } from 'react-native';
@@ -87,6 +88,20 @@ export default function AjustesScreen() {
   const lang = useLanguage();
   const [langOpen, setLangOpen] = useState(false);
   const currentLangName = PICKER_LANGS.find(l => l.code === lang)?.name ?? lang;
+
+  const [rateOpen, setRateOpen] = useState(false);
+  const [rating,   setRating]   = useState(0);
+  useEffect(() => {
+    AsyncStorage.getItem('@app_rating').then(v => { if (v) setRating(parseInt(v, 10) || 0); }).catch(() => {});
+  }, []);
+  const handleRate = (n: number) => {
+    hSelection();
+    setRating(n);
+    AsyncStorage.setItem('@app_rating', String(n)).catch(() => {});
+    // ≤3 estrellas → feedback privado por email (en vez de una reseña pública mala).
+    // ≥4 → gracias inline (post-lanzamiento: Linking a la tienda).
+    if (n <= 3) Linking.openURL(`mailto:Glosx@outlook.com?subject=WoW Train - Feedback`).catch(() => {});
+  };
 
   const goLegal = (page: string) => {
     hImpact(ImpactStyle.Light);
@@ -220,8 +235,21 @@ export default function AjustesScreen() {
           <Row
             iconName="star-outline" iconBg="#FFD60A"
             label={t('settings_rate')} colors={colors}
-            onPress={() => hImpact(ImpactStyle.Light)}
+            value={rating > 0 ? '★'.repeat(rating) : undefined}
+            onPress={() => { hImpact(ImpactStyle.Light); setRateOpen(o => !o); }}
           />
+          {rateOpen && (
+            <View style={styles.rateBox}>
+              <Text style={styles.ratePrompt}>{rating > 0 ? t('rate_thanks') : t('rate_tap')}</Text>
+              <View style={styles.starsRow}>
+                {[1, 2, 3, 4, 5].map(n => (
+                  <Pressable key={n} onPress={() => handleRate(n)} hitSlop={6}>
+                    <Ionicons name={n <= rating ? 'star' : 'star-outline'} size={36} color="#FFD60A" />
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          )}
           <Row
             iconName="bug-outline" iconBg="#FF453A"
             label={t('settings_report')} colors={colors}
@@ -265,6 +293,14 @@ const styles = StyleSheet.create({
   },
   langFlag: { fontSize: 22 },
   langName: { flex: 1, fontSize: 16, fontWeight: '500' },
+
+  rateBox: {
+    paddingVertical: 16, paddingHorizontal: 18, alignItems: 'center', gap: 12,
+    borderBottomWidth: 0.5, borderBottomColor: 'rgba(255,255,255,0.10)',
+    backgroundColor: 'rgba(255,255,255,0.03)',
+  },
+  ratePrompt: { color: 'rgba(255,255,255,0.85)', fontSize: 14, fontWeight: '600' },
+  starsRow:   { flexDirection: 'row', gap: 10 },
 
   section: {
     fontSize: 11, fontWeight: '700', letterSpacing: 1.3,

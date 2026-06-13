@@ -23,6 +23,8 @@ import type { AppLanguage } from '../types';
 
 const translations = {
   es: {
+    rate_tap: '¿Cómo nos calificás?',
+    rate_thanks: '¡Gracias por tu calificación! 🙌',
     settings_language: 'Idioma',
     tr_title: 'Traductor',
     tr_detect: 'Detectar',
@@ -261,6 +263,8 @@ const translations = {
   },
 
   en: {
+    rate_tap: 'How would you rate us?',
+    rate_thanks: 'Thanks for your rating! 🙌',
     settings_language: 'Language',
     tr_title: 'Translator',
     tr_detect: 'Detect',
@@ -480,6 +484,8 @@ const translations = {
   },
 
   pt: {
+    rate_tap: 'Como você nos avalia?',
+    rate_thanks: 'Obrigado pela avaliação! 🙌',
     settings_language: 'Idioma',
     tr_title: 'Tradutor',
     tr_detect: 'Detectar',
@@ -699,6 +705,8 @@ const translations = {
   },
 
   ja: {
+    rate_tap: '評価してください',
+    rate_thanks: '評価ありがとうございます！🙌',
     settings_language: '言語',
     tr_title: '翻訳',
     tr_detect: '自動検出',
@@ -910,6 +918,8 @@ const translations = {
   },
 
   zh: {
+    rate_tap: '给我们打个分吧',
+    rate_thanks: '感谢您的评分！🙌',
     settings_language: '语言',
     tr_title: '翻译',
     tr_detect: '自动检测',
@@ -1121,6 +1131,8 @@ const translations = {
   },
 
   ko: {
+    rate_tap: '평가해 주세요',
+    rate_thanks: '평가해 주셔서 감사합니다! 🙌',
     settings_language: '언어',
     tr_title: '번역기',
     tr_detect: '자동 감지',
@@ -1332,6 +1344,8 @@ const translations = {
   },
 
   fr: {
+    rate_tap: 'Quelle note nous donnez-vous ?',
+    rate_thanks: 'Merci pour votre note ! 🙌',
     settings_language: 'Langue',
     tr_title: 'Traducteur',
     tr_detect: 'Détecter',
@@ -1551,6 +1565,8 @@ const translations = {
   },
 
   de: {
+    rate_tap: 'Wie bewertest du uns?',
+    rate_thanks: 'Danke für deine Bewertung! 🙌',
     settings_language: 'Sprache',
     tr_title: 'Übersetzer',
     tr_detect: 'Erkennen',
@@ -1770,6 +1786,8 @@ const translations = {
   },
 
   it: {
+    rate_tap: 'Che voto ci dai?',
+    rate_thanks: 'Grazie per la valutazione! 🙌',
     settings_language: 'Lingua',
     tr_title: 'Traduttore',
     tr_detect: 'Rileva',
@@ -1989,6 +2007,8 @@ const translations = {
   },
 
   ar: {
+    rate_tap: 'كيف تقيّمنا؟',
+    rate_thanks: 'شكرًا على تقييمك! 🙌',
     settings_language: 'اللغة',
     tr_title: 'المترجم',
     tr_detect: 'كشف تلقائي',
