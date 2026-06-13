@@ -1,26 +1,26 @@
 /**
- * app/traductor.tsx — Traductor de señales (PANTALLA, no Modal).
+ * app/traductor.tsx — Traductor de texto + voz (PANTALLA, no Modal).
  *
- * Es una ruta normal de expo-router, NO un <Modal>. Eso evita el bug de toques
- * muertos del Modal en Android. Texto vía translatorEngine (Google Translate +
- * fallback MyMemory + bundle offline). Cámara vía expo-camera (corre en Expo Go)
- * + OCR.space para leer carteles.
+ * Es una ruta normal de expo-router, NO un <Modal> (eso evitaba el bug de toques
+ * muertos en Android). Texto vía translatorEngine (Google Translate + fallback
+ * MyMemory + bundle offline). Voz universal vía Google TTS + expo-av (habla
+ * cualquier idioma sin depender de las voces instaladas en el teléfono).
  */
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View, Text, TextInput, Pressable, ActivityIndicator,
-  ScrollView, StyleSheet, Keyboard, StatusBar, Image,
+  ScrollView, StyleSheet, Keyboard, StatusBar, Image, Animated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Shadows } from '../theme';
 import { Ionicons } from '@expo/vector-icons';
-import { CameraView, useCameraPermissions } from 'expo-camera';
-import * as ImageManipulator from 'expo-image-manipulator';
 import * as Haptics from 'expo-haptics';
+import { Audio } from 'expo-av';
 import { translate } from '../services/translatorEngine';
 import { getLanguage } from '../services/i18n';
 import BottomTabBar from '../components/BottomTabBar';
+import FlagCircle from '../components/FlagCircle';
 
 // Tipo exacto del parámetro de idioma destino de translate() — evita importar AppLanguage
 type TargetLang = Parameters<typeof translate>[1];
@@ -37,19 +37,96 @@ const SOURCE_LANGS: Lang[] = [
 ];
 const TARGET_LANGS: Lang[] = SOURCE_LANGS.filter(l => l.code !== 'auto');
 
+// Código de idioma → país (ISO alpha-2) para FlagCircle
+const LANG_TO_COUNTRY: Record<string, string> = {
+  es: 'es', en: 'gb', fr: 'fr', de: 'de', it: 'it',
+  pt: 'pt', ja: 'jp', zh: 'cn', ko: 'kr', ar: 'sa',
+};
+
+// Locale para Google TTS
+const ttsLocale = (code: string): string => (code === 'zh' ? 'zh-CN' : code);
+
+// Google TTS limita ~200 chars por request → partir el texto en pedazos reproducibles
+function chunkText(text: string, maxLen: number): string[] {
+  const clean = text.trim();
+  if (clean.length <= maxLen) return [clean];
+  const out: string[] = [];
+  let rest = clean;
+  while (rest.length > maxLen) {
+    let cut = rest.lastIndexOf(' ', maxLen);
+    if (cut <= 0) cut = maxLen; // sin espacios (CJK) → corte duro
+    out.push(rest.slice(0, cut).trim());
+    rest = rest.slice(cut).trim();
+  }
+  if (rest) out.push(rest);
+  return out;
+}
+
 export default function TraductorScreen() {
   const insets = useSafeAreaInsets();
-  const [permission, requestPermission] = useCameraPermissions();
-  const cameraRef = useRef<CameraView>(null);
 
   const [sourceLang, setSourceLang] = useState<string>('auto');
   const [targetLang, setTargetLang] = useState<string>(getLanguage() === 'es' ? 'en' : getLanguage());
   const [input,  setInput]  = useState('');
   const [output, setOutput] = useState('');
-  const [loading,    setLoading]    = useState(false);
-  const [error,      setError]      = useState<string | null>(null);
-  const [cameraOpen, setCameraOpen] = useState(false);
-  const [ocrLoading, setOcrLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error,   setError]   = useState<string | null>(null);
+  const [speaking, setSpeaking] = useState(false);
+  const pulse      = useRef(new Animated.Value(1)).current;
+  const soundRef   = useRef<Audio.Sound | null>(null);
+  const speakIdRef = useRef(0); // token para cancelar la reproducción en curso
+
+  // Animación de pulso del parlante mientras habla
+  useEffect(() => {
+    if (!speaking) { pulse.setValue(1); return; }
+    const loop = Animated.loop(Animated.sequence([
+      Animated.timing(pulse, { toValue: 1.22, duration: 450, useNativeDriver: true }),
+      Animated.timing(pulse, { toValue: 1,    duration: 450, useNativeDriver: true }),
+    ]));
+    loop.start();
+    return () => loop.stop();
+  }, [speaking, pulse]);
+
+  // Descargar el audio al desmontar (evita fuga de memoria)
+  useEffect(() => () => { soundRef.current?.unloadAsync().catch(() => {}); }, []);
+
+  const stopSpeak = useCallback(async () => {
+    speakIdRef.current++; // invalida la reproducción en curso
+    try { await soundRef.current?.unloadAsync(); } catch {}
+    soundRef.current = null;
+    setSpeaking(false);
+  }, []);
+
+  // Voz UNIVERSAL: Google TTS — habla cualquier idioma sin depender de las voces del teléfono
+  const speak = useCallback(async () => {
+    if (!output) return;
+    if (speaking) { stopSpeak(); return; }
+    Haptics.selectionAsync();
+    setError(null);
+    setSpeaking(true);
+    const myId = ++speakIdRef.current;
+    try {
+      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+      const tl = ttsLocale(targetLang);
+      for (const chunk of chunkText(output, 190)) {
+        if (speakIdRef.current !== myId) break; // cancelado
+        const url = `https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=${encodeURIComponent(tl)}&q=${encodeURIComponent(chunk)}`;
+        const { sound } = await Audio.Sound.createAsync({ uri: url }, { shouldPlay: true });
+        soundRef.current = sound;
+        await new Promise<void>((resolve) => {
+          sound.setOnPlaybackStatusUpdate((st) => {
+            if (!st.isLoaded) { resolve(); return; }
+            if (st.didJustFinish) resolve();
+          });
+        });
+        await sound.unloadAsync().catch(() => {});
+      }
+    } catch {
+      setError('No se pudo reproducir la voz. Revisá tu conexión.');
+    } finally {
+      if (speakIdRef.current === myId) { setSpeaking(false); soundRef.current = null; }
+    }
+  }, [output, speaking, targetLang, stopSpeak]);
 
   const swap = useCallback(() => {
     if (sourceLang === 'auto') return; // "Detectar" no se puede invertir
@@ -61,7 +138,8 @@ export default function TraductorScreen() {
 
   const doTranslate = useCallback(async (text: string) => {
     if (!text.trim()) return;
-    Keyboard.dismiss();
+    // OJO: NO cerrar el teclado acá — el auto-traductor corre en segundo plano
+    // mientras escribís; cerrarlo te sacaba del medio de la frase.
     setLoading(true); setError(null); setOutput('');
     try {
       const r = await translate(text, targetLang as TargetLang, sourceLang);
@@ -73,73 +151,13 @@ export default function TraductorScreen() {
     }
   }, [targetLang, sourceLang]);
 
-  const openCamera = useCallback(async () => {
-    if (!permission?.granted) {
-      const res = await requestPermission();
-      if (!res.granted) { setError('Se necesita permiso de cámara para escanear.'); return; }
-    }
-    setError(null);
-    setCameraOpen(true);
-  }, [permission, requestPermission]);
+  // Auto-traducir mientras escribís (debounce) y al cambiar de idioma
+  useEffect(() => {
+    if (!input.trim()) { setOutput(''); return; }
+    const id = setTimeout(() => { doTranslate(input); }, 650);
+    return () => clearTimeout(id);
+  }, [input, doTranslate]);
 
-  const shoot = useCallback(async () => {
-    if (!cameraRef.current || ocrLoading) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setOcrLoading(true);
-    try {
-      const photo = await cameraRef.current.takePictureAsync({ quality: 0.9 });
-      if (!photo) { setOcrLoading(false); return; }
-      const manip = await ImageManipulator.manipulateAsync(
-        photo.uri,
-        [{ resize: { width: 1100 } }],
-        { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG, base64: true },
-      );
-      const fd = new FormData();
-      fd.append('base64Image', `data:image/jpeg;base64,${manip.base64 ?? ''}`);
-      fd.append('language', 'auto');
-      fd.append('isOverlayRequired', 'false');
-      fd.append('detectOrientation', 'true');
-      fd.append('scale', 'true');
-      fd.append('OCREngine', '2');
-      const res  = await fetch('https://api.ocr.space/parse/image', {
-        method: 'POST', headers: { apikey: 'helloworld' }, body: fd,
-      });
-      const json = await res.json();
-      const text: string = (json?.ParsedResults?.[0]?.ParsedText ?? '').trim();
-      setCameraOpen(false);
-      setOcrLoading(false);
-      if (text) { setInput(text); doTranslate(text); }
-      else setError('No se detectó texto. Acercate al cartel e intentá de nuevo.');
-    } catch {
-      setOcrLoading(false);
-      setCameraOpen(false);
-      setError('Error al leer la imagen.');
-    }
-  }, [ocrLoading, doTranslate]);
-
-  // ── MODO CÁMARA ───────────────────────────────────────────────────────────
-  if (cameraOpen) {
-    return (
-      <View style={StyleSheet.absoluteFill}>
-        <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="back" />
-        <View style={[styles.camOverlay, { paddingTop: insets.top + 12 }]}>
-          <Pressable style={styles.camClose} onPress={() => setCameraOpen(false)} hitSlop={10}>
-            <Ionicons name="close" size={26} color="#fff" />
-          </Pressable>
-          <View style={styles.scanBox}>
-            <View style={[styles.corner, styles.tl]} /><View style={[styles.corner, styles.tr]} />
-            <View style={[styles.corner, styles.bl]} /><View style={[styles.corner, styles.br]} />
-          </View>
-          <Text style={styles.camHint}>Apuntá al cartel o frase</Text>
-          <Pressable style={styles.shootBtn} onPress={shoot} disabled={ocrLoading}>
-            {ocrLoading ? <ActivityIndicator color="#fff" /> : <Ionicons name="scan" size={30} color="#fff" />}
-          </Pressable>
-        </View>
-      </View>
-    );
-  }
-
-  // ── PANTALLA PRINCIPAL ──────────────────────────────────────────────────────
   return (
     <View style={styles.root}>
       {/* Fondo hero + gradiente — mismo look que Inicio/Salidas */}
@@ -158,8 +176,9 @@ export default function TraductorScreen() {
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingTop: insets.top + 14, paddingHorizontal: 18, paddingBottom: 20 }}
+        contentContainerStyle={{ flexGrow: 1, paddingTop: insets.top + 14, paddingHorizontal: 18, paddingBottom: 12 }}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
           <Text style={styles.title}>Traductor</Text>
@@ -175,6 +194,10 @@ export default function TraductorScreen() {
             const active = sourceLang === l.code;
             return (
               <Pressable key={l.code} onPress={() => setSourceLang(l.code)} style={[styles.chip, active && styles.chipActive]}>
+                {active && <LinearGradient colors={BRAND_GRAD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.chipGrad} />}
+                {l.code === 'auto'
+                  ? <Ionicons name="globe-outline" size={16} color={active ? '#fff' : 'rgba(255,255,255,0.7)'} />
+                  : <FlagCircle countryCode={LANG_TO_COUNTRY[l.code] ?? l.code} size="sm" />}
                 <Text style={[styles.chipText, active && styles.chipTextActive]}>{l.name}</Text>
               </Pressable>
             );
@@ -185,34 +208,42 @@ export default function TraductorScreen() {
         <View style={styles.card}>
           <TextInput
             style={styles.input}
-            placeholder="Escribí o usá la cámara…"
+            placeholder="Escribí lo que querés traducir…"
             placeholderTextColor="rgba(255,255,255,0.45)"
             multiline
             maxLength={1000}
             value={input}
             onChangeText={setInput}
           />
-          <View style={styles.inputFooter}>
-            {input.length > 0 ? (
+          {input.length > 0 && (
+            <View style={styles.inputFooter}>
               <Pressable onPress={() => { setInput(''); setOutput(''); }} hitSlop={8}>
                 <Text style={styles.clearText}>Limpiar</Text>
               </Pressable>
-            ) : <View />}
-            <Pressable style={styles.cameraBtn} onPress={openCamera}>
-              <Ionicons name="camera" size={20} color="#fff" />
-            </Pressable>
-          </View>
+              <Text style={styles.charCount}>{input.length}/1000</Text>
+            </View>
+          )}
         </View>
 
         {/* Botón traducir */}
         <Pressable
-          style={({ pressed }) => [styles.translateBtn, (!input.trim() || loading) && styles.translateBtnDisabled, pressed && { opacity: 0.85 }]}
-          onPress={() => doTranslate(input)}
+          style={({ pressed }) => [
+            styles.translateBtnWrap,
+            (!input.trim() || loading) && { opacity: 0.5 },
+            pressed && { opacity: 0.92, transform: [{ scale: 0.99 }] },
+          ]}
+          onPress={() => { Keyboard.dismiss(); doTranslate(input); }}
           disabled={loading || !input.trim()}
         >
-          {loading
-            ? <ActivityIndicator color="#fff" />
-            : <><Text style={styles.translateBtnText}>Traducir</Text><Ionicons name="arrow-forward" size={18} color="#fff" style={{ marginLeft: 8 }} /></>}
+          <LinearGradient
+            colors={BRAND_GRAD}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+            style={styles.translateBtn}
+          >
+            {loading
+              ? <ActivityIndicator color="#fff" />
+              : <><Text style={styles.translateBtnText}>Traducir</Text><Ionicons name="arrow-forward" size={18} color="#fff" style={{ marginLeft: 8 }} /></>}
+          </LinearGradient>
         </Pressable>
 
         {error && <Text style={styles.error}>{error}</Text>}
@@ -224,6 +255,8 @@ export default function TraductorScreen() {
             const active = targetLang === l.code;
             return (
               <Pressable key={l.code} onPress={() => setTargetLang(l.code)} style={[styles.chip, active && styles.chipActive]}>
+                {active && <LinearGradient colors={BRAND_GRAD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.chipGrad} />}
+                <FlagCircle countryCode={LANG_TO_COUNTRY[l.code] ?? l.code} size="sm" />
                 <Text style={[styles.chipText, active && styles.chipTextActive]}>{l.name}</Text>
               </Pressable>
             );
@@ -232,9 +265,20 @@ export default function TraductorScreen() {
 
         {/* Salida */}
         <View style={[styles.card, styles.outputCard]}>
+          {!!output && !loading && (
+            <Pressable
+              style={[styles.speakBtn, speaking && styles.speakBtnActive]}
+              onPress={speak}
+              hitSlop={8}
+            >
+              <Animated.View style={{ transform: [{ scale: speaking ? pulse : 1 }] }}>
+                <Ionicons name={speaking ? 'volume-high' : 'volume-medium'} size={20} color="#C4B5FD" />
+              </Animated.View>
+            </Pressable>
+          )}
           {loading
             ? <Text style={styles.placeholder}>Traduciendo…</Text>
-            : <Text style={output ? styles.outputText : styles.placeholder}>{output || 'La traducción aparecerá acá…'}</Text>}
+            : <Text style={[output ? styles.outputText : styles.placeholder, !!output && { paddingRight: 36 }]}>{output || 'La traducción aparecerá acá…'}</Text>}
         </View>
       </ScrollView>
 
@@ -244,6 +288,7 @@ export default function TraductorScreen() {
 }
 
 const PURPLE = '#8B5CF6'; // brand.primary (dark) — igual que el resto de la app
+const BRAND_GRAD = ['#8B5CF6', '#7C3AED', '#6D28D9'] as const; // Gradients.brandVertical
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#0A0820' },
@@ -252,36 +297,27 @@ const styles = StyleSheet.create({
   swapBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(139,92,246,0.25)', borderWidth: 1, borderColor: 'rgba(139,92,246,0.5)' },
 
   langLabel: { fontSize: 11, fontWeight: '700', color: '#A78BFA', letterSpacing: 1.5, marginBottom: 8, marginTop: 4 },
-  chipRow: { marginBottom: 14 },
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: 'rgba(14,14,46,0.70)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', marginRight: 8 },
-  chipActive: { backgroundColor: PURPLE, borderColor: PURPLE, ...Shadows.glow },
+  chipRow: { flexGrow: 0, flexShrink: 0, height: 50, marginBottom: 14 },
+  chip: { alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 7, paddingLeft: 8, paddingRight: 14, paddingVertical: 7, borderRadius: 22, backgroundColor: 'rgba(14,14,46,0.70)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', marginRight: 8 },
+  chipActive: { borderColor: 'rgba(196,181,253,0.65)', ...Shadows.glow },
+  chipGrad: { ...StyleSheet.absoluteFillObject, borderRadius: 22 },
   chipText: { fontSize: 14, color: 'rgba(255,255,255,0.75)', fontWeight: '600' },
   chipTextActive: { color: '#fff', fontWeight: '700' },
 
-  card: { backgroundColor: 'rgba(14,14,46,0.80)', borderRadius: 18, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', overflow: 'hidden' },
-  input: { fontSize: 18, color: '#fff', minHeight: 110, textAlignVertical: 'top' },
+  card: { flex: 1, minHeight: 130, backgroundColor: 'rgba(14,14,46,0.80)', borderRadius: 18, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' },
+  input: { flex: 1, fontSize: 18, color: '#fff', textAlignVertical: 'top' },
   inputFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 },
   clearText: { color: 'rgba(255,255,255,0.6)', fontSize: 14, fontWeight: '600' },
-  cameraBtn: { width: 46, height: 46, borderRadius: 23, backgroundColor: PURPLE, alignItems: 'center', justifyContent: 'center', ...Shadows.glow },
+  charCount: { color: 'rgba(255,255,255,0.4)', fontSize: 12 },
 
-  translateBtn: { flexDirection: 'row', backgroundColor: PURPLE, paddingVertical: 15, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginTop: 14, ...Shadows.glow },
-  translateBtnDisabled: { backgroundColor: 'rgba(255,255,255,0.15)' },
+  translateBtnWrap: { marginTop: 14, borderRadius: 14, overflow: 'hidden', ...Shadows.glow },
+  translateBtn: { flexDirection: 'row', paddingVertical: 15, alignItems: 'center', justifyContent: 'center' },
   translateBtnText: { color: '#fff', fontSize: 16, fontWeight: '800', letterSpacing: 0.3 },
   error: { color: '#FCA5A5', fontSize: 14, marginTop: 10, textAlign: 'center' },
 
-  outputCard: { marginTop: 4, minHeight: 130, backgroundColor: 'rgba(14,14,46,0.80)', borderColor: 'rgba(139,92,246,0.40)' },
+  outputCard: { marginTop: 4, backgroundColor: 'rgba(14,14,46,0.80)', borderColor: 'rgba(139,92,246,0.40)' },
+  speakBtn: { position: 'absolute', top: 12, right: 12, width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(139,92,246,0.18)', borderWidth: 1, borderColor: 'rgba(139,92,246,0.4)', zIndex: 2 },
+  speakBtnActive: { backgroundColor: 'rgba(139,92,246,0.55)', borderColor: '#A78BFA', ...Shadows.glow },
   outputText: { fontSize: 19, color: '#fff', lineHeight: 26 },
   placeholder: { fontSize: 16, color: 'rgba(255,255,255,0.45)', fontStyle: 'italic' },
-
-  // Cámara
-  camOverlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
-  camClose: { position: 'absolute', top: 50, left: 20, width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center' },
-  scanBox: { width: 290, height: 160 },
-  corner: { position: 'absolute', width: 26, height: 26, borderColor: '#A78BFA' },
-  tl: { top: 0, left: 0, borderTopWidth: 4, borderLeftWidth: 4, borderTopLeftRadius: 10 },
-  tr: { top: 0, right: 0, borderTopWidth: 4, borderRightWidth: 4, borderTopRightRadius: 10 },
-  bl: { bottom: 0, left: 0, borderBottomWidth: 4, borderLeftWidth: 4, borderBottomLeftRadius: 10 },
-  br: { bottom: 0, right: 0, borderBottomWidth: 4, borderRightWidth: 4, borderBottomRightRadius: 10 },
-  camHint: { color: '#fff', fontSize: 15, fontWeight: '600', marginTop: 28, backgroundColor: 'rgba(0,0,0,0.65)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, overflow: 'hidden' },
-  shootBtn: { position: 'absolute', bottom: 60, alignSelf: 'center', width: 74, height: 74, borderRadius: 37, backgroundColor: PURPLE, alignItems: 'center', justifyContent: 'center', borderWidth: 4, borderColor: 'rgba(255,255,255,0.4)' },
 });
