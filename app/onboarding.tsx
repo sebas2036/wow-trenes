@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { hImpact, hSelection, hNotify, ImpactStyle, NotifyType } from '../services/haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Svg, { Path, Circle, Rect, Line, Polyline } from 'react-native-svg';
 
@@ -137,7 +138,7 @@ function Slide({
       {/* CTA */}
       <Animated.View style={{ opacity: fade, transform: [{ translateY: riseSlow }, { scale: isLast ? pulse : 1 }] }}>
         <Pressable
-          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onFinish(); }}
+          onPress={() => { hImpact(ImpactStyle.Light); onFinish(); }}
           accessibilityRole="button"
         >
           <LinearGradient
@@ -154,7 +155,7 @@ function Slide({
       {!isLast && (
         <Pressable
           style={styles.skipBtn}
-          onPress={() => { Haptics.selectionAsync(); onSkip(); }}
+          onPress={() => { hSelection(); onSkip(); }}
           hitSlop={12}
         >
           <Text style={styles.skipText}>{t('ob_skip')}</Text>

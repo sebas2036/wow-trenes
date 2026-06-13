@@ -12,19 +12,25 @@ import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { NotificationProvider } from '../context/NotificationContext';
 import { initGeofenceTask } from '../tasks/geofenceTask';
 import { initDatabase } from '../services/gtfsDatabase';
+import { loadUserSettings, getNotificationsEnabled } from '../services/userSettings';
 
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
+  // Respeta el toggle "Notificaciones" de Ajustes (gate en primer plano)
+  handleNotification: async () => {
+    const on = getNotificationsEnabled();
+    return {
+      shouldShowAlert: on,
+      shouldPlaySound: on,
+      shouldSetBadge:  false,
+    };
+  },
 });
 
 function AppStack() {
   const { colors } = useTheme();
 
   useEffect(() => {
+    loadUserSettings().catch(() => {}); // preferencias (haptics/notifs) antes de interactuar
     // Delay 150ms para que el primer frame se renderice antes de cargar SQLite
     const t = setTimeout(() => {
       initDatabase().catch(console.warn);

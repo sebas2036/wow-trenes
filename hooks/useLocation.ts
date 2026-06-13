@@ -7,6 +7,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
+import { hImpact, hSelection, hNotify, ImpactStyle, NotifyType } from '../services/haptics';
 import type { Coordinates } from '../types';
 
 export type LocationState =
@@ -44,7 +45,7 @@ export function useLocation(): UseLocationReturn {
 
   const requestLocation = useCallback(async (): Promise<Coordinates | null> => {
     setLocationState({ status: 'requesting' });
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    await hImpact(ImpactStyle.Medium);
 
     // 1. Check / request foreground permission
     const { status: existingStatus } = await Location.getForegroundPermissionsAsync();
@@ -87,7 +88,7 @@ export function useLocation(): UseLocationReturn {
         accuracy: DEV_LOCATION ? null : null,
       });
 
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await hNotify(NotifyType.Success);
       return coords;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al obtener la ubicación';

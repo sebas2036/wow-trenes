@@ -16,6 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Shadows } from '../theme';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { hImpact, hSelection, hNotify, ImpactStyle, NotifyType } from '../services/haptics';
 import { Audio } from 'expo-av';
 import { translate } from '../services/translatorEngine';
 import { getLanguage } from '../services/i18n';
@@ -101,7 +102,7 @@ export default function TraductorScreen() {
   const speak = useCallback(async () => {
     if (!output) return;
     if (speaking) { stopSpeak(); return; }
-    Haptics.selectionAsync();
+    hSelection();
     setError(null);
     setSpeaking(true);
     const myId = ++speakIdRef.current;

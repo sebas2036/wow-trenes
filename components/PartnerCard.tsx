@@ -14,6 +14,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-na
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { hImpact, hSelection, hNotify, ImpactStyle, NotifyType } from '../services/haptics';
 import { useTheme } from '../context/ThemeContext';
 
 export interface PartnerCardProps {
@@ -34,7 +35,7 @@ export default function PartnerCard({
   const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   const handlePress = async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    await hImpact(ImpactStyle.Light);
     Linking.openURL(url).catch(() => {});
   };
 

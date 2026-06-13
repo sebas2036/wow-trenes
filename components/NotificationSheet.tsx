@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { hImpact, hSelection, hNotify, ImpactStyle, NotifyType } from '../services/haptics';
 
 import { Radius, Spacing, Typography, Gradients } from '../theme';
 import { useTheme } from '../context/ThemeContext';
@@ -42,7 +43,7 @@ export default function NotificationSheet({ visible, onClose }: Props) {
             </Pressable>
             <Text style={[styles.title, { color: colors.text.primary }]}>Alertas en Vivo</Text>
             {notifications.length > 0 ? (
-              <Pressable onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); clearAll(); }}>
+              <Pressable onPress={() => { hImpact(ImpactStyle.Medium); clearAll(); }}>
                 <Text style={{ color: colors.brand.primary, fontSize: 12, fontWeight: '600' }}>Limpiar</Text>
               </Pressable>
             ) : <View style={{ width: 40 }} />}

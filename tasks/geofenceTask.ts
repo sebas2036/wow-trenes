@@ -9,6 +9,7 @@
  * Android FOREGROUND_SERVICE_LOCATION).
  */
 import * as TaskManager   from 'expo-task-manager';
+import { getNotificationsEnabled } from '../services/userSettings';
 import * as Location      from 'expo-location';
 import * as Notifications from 'expo-notifications';
 import { GeofenceRadius } from '../theme';
@@ -249,6 +250,7 @@ async function notify(params: {
   priority:      'high' | 'max';
   timeSensitive?:boolean;
 }): Promise<void> {
+  if (!getNotificationsEnabled()) return; // toggle "Notificaciones" en Ajustes
   await Notifications.scheduleNotificationAsync({
     content: {
       title: params.title,

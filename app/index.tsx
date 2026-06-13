@@ -15,6 +15,7 @@ import {
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { hImpact, hSelection, hNotify, ImpactStyle, NotifyType } from '../services/haptics';
 import * as Location from 'expo-location';
 
 import { Radius, Shadows, Gradients } from '../theme';
@@ -436,7 +437,7 @@ export default function HomeScreen() {
   // Vibrar cuando llega una notificación nueva
   useEffect(() => {
     if (unreadCount > prevUnread.current) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      hNotify(NotifyType.Warning);
     }
     prevUnread.current = unreadCount;
   }, [unreadCount]);
@@ -488,13 +489,13 @@ export default function HomeScreen() {
   }, []);
 
   const handleFavToggle = useCallback(async (code: CountryCode) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hImpact(ImpactStyle.Light);
     const updated = await toggleFavorito(code);
     setFavs(updated);
   }, []);
 
   const handleCountryPress = useCallback((country: CountryEntry) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    hImpact(ImpactStyle.Medium);
     setActiveCountry(country.code).catch(() => {});
     router.push({ pathname: '/split-screen', params: {
       country: country.code,
@@ -504,7 +505,7 @@ export default function HomeScreen() {
   }, [router, userCoords]);
 
   const handleMetroPress = useCallback((code: CountryCode, label?: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    hImpact(ImpactStyle.Medium);
     setActiveCountry(code).catch(() => {});
     router.push({ pathname: '/split-screen', params: {
       country: code,
@@ -515,7 +516,7 @@ export default function HomeScreen() {
   }, [router, userCoords]);
 
   const handleGPS = useCallback(async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hImpact(ImpactStyle.Light);
     setGpsLoading(true);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -649,7 +650,7 @@ export default function HomeScreen() {
                 : { borderWidth: 1.5, borderColor: '#9F67FA', elevation: 10 },
             ]}
             onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              hImpact(ImpactStyle.Light);
               setNotifVisible(true);
             }}
             accessibilityLabel="Notificaciones"
@@ -680,7 +681,7 @@ export default function HomeScreen() {
               <Pressable
                 key={t.key}
                 style={[styles.segmentBtn, active && styles.segmentBtnActive]}
-                onPress={() => { Haptics.selectionAsync(); setFilter(t.key); setShowAllScenic(false); }}
+                onPress={() => { hSelection(); setFilter(t.key); setShowAllScenic(false); }}
               >
                 {active && (
                   <>
@@ -783,7 +784,7 @@ export default function HomeScreen() {
                   style={[styles.intlDayChip,
                     { backgroundColor: intlDate === i ? 'rgba(88,28,135,0.55)' : 'rgba(14,14,46,0.45)',
                       borderColor: intlDate === i ? colors.brand.primary : 'rgba(255,255,255,0.18)' }]}
-                  onPress={() => { Haptics.selectionAsync(); setIntlDate(i); }}
+                  onPress={() => { hSelection(); setIntlDate(i); }}
                 >
                   <Text style={[styles.intlDayText, { color: intlDate === i ? '#fff' : 'rgba(255,255,255,0.85)' }]}>{label}</Text>
                 </Pressable>
@@ -799,7 +800,7 @@ export default function HomeScreen() {
               }, pressed && { transform: [{ scale: 0.97 }], opacity: 0.9 }]}
               onPress={() => {
                 if (!intlOrigin.trim() || !intlDest.trim()) return;
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                hImpact(ImpactStyle.Medium);
                 const date = new Date();
                 date.setDate(date.getDate() + intlDate);
                 const url = buildBestBookingUrl(intlOrigin.trim(), intlDest.trim(), date, 'INTL');
@@ -825,7 +826,7 @@ export default function HomeScreen() {
                 key={train.id}
                 train={train}
                 onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  hImpact(ImpactStyle.Medium);
                   const dep = new Date(); dep.setHours(9, 0, 0, 0);
                   Linking.openURL(buildScenicTrainUrl(train.origin, train.dest, dep)).catch(() => {});
                 }}
@@ -836,7 +837,7 @@ export default function HomeScreen() {
             {SCENIC_TRAINS.length > 3 && (
               <Pressable
                 style={styles.moreExpBtn}
-                onPress={() => { Haptics.selectionAsync(); setShowAllScenic(v => !v); }}
+                onPress={() => { hSelection(); setShowAllScenic(v => !v); }}
               >
                 <View style={styles.moreExpLine} />
                 <View style={styles.moreExpPill}>

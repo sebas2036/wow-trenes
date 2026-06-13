@@ -21,8 +21,10 @@
  *   No se registra, no se envía a servidor.
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { getNotificationsEnabled } from '../services/userSettings';
 import * as Notifications from 'expo-notifications';
 import * as Haptics from 'expo-haptics';
+import { hImpact, hSelection, hNotify, ImpactStyle, NotifyType } from '../services/haptics';
 import { Platform } from 'react-native';
 import { queryUpcomingTrains, findNearestStation } from '../services/gtfsDatabase';
 import type { TrainService, Station } from '../types';
@@ -94,6 +96,7 @@ async function sendPushAlert(mins: number, stationName: string): Promise<void> {
   try {
     const { status } = await Notifications.getPermissionsAsync();
     if (status !== 'granted') return;
+    if (!getNotificationsEnabled()) return; // toggle "Notificaciones" en Ajustes
 
     await Notifications.scheduleNotificationAsync({
       content: {
@@ -228,7 +231,7 @@ export function useLastTrainAlert(
       const threshold = THRESHOLDS.find(t => t.level === level);
       if (threshold?.haptic && pushSentForLevel.current !== level) {
         pushSentForLevel.current = level;
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+        hNotify(NotifyType.Warning);
         sendPushAlert(minsLeft, station.name);
       }
 

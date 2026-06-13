@@ -9,6 +9,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { hImpact, hSelection, hNotify, ImpactStyle, NotifyType } from '../services/haptics';
+import { getHapticsEnabled, getNotificationsEnabled, setHapticsEnabled, setNotificationsEnabled } from '../services/userSettings';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Radius, Gradients } from '../theme';
@@ -77,11 +79,11 @@ function Row({
 export default function AjustesScreen() {
   const router = useRouter();
   const { colors } = useTheme();
-  const [notifications, setNotifications] = useState(true);
-  const [haptics,       setHaptics]       = useState(true);
+  const [notifications, setNotifications] = useState(getNotificationsEnabled);
+  const [haptics,       setHaptics]       = useState(getHapticsEnabled);
 
   const goLegal = (page: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hImpact(ImpactStyle.Light);
     router.push({ pathname: '/legal', params: { page } });
   };
 
@@ -106,13 +108,13 @@ export default function AjustesScreen() {
             iconName="notifications-outline" iconBg="#7C3AED"
             label={t('settings_notifs')} colors={colors}
             isSwitch switchValue={notifications}
-            onToggle={(v) => { Haptics.selectionAsync(); setNotifications(v); }}
+            onToggle={(v) => { hSelection(); setNotifications(v); setNotificationsEnabled(v); }}
           />
           <Row
             iconName="pulse-outline" iconBg="#0A84FF"
             label={t('settings_haptics')} colors={colors}
             isSwitch switchValue={haptics}
-            onToggle={(v) => { Haptics.selectionAsync(); setHaptics(v); }}
+            onToggle={(v) => { hSelection(); setHaptics(v); setHapticsEnabled(v); }}
             isLast
           />
         </View>
@@ -189,7 +191,7 @@ export default function AjustesScreen() {
           <Row
             iconName="star-outline" iconBg="#FFD60A"
             label={t('settings_rate')} colors={colors}
-            onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+            onPress={() => hImpact(ImpactStyle.Light)}
           />
           <Row
             iconName="bug-outline" iconBg="#FF453A"

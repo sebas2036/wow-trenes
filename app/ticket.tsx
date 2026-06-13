@@ -17,6 +17,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { hImpact, hSelection, hNotify, ImpactStyle, NotifyType } from '../services/haptics';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Typography, Spacing, Radius, Shadows, Gradients } from '../theme';
@@ -42,7 +43,7 @@ export default function TicketScreen() {
 
   const handleTicketPress = useCallback(
     (ticket: StoredTicket) => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      hImpact(ImpactStyle.Medium);
       openManually(ticket);
     },
     [openManually],

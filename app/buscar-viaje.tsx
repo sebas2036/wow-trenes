@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { hImpact, hSelection, hNotify, ImpactStyle, NotifyType } from '../services/haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { Colors, Typography, Spacing, Radius, Gradients } from '../theme';
@@ -142,7 +143,7 @@ export default function BuscarViaje() {
   }, [activeQuery, activeField, usingNavitia]);
 
   const selectStation = useCallback((station: Station) => {
-    Haptics.selectionAsync();
+    hSelection();
     // Detectar automáticamente si es una estación Navitia Francia
     if (isFrance(station.id)) setUsingNavitia(true);
     if (activeField === 'origin') {
@@ -163,7 +164,7 @@ export default function BuscarViaje() {
   }, [activeField, destStation]);
 
   const swap = useCallback(() => {
-    Haptics.selectionAsync();
+    hSelection();
     const tmpS = originStation;
     const tmpQ = originQuery;
     setOriginStation(destStation);
@@ -232,7 +233,7 @@ export default function BuscarViaje() {
   }, [originStation?.id]);
 
   const handleBuy = useCallback((trip: TripResult) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    hImpact(ImpactStyle.Medium);
     Linking.openURL(buildPurchaseUrl(trip.origin.name, trip.destination.name, trip.departureTime, trip.origin.countryCode ?? 'ES'));
   }, []);
 
@@ -372,7 +373,7 @@ export default function BuscarViaje() {
                   key={dest.id}
                   style={styles.popularChip}
                   onPress={() => {
-                    Haptics.selectionAsync();
+                    hSelection();
                     const s = { id: dest.id, name: dest.name, nameLocal: dest.name, coordinates: { latitude: 0, longitude: 0 }, platforms: [] } as unknown as Station;
                     setDestStation(s);
                     setDestQuery(dest.name);

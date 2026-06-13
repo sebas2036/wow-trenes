@@ -41,6 +41,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MapView, { Marker, Polyline, Circle, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Haptics from 'expo-haptics';
+import { hImpact, hSelection, hNotify, ImpactStyle, NotifyType } from '../services/haptics';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -510,7 +511,7 @@ export default function SplitScreen() {
 
   // Abrir el picker de estación (desde la pill o desde el coachmark) y marcar visto
   const openStationPicker = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hImpact(ImpactStyle.Light);
     setStationQuery('');
     setStationSuggestions([]);
     setShowStationPicker(true);
@@ -653,7 +654,7 @@ export default function SplitScreen() {
     setDestStation(station);
     setSearchedDestWalk(walkMinutes);
     setShowDestSearch(false);   // colapsar el buscador
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hImpact(ImpactStyle.Light);
     // Centrar mapa en la estación de destino
     if (mapRef.current) {
       mapRef.current.animateToRegion(
@@ -685,7 +686,7 @@ export default function SplitScreen() {
       });
     }
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hImpact(ImpactStyle.Light);
     openMapPeek();
   }, [params.country, openMapPeek]);
 
@@ -694,7 +695,7 @@ export default function SplitScreen() {
     const svc = clock.train;
     setSelectedService(svc);
     startPlatformMonitoring(svc);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    hImpact(ImpactStyle.Medium);
     // Redirige al navegador externo, igual que el tablero de salidas.
     // (El AffiliateWebView interno no renderiza dentro del Modal en Android.)
     const departure = new Date(svc.departureTime);
@@ -763,14 +764,14 @@ export default function SplitScreen() {
       console.warn('[SplitScreen] storeTicket failed (non-fatal):', err);
     }
 
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    hNotify(NotifyType.Success);
   }, [selectedService, params.destStationId, params.destName, openMapFull]);
 
   // ── Back ──────────────────────────────────────────────────────────────
   const handleBack = useCallback(() => {
     // Stop any active platform monitoring when leaving screen
     if (selectedService) stopPlatformMonitoring(selectedService.serviceId);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hImpact(ImpactStyle.Light);
     router.back();
   }, [router, selectedService]);
 
@@ -845,7 +846,7 @@ export default function SplitScreen() {
 
           <Pressable
             onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              hImpact(ImpactStyle.Light);
               // Volver a la estación GPS original (si estás viendo otra) y recargar
               if (gpsStation && gpsStation.id !== selectedStation?.id) {
                 setSelectedStation(gpsStation);
@@ -1001,7 +1002,7 @@ export default function SplitScreen() {
         <RNAnimated.View style={{ flex: 1, transform: [{ scale: travelPulse }] }}>
           <Pressable
             style={[styles.floatingBtn, styles.floatingBtnTravel, { flex: 0 }]}
-            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowTravelModal(true); }}
+            onPress={() => { hImpact(ImpactStyle.Light); setShowTravelModal(true); }}
           >
             <Ionicons name="sparkles" size={16} color="#FCD34D" />
             <Text style={[styles.floatingBtnText, { color: '#FCD34D' }]}>{t('split_discover')}</Text>
@@ -1159,7 +1160,7 @@ export default function SplitScreen() {
                     key={train.id}
                     style={[styles.scenicCard, { backgroundColor: 'rgba(255,255,255,0.07)', borderColor: train.colors[0] + '66' }]}
                     onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                      hImpact(ImpactStyle.Medium);
                       setShowTravelModal(false);
                       const dep = new Date(); dep.setHours(9, 0, 0, 0);
                       // Navegador externo (el AffiliateWebView interno no renderiza en Android).

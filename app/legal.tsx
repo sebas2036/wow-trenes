@@ -10,6 +10,7 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { hImpact, hSelection, hNotify, ImpactStyle, NotifyType } from '../services/haptics';
 
 import { LinearGradient } from 'expo-linear-gradient';
 import { Radius } from '../theme';
@@ -202,7 +203,7 @@ export default function LegalScreen() {
       <View style={styles.header}>
         <Pressable
           style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.6 }]}
-          onPress={() => { Haptics.selectionAsync(); router.back(); }}
+          onPress={() => { hSelection(); router.back(); }}
           hitSlop={10}
         >
           <Text style={[styles.backIcon, { color: colors.brand.glow }]}>‹</Text>

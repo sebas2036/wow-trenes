@@ -6,6 +6,7 @@ import React, { memo, useCallback } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { hImpact, hSelection, hNotify, ImpactStyle, NotifyType } from '../services/haptics';
 import { Radius, Shadows } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 import type { TransportMode } from '../types';
@@ -41,7 +42,7 @@ export default memo(function ModeChip({ selected, onChange, etas }: ModeChipProp
   const { colors } = useTheme();
 
   const handlePress = useCallback(async (mode: TransportMode) => {
-    await Haptics.selectionAsync();
+    await hSelection();
     onChange(mode);
   }, [onChange]);
 

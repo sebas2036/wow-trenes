@@ -28,6 +28,7 @@ import {
 import { WebView, WebViewNavigation } from 'react-native-webview';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { hImpact, hSelection, hNotify, ImpactStyle, NotifyType } from '../services/haptics';
 
 import { Colors, Typography, Spacing, Radius, Gradients, Shadows } from '../theme';
 import { buildOmioUrl, buildScenicTrainUrl } from '../services/affiliateEngine';
@@ -135,7 +136,7 @@ export default function AffiliateWebView({
                          nav.url.match(/confirmation\/([\w-]+)/i);
         const bookingRef = refMatch?.[1] ?? `WOW-${Date.now().toString(36).toUpperCase()}`;
 
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        hNotify(NotifyType.Success);
         onPurchaseSuccess(bookingRef);
       }
     },

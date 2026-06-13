@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { hImpact, hSelection, hNotify, ImpactStyle, NotifyType } from '../services/haptics';
 import { useTheme } from '../context/ThemeContext';
 import { t } from '../services/i18n';
 
@@ -40,7 +41,7 @@ export default function BottomTabBar({ active, onTranslatePress, onHomePress }: 
   const { colors } = useTheme();
 
   const handlePress = (tab: TabConfig) => {
-    Haptics.selectionAsync();
+    hSelection();
     if (tab.name === 'inicio' && active === 'inicio') { onHomePress?.(); return; }
     if (tab.name === active) return;
     // replace() en vez de push/navigate: los tabs nunca apilan.

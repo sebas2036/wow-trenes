@@ -12,6 +12,7 @@ import {
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { hImpact, hSelection, hNotify, ImpactStyle, NotifyType } from '../services/haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -174,7 +175,7 @@ function BoardRow({
   const { colors } = useTheme();
 
   const handleBuy = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    hImpact(ImpactStyle.Medium);
     const dest = entry.endpoint !== '—' ? entry.endpoint : entry.train;
     const url = buildBestBookingUrl(originName, dest, new Date(), countryCode);
     Linking.openURL(url).catch(() => {});
@@ -336,7 +337,7 @@ function StationPicker({
                   styles.pickerItem,
                   { borderColor: 'rgba(255,255,255,0.12)', backgroundColor: 'rgba(255,255,255,0.07)' },
                 ]}
-                onPress={() => { Haptics.selectionAsync(); onSelect(item.id, item.name); }}
+                onPress={() => { hSelection(); onSelect(item.id, item.name); }}
               >
                 <Ionicons name="train-outline" size={16} color="rgba(255,255,255,0.60)" />
                 <View style={{ flex: 1 }}>
@@ -635,7 +636,7 @@ export default function SalidasScreen() {
   }, [selected.code, loadBoard, mode]);
 
   const handleDestPress = useCallback((dest: typeof DESTINATIONS[0]) => {
-    Haptics.selectionAsync();
+    hSelection();
     setGpsDetected(false);
     setGpsStationName('');
     setCurrentStationId(undefined);
@@ -644,7 +645,7 @@ export default function SalidasScreen() {
 
 
   const handleBoardTap = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    hImpact(ImpactStyle.Medium);
     setActiveCountry(selected.code).catch(() => {});
     router.push({ pathname: '/split-screen', params: { country: selected.code, mode: 'country' } });
   }, [selected, router]);
@@ -789,7 +790,7 @@ export default function SalidasScreen() {
                 styles.segBtn,
                 active && styles.segBtnActive,
               ]}
-              onPress={() => { Haptics.selectionAsync(); setMode(t.key); }}
+              onPress={() => { hSelection(); setMode(t.key); }}
             >
               {active && (
                 <>

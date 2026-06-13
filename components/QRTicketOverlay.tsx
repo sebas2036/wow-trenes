@@ -17,6 +17,7 @@ import {
 import QRCode      from 'react-native-qrcode-svg';
 import * as Brightness from 'expo-brightness';
 import * as Haptics    from 'expo-haptics';
+import { hImpact, hSelection, hNotify, ImpactStyle, NotifyType } from '../services/haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView }       from 'expo-blur';
 import Animated, {
@@ -57,7 +58,7 @@ export default function QRTicketOverlay({
       opacity.value = withTiming(1, { duration: 280 });
 
       // Haptic alert
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      hNotify(NotifyType.Success);
 
       // Force 100% brightness for scanner readability
       (async () => {
@@ -102,7 +103,7 @@ export default function QRTicketOverlay({
   }));
 
   const handleClose = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    hImpact(ImpactStyle.Medium);
     onClose();
   }, [onClose]);
 

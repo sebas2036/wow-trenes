@@ -20,6 +20,7 @@
  *   🇪🇸 Renfe         — limitado (horarios teóricos + delay)
  */
 import * as Notifications from 'expo-notifications';
+import { getNotificationsEnabled } from './userSettings';
 import type { TrainService } from '../types';
 import { emitToApp } from './notificationBridge';
 
@@ -202,6 +203,7 @@ async function sendPlatformArrivalAlert(service: TrainService, minutes: number):
   const title = `Tu tren llega al andén ${service.platform ?? ''} ¡YA!`;
   const body  = `${service.operator.toUpperCase()} ${service.trainNumber} → ${service.destination.name} · Sale a las ${dep} · Tenés ~${Math.ceil(minutes)} min`;
 
+  if (!getNotificationsEnabled()) return; // toggle "Notificaciones" en Ajustes
   await Notifications.scheduleNotificationAsync({
     content: {
       title: `🚄 ${title}`,

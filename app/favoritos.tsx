@@ -10,6 +10,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
+import { hImpact, hSelection, hNotify, ImpactStyle, NotifyType } from '../services/haptics';
 import { Ionicons } from '@expo/vector-icons';
 
 import { LinearGradient } from 'expo-linear-gradient';
@@ -121,13 +122,13 @@ export default function FavoritosScreen() {
   useEffect(() => { getFavoritos().then(setFavs); }, []);
 
   const handleRemove = useCallback(async (code: CountryCode) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hImpact(ImpactStyle.Light);
     const updated = await toggleFavorito(code);
     setFavs(updated);
   }, []);
 
   const handlePress = useCallback((code: CountryCode) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    hImpact(ImpactStyle.Medium);
     setActiveCountry(code).catch(() => {});
     router.push({ pathname: '/split-screen', params: { country: code, mode: 'country' } });
   }, [router]);
