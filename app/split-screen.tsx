@@ -692,12 +692,61 @@ export default function SplitScreen() {
     openMapPeek();
   }, [params.country, openMapPeek]);
 
+  /**
+   * Arma la alerta de llegada (geofence Ring-3 "preparate para bajar") + guarda
+   * un registro mínimo del viaje para las alertas de aproximación Ring-1/2.
+   *
+   * La compra se hace en el navegador externo (Trainline), así que NO podemos
+   * detectar la confirmación → registramos de forma optimista al tocar Comprar,
+   * con el tren que el usuario eligió. El QR real llega por email de Trainline.
+   */
+  const armArrivalAlert = useCallback(async (svc: TrainService) => {
+    const destId          = params.destStationId ?? svc.destination.id;
+    const destDisplayName = params.destName ?? svc.destination.name;
+    const bookingRef      = `WT-${Date.now()}`; // sin ref real de Trainline (compra externa)
+
+    registerDestinationGeofence({
+      destinationStationId: destId,
+      ticketId:             bookingRef,
+      trainNumber:          svc.trainNumber,
+      operator:             svc.operator,
+      destinationName:      destDisplayName,
+      platform:             svc.platform,
+    });
+
+    const now = new Date();
+    const ticket: StoredTicket = {
+      id:           bookingRef,
+      bookingRef,
+      qrData:       bookingRef,          // Trainline manda el QR real por email
+      qrFormat:     'QR_CODE',
+      trainService: svc,
+      passenger:    { firstName: '', lastName: '' }, // RGPD: no se persiste
+      issuedAt:     now,
+      validUntil:   svc.arrivalTime,
+      operator:     svc.operator,
+      status:       'valid',
+      storedAt:     now,
+      associatedStation: svc.origin.id,
+    };
+
+    try {
+      await storeTicket(ticket);
+      await refreshGeofences();
+    } catch (err) {
+      console.warn('[SplitScreen] armArrivalAlert failed (non-fatal):', err);
+    }
+  }, [params.destStationId, params.destName]);
+
   // Tap en "Comprar" → abre checkout + monitoreo
   const handleClockBuy = useCallback((clock: PredictiveClock) => {
     const svc = clock.train;
     setSelectedService(svc);
     startPlatformMonitoring(svc);
     hImpact(ImpactStyle.Medium);
+    // Arma la campana de llegada para el tren elegido (la compra es externa y
+    // no se puede detectar, así que registramos al tocar Comprar).
+    armArrivalAlert(svc).catch(() => {});
     // Redirige al navegador externo, igual que el tablero de salidas.
     // (El AffiliateWebView interno no renderiza dentro del Modal en Android.)
     const departure = new Date(svc.departureTime);
@@ -708,7 +757,7 @@ export default function SplitScreen() {
       svc.origin.country,
     );
     setSecureUrl(url); // muestra la transición "Conexión segura" → abre Trainline
-  }, []);
+  }, [armArrivalAlert]);
 
   // ── Purchase success ──────────────────────────────────────────────────
   /**
