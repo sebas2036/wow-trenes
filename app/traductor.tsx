@@ -19,7 +19,7 @@ import * as Haptics from 'expo-haptics';
 import { hImpact, hSelection, hNotify, ImpactStyle, NotifyType } from '../services/haptics';
 import { Audio } from 'expo-av';
 import { translate } from '../services/translatorEngine';
-import { getLanguage } from '../services/i18n';
+import { getLanguage, t } from '../services/i18n';
 import BottomTabBar from '../components/BottomTabBar';
 import FlagCircle from '../components/FlagCircle';
 
@@ -29,10 +29,10 @@ type TargetLang = Parameters<typeof translate>[1];
 type Lang = { code: string; name: string };
 
 const SOURCE_LANGS: Lang[] = [
-  { code: 'auto', name: 'Detectar' },
-  { code: 'es', name: 'Español' },  { code: 'en', name: 'Inglés' },
-  { code: 'fr', name: 'Francés' },  { code: 'de', name: 'Alemán' },
-  { code: 'it', name: 'Italiano' }, { code: 'pt', name: 'Portugués' },
+  { code: 'auto', name: 'Detectar' }, // el nombre se traduce en el render (tr_detect)
+  { code: 'es', name: 'Español' },  { code: 'en', name: 'English' },
+  { code: 'fr', name: 'Français' }, { code: 'de', name: 'Deutsch' },
+  { code: 'it', name: 'Italiano' }, { code: 'pt', name: 'Português' },
   { code: 'ja', name: '日本語' },    { code: 'zh', name: '中文' },
   { code: 'ko', name: '한국어' },    { code: 'ar', name: 'العربية' },
 ];
@@ -123,7 +123,7 @@ export default function TraductorScreen() {
         await sound.unloadAsync().catch(() => {});
       }
     } catch {
-      setError('No se pudo reproducir la voz. Revisá tu conexión.');
+      setError(t('tr_err_voice'));
     } finally {
       if (speakIdRef.current === myId) { setSpeaking(false); soundRef.current = null; }
     }
@@ -146,7 +146,7 @@ export default function TraductorScreen() {
       const r = await translate(text, targetLang as TargetLang, sourceLang);
       setOutput(r.translatedText);
     } catch {
-      setError('No se pudo traducir. Revisá tu conexión.');
+      setError(t('tr_err_translate'));
     } finally {
       setLoading(false);
     }
@@ -182,14 +182,14 @@ export default function TraductorScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <Text style={styles.title}>Traductor</Text>
+          <Text style={styles.title}>{t('tr_title')}</Text>
           <Pressable style={styles.swapBtn} onPress={swap} hitSlop={8}>
             <Ionicons name="swap-horizontal" size={20} color="#fff" />
           </Pressable>
         </View>
 
         {/* Idioma origen */}
-        <Text style={styles.langLabel}>DESDE</Text>
+        <Text style={styles.langLabel}>{t('tr_from')}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow} keyboardShouldPersistTaps="handled">
           {SOURCE_LANGS.map(l => {
             const active = sourceLang === l.code;
@@ -199,7 +199,7 @@ export default function TraductorScreen() {
                 {l.code === 'auto'
                   ? <Ionicons name="globe-outline" size={16} color={active ? '#fff' : 'rgba(255,255,255,0.7)'} />
                   : <FlagCircle countryCode={LANG_TO_COUNTRY[l.code] ?? l.code} size="sm" />}
-                <Text style={[styles.chipText, active && styles.chipTextActive]}>{l.name}</Text>
+                <Text style={[styles.chipText, active && styles.chipTextActive]}>{l.code === 'auto' ? t('tr_detect') : l.name}</Text>
               </Pressable>
             );
           })}
@@ -209,7 +209,7 @@ export default function TraductorScreen() {
         <View style={styles.card}>
           <TextInput
             style={styles.input}
-            placeholder="Escribí lo que querés traducir…"
+            placeholder={t('tr_input_ph')}
             placeholderTextColor="rgba(255,255,255,0.45)"
             multiline
             maxLength={1000}
@@ -219,7 +219,7 @@ export default function TraductorScreen() {
           {input.length > 0 && (
             <View style={styles.inputFooter}>
               <Pressable onPress={() => { setInput(''); setOutput(''); }} hitSlop={8}>
-                <Text style={styles.clearText}>Limpiar</Text>
+                <Text style={styles.clearText}>{t('tr_clear')}</Text>
               </Pressable>
               <Text style={styles.charCount}>{input.length}/1000</Text>
             </View>
@@ -243,14 +243,14 @@ export default function TraductorScreen() {
           >
             {loading
               ? <ActivityIndicator color="#fff" />
-              : <><Text style={styles.translateBtnText}>Traducir</Text><Ionicons name="arrow-forward" size={18} color="#fff" style={{ marginLeft: 8 }} /></>}
+              : <><Text style={styles.translateBtnText}>{t('tr_translate')}</Text><Ionicons name="arrow-forward" size={18} color="#fff" style={{ marginLeft: 8 }} /></>}
           </LinearGradient>
         </Pressable>
 
         {error && <Text style={styles.error}>{error}</Text>}
 
         {/* Idioma destino */}
-        <Text style={styles.langLabel}>A</Text>
+        <Text style={styles.langLabel}>{t('tr_to')}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow} keyboardShouldPersistTaps="handled">
           {TARGET_LANGS.map(l => {
             const active = targetLang === l.code;
@@ -258,7 +258,7 @@ export default function TraductorScreen() {
               <Pressable key={l.code} onPress={() => setTargetLang(l.code)} style={[styles.chip, active && styles.chipActive]}>
                 {active && <LinearGradient colors={BRAND_GRAD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.chipGrad} />}
                 <FlagCircle countryCode={LANG_TO_COUNTRY[l.code] ?? l.code} size="sm" />
-                <Text style={[styles.chipText, active && styles.chipTextActive]}>{l.name}</Text>
+                <Text style={[styles.chipText, active && styles.chipTextActive]}>{l.code === 'auto' ? t('tr_detect') : l.name}</Text>
               </Pressable>
             );
           })}
@@ -278,8 +278,8 @@ export default function TraductorScreen() {
             </Pressable>
           )}
           {loading
-            ? <Text style={styles.placeholder}>Traduciendo…</Text>
-            : <Text style={[output ? styles.outputText : styles.placeholder, !!output && { paddingRight: 36 }]}>{output || 'La traducción aparecerá acá…'}</Text>}
+            ? <Text style={styles.placeholder}>{t('tr_translating')}</Text>
+            : <Text style={[output ? styles.outputText : styles.placeholder, !!output && { paddingRight: 36 }]}>{output || t('tr_output_ph')}</Text>}
         </View>
       </ScrollView>
 
