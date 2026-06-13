@@ -11,6 +11,8 @@
  * deduplicamos por número de tren y ordenamos por hora de salida.
  */
 
+import { fetchWithTimeout } from './fetchWithTimeout';
+
 const BASE          = 'https://api.cp.pt/cp-api/siv';
 const CACHE_TTL_MS  = 120_000; // 2 minutos (CP es más lenta que otras APIs)
 
@@ -95,7 +97,7 @@ function categoryFromName(name: string): string {
 async function cpFetch<T>(path: string, params: Record<string, string> = {}): Promise<T> {
   const qs   = new URLSearchParams(params).toString();
   const url  = `${BASE}/${path}${qs ? '?' + qs : ''}`;
-  const resp = await fetch(url, {
+  const resp = await fetchWithTimeout(url, {
     headers: {
       'User-Agent': 'WoW-Trenes-App/1.0',
       'Accept':     'application/json',

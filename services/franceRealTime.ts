@@ -12,6 +12,8 @@
  *   /coverage/sncf/stop_areas/{id}/arrivals           → llegadas en tiempo real
  */
 
+import { fetchWithTimeout } from './fetchWithTimeout';
+
 const BASE    = 'https://api.sncf.com/v1/coverage/sncf';
 const API_KEY = process.env.EXPO_PUBLIC_SNCF_KEY ?? '';
 
@@ -91,7 +93,7 @@ function calcDelayMin(scheduled: string, realtime: string): number {
 async function sncf<T>(path: string, params: Record<string, string> = {}): Promise<T> {
   const qs  = new URLSearchParams({ count: '30', ...params }).toString();
   const url = `${BASE}/${path}?${qs}`;
-  const resp = await fetch(url, {
+  const resp = await fetchWithTimeout(url, {
     headers: { Authorization: AUTH, 'User-Agent': 'WoW-Trenes-App/1.0' },
   });
   if (!resp.ok) throw new Error(`SNCF API HTTP ${resp.status}: ${path}`);

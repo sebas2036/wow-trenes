@@ -10,6 +10,8 @@
  *   searchSwissStations()     → búsqueda de estaciones por nombre
  */
 
+import { fetchWithTimeout } from './fetchWithTimeout';
+
 const BASE = 'https://transport.opendata.ch/v1';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
@@ -106,7 +108,7 @@ export async function fetchSwissStationboard(
   }
 
   const url = `${BASE}/stationboard?${params}`;
-  const res  = await fetch(url);
+  const res  = await fetchWithTimeout(url);
   if (!res.ok) throw new Error(`Swiss API error ${res.status}`);
   const json = await res.json();
 
@@ -173,7 +175,7 @@ export async function fetchSwissConnections(
   });
 
   const url = `${BASE}/connections?${params}`;
-  const res  = await fetch(url);
+  const res  = await fetchWithTimeout(url);
   if (!res.ok) throw new Error(`Swiss API error ${res.status}`);
   const json = await res.json();
 
@@ -306,7 +308,7 @@ export async function searchSwissStations(query: string): Promise<SwissStation[]
   if (query.length < 2) return [];
   const translated = translateSwissQuery(query);
   const params = new URLSearchParams({ query: translated, type: 'station' });
-  const res = await fetch(`${BASE}/locations?${params}`);
+  const res = await fetchWithTimeout(`${BASE}/locations?${params}`);
   if (!res.ok) return [];
   const json = await res.json();
   return (json.stations ?? [])
@@ -326,7 +328,7 @@ export async function searchSwissStations(query: string): Promise<SwissStation[]
  */
 export async function nearestSwissStation(lat: number, lon: number): Promise<SwissStation | null> {
   const params = new URLSearchParams({ x: String(lat), y: String(lon), type: 'station' });
-  const res = await fetch(`${BASE}/locations?${params}`);
+  const res = await fetchWithTimeout(`${BASE}/locations?${params}`);
   if (!res.ok) return null;
   const json = await res.json();
   const s = json.stations?.[0];

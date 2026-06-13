@@ -8,6 +8,8 @@
  * Docs: https://docs.irail.be
  */
 
+import { fetchWithTimeout } from './fetchWithTimeout';
+
 const BASE = 'https://api.irail.be';
 const CACHE_TTL_MS = 90_000; // 90 segundos (respeta cache-control de iRail)
 const USER_AGENT   = 'WoW-Trenes-App/1.0 (jasinskysebastian@gmail.com)';
@@ -72,7 +74,7 @@ function categoryFromShortname(shortname: string): string {
 async function irail<T>(path: string, params: Record<string, string> = {}): Promise<T> {
   const qs = new URLSearchParams({ format: 'json', lang: 'en', ...params }).toString();
   const url = `${BASE}/${path}?${qs}`;
-  const resp = await fetch(url, { headers: { 'User-Agent': USER_AGENT }, redirect: 'follow' });
+  const resp = await fetchWithTimeout(url, { headers: { 'User-Agent': USER_AGENT }, redirect: 'follow' });
   if (!resp.ok) throw new Error(`iRail HTTP ${resp.status}: ${path}`);
   return resp.json() as Promise<T>;
 }

@@ -10,6 +10,8 @@
  *   /bin/stboard.exe/dn       → tablero de salidas/llegadas en tiempo real
  */
 
+import { fetchWithTimeout } from './fetchWithTimeout';
+
 const BASE = 'https://fahrplan.oebb.at';
 const CACHE_TTL_MS = 90_000;
 
@@ -61,7 +63,7 @@ function categoryFromName(name: string): string {
 async function oebb<T>(path: string, params: Record<string, string>): Promise<T> {
   const qs   = new URLSearchParams(params).toString();
   const url  = `${BASE}${path}?${qs}`;
-  const resp = await fetch(url, {
+  const resp = await fetchWithTimeout(url, {
     headers: { 'User-Agent': 'WoW-Trenes-App/1.0' },
   });
   if (!resp.ok) throw new Error(`ÖBB Hafas HTTP ${resp.status}: ${path}`);
@@ -77,7 +79,7 @@ async function oebb<T>(path: string, params: Record<string, string>): Promise<T>
 export async function searchAustriaStations(query: string): Promise<AustriaStation[]> {
   try {
     const url  = `${BASE}/bin/ajax-getstop.exe/dn?S=${encodeURIComponent(query)}&js=true&max=25`;
-    const resp = await fetch(url, { headers: { 'User-Agent': 'WoW-Trenes-App/1.0' } });
+    const resp = await fetchWithTimeout(url, { headers: { 'User-Agent': 'WoW-Trenes-App/1.0' } });
     const text = await resp.text();
     // Hafas devuelve: SLs.sls = {"suggestions":[...]}
     const match = text.match(/\{.*\}/s);

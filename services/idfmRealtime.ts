@@ -13,6 +13,8 @@
  * Fallback: si la API falla (offline, sin key), usa GTFS local (gtfs_fr_par.db)
  */
 
+import { fetchWithTimeout } from './fetchWithTimeout';
+
 const IDFM_BASE = 'https://prim.iledefrance-mobilites.fr/marketplace';
 const API_KEY   = process.env.EXPO_PUBLIC_IDFM_API_KEY ?? '';
 
@@ -86,7 +88,7 @@ export async function getNextArrivals(
     + `&MaximumStopVisits=${limit * 2}`;
 
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       headers: {
         'apiKey': API_KEY,
         'Accept': 'application/json',
@@ -186,7 +188,7 @@ export async function checkIdfmApiHealth(): Promise<boolean> {
   try {
     const url = `${IDFM_BASE}/stop-monitoring`
       + `?MonitoringRef=${encodeURIComponent('STIF:StopPoint:Q:22046:')}&MaximumStopVisits=1`;
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       headers: { 'apiKey': API_KEY },
       signal: AbortSignal.timeout(5_000),
     });
