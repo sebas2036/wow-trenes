@@ -16,7 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Radius } from '../theme';
+import { Radius, Shadows } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 import { t, getLanguage } from '../services/i18n';
 import { hSelection, hImpact, ImpactStyle } from '../services/haptics';
@@ -134,14 +134,18 @@ export default function MisViajesScreen() {
                   </View>
 
                   <Pressable
-                    style={({ pressed }) => [
-                      styles.reopenBtn, { backgroundColor: colors.brand.primary },
-                      pressed && { opacity: 0.85 },
-                    ]}
+                    style={({ pressed }) => [styles.reopenWrap, pressed && { opacity: 0.9, transform: [{ scale: 0.99 }] }]}
                     onPress={() => { hSelection(); handleReopen(trip); }}
                   >
-                    <Ionicons name="open-outline" size={15} color="#fff" />
-                    <Text style={styles.reopenText}>{t('trips_reopen')}</Text>
+                    <LinearGradient
+                      colors={['#8B5CF6', '#7C3AED', '#6D28D9']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.reopenBtn}
+                    >
+                      <Ionicons name="open-outline" size={15} color="#fff" />
+                      <Text style={styles.reopenText}>{t('trips_reopen')}</Text>
+                    </LinearGradient>
                   </Pressable>
                 </View>
               );
@@ -178,11 +182,15 @@ const styles = StyleSheet.create({
   route:   { flexDirection: 'row', alignItems: 'center' },
   station: { fontSize: 16, fontWeight: '700', flexShrink: 1 },
 
-  reopenBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7,
-    paddingVertical: 10, borderRadius: Radius.md, marginTop: 2,
+  reopenWrap: {
+    marginTop: 2, borderRadius: Radius.md,
+    ...Shadows.glow, shadowColor: '#7C3AED',
   },
-  reopenText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  reopenBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    paddingVertical: 12, borderRadius: Radius.md,
+  },
+  reopenText: { color: '#fff', fontSize: 14, fontWeight: '800', letterSpacing: 0.2 },
 
   empty:         { alignItems: 'center', paddingTop: 80, paddingHorizontal: 30 },
   emptyIconWrap: { width: 84, height: 84, borderRadius: 42, alignItems: 'center', justifyContent: 'center', marginBottom: 18 },
