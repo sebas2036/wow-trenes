@@ -23,6 +23,8 @@ import type { AppLanguage } from '../types';
 
 const translations = {
   es: {
+    report_ph: 'Contanos qué pasó…',
+    report_send: 'Enviar',
     rate_tap: '¿Cómo nos calificás?',
     rate_thanks: '¡Gracias por tu calificación! 🙌',
     settings_language: 'Idioma',
@@ -263,6 +265,8 @@ const translations = {
   },
 
   en: {
+    report_ph: 'Tell us what happened…',
+    report_send: 'Send',
     rate_tap: 'How would you rate us?',
     rate_thanks: 'Thanks for your rating! 🙌',
     settings_language: 'Language',
@@ -484,6 +488,8 @@ const translations = {
   },
 
   pt: {
+    report_ph: 'Conte o que aconteceu…',
+    report_send: 'Enviar',
     rate_tap: 'Como você nos avalia?',
     rate_thanks: 'Obrigado pela avaliação! 🙌',
     settings_language: 'Idioma',
@@ -705,6 +711,8 @@ const translations = {
   },
 
   ja: {
+    report_ph: '何が起きたか教えてください…',
+    report_send: '送信',
     rate_tap: '評価してください',
     rate_thanks: '評価ありがとうございます！🙌',
     settings_language: '言語',
@@ -918,6 +926,8 @@ const translations = {
   },
 
   zh: {
+    report_ph: '告诉我们发生了什么…',
+    report_send: '发送',
     rate_tap: '给我们打个分吧',
     rate_thanks: '感谢您的评分！🙌',
     settings_language: '语言',
@@ -1131,6 +1141,8 @@ const translations = {
   },
 
   ko: {
+    report_ph: '무슨 일이 있었는지 알려주세요…',
+    report_send: '보내기',
     rate_tap: '평가해 주세요',
     rate_thanks: '평가해 주셔서 감사합니다! 🙌',
     settings_language: '언어',
@@ -1344,6 +1356,8 @@ const translations = {
   },
 
   fr: {
+    report_ph: 'Dites-nous ce qui s’est passé…',
+    report_send: 'Envoyer',
     rate_tap: 'Quelle note nous donnez-vous ?',
     rate_thanks: 'Merci pour votre note ! 🙌',
     settings_language: 'Langue',
@@ -1565,6 +1579,8 @@ const translations = {
   },
 
   de: {
+    report_ph: 'Erzähl uns, was passiert ist…',
+    report_send: 'Senden',
     rate_tap: 'Wie bewertest du uns?',
     rate_thanks: 'Danke für deine Bewertung! 🙌',
     settings_language: 'Sprache',
@@ -1786,6 +1802,8 @@ const translations = {
   },
 
   it: {
+    report_ph: 'Raccontaci cosa è successo…',
+    report_send: 'Invia',
     rate_tap: 'Che voto ci dai?',
     rate_thanks: 'Grazie per la valutazione! 🙌',
     settings_language: 'Lingua',
@@ -2007,6 +2025,8 @@ const translations = {
   },
 
   ar: {
+    report_ph: 'أخبرنا بما حدث…',
+    report_send: 'إرسال',
     rate_tap: 'كيف تقيّمنا؟',
     rate_thanks: 'شكرًا على تقييمك! 🙌',
     settings_language: 'اللغة',

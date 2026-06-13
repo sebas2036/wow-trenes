@@ -6,6 +6,7 @@ import React, { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View, Text, StyleSheet, Pressable, Switch, ScrollView, Linking, Image,
+  TextInput, Platform, Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -101,6 +102,19 @@ export default function AjustesScreen() {
     // ≤3 estrellas → feedback privado por email (en vez de una reseña pública mala).
     // ≥4 → gracias inline (post-lanzamiento: Linking a la tienda).
     if (n <= 3) Linking.openURL(`mailto:Glosx@outlook.com?subject=WoW Train - Feedback`).catch(() => {});
+  };
+
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportText, setReportText] = useState('');
+  const sendReport = () => {
+    if (!reportText.trim()) return;
+    Keyboard.dismiss();
+    // El texto del usuario + contexto automático (versión/dispositivo) van en el cuerpo del mail.
+    const ctx = `\n\n---\nApp: WoW Train v${APP_VERSION}\n${Platform.OS} ${Platform.Version}`;
+    const url = `mailto:Glosx@outlook.com?subject=${encodeURIComponent('WoW Train - Reporte')}&body=${encodeURIComponent(reportText + ctx)}`;
+    Linking.openURL(url).catch(() => {});
+    setReportText('');
+    setReportOpen(false);
   };
 
   const goLegal = (page: string) => {
@@ -253,9 +267,29 @@ export default function AjustesScreen() {
           <Row
             iconName="bug-outline" iconBg="#FF453A"
             label={t('settings_report')} colors={colors}
-            onPress={() => Linking.openURL('mailto:Glosx@outlook.com?subject=WoW Train - Bug')}
-            isLast
+            onPress={() => { hImpact(ImpactStyle.Light); setReportOpen(o => !o); }}
+            isLast={!reportOpen}
           />
+          {reportOpen && (
+            <View style={styles.reportBox}>
+              <TextInput
+                style={styles.reportInput}
+                placeholder={t('report_ph')}
+                placeholderTextColor="rgba(255,255,255,0.4)"
+                multiline
+                value={reportText}
+                onChangeText={setReportText}
+              />
+              <Pressable
+                style={({ pressed }) => [styles.reportBtn, !reportText.trim() && { opacity: 0.5 }, pressed && { opacity: 0.85 }]}
+                onPress={sendReport}
+                disabled={!reportText.trim()}
+              >
+                <Ionicons name="paper-plane" size={16} color="#fff" />
+                <Text style={styles.reportBtnText}>{t('report_send')}</Text>
+              </Pressable>
+            </View>
+          )}
         </View>
 
         {/* ── Branding ── */}
@@ -301,6 +335,18 @@ const styles = StyleSheet.create({
   },
   ratePrompt: { color: 'rgba(255,255,255,0.85)', fontSize: 14, fontWeight: '600' },
   starsRow:   { flexDirection: 'row', gap: 10 },
+
+  reportBox: { padding: 14, gap: 10, backgroundColor: 'rgba(255,255,255,0.03)' },
+  reportInput: {
+    minHeight: 90, color: '#fff', fontSize: 15, textAlignVertical: 'top',
+    backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 10, padding: 12,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
+  },
+  reportBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: '#7C3AED', paddingVertical: 12, borderRadius: 12,
+  },
+  reportBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
 
   section: {
     fontSize: 11, fontWeight: '700', letterSpacing: 1.3,
