@@ -45,28 +45,29 @@ export default function SecureRedirect({ visible, url, partner = 'Trainline', on
 
   return (
     <View style={styles.overlay} pointerEvents="auto">
-      <View style={styles.lockArea}>
-        <Animated.View style={[styles.ring, { transform: [{ rotate: ringRotate }] }]} />
-        <Animated.View style={{ transform: [{ scale }] }}>
-          <LinearGradient colors={['#8B5CF6', '#7C3AED', '#6D28D9']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.lockCircle}>
-            <Ionicons name="lock-closed" size={52} color="#fff" />
+      <Animated.View style={[styles.card, { transform: [{ scale }] }]}>
+        <View style={styles.lockArea}>
+          {/* Anillo metálico (blanco → dorado → púrpura) que gira */}
+          <Animated.View style={[styles.ring, { transform: [{ rotate: ringRotate }] }]} />
+          <LinearGradient colors={['#9E74D6', '#7C3AED', '#56398B']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.lockCircle}>
+            <Ionicons name="lock-closed" size={46} color="#F1E9FB" />
           </LinearGradient>
           {/* Check verde de "verificado" */}
           <View style={styles.checkBadge}>
-            <Ionicons name="checkmark" size={18} color="#fff" />
+            <Ionicons name="checkmark" size={16} color="#fff" />
           </View>
-        </Animated.View>
-      </View>
+        </View>
 
-      <Text style={styles.title}>Conexión segura</Text>
-      <Text style={styles.sub}>Te llevamos a {partner} para completar tu compra de forma segura</Text>
+        <Text style={styles.title}>Conexión segura</Text>
+        <Text style={styles.sub}>Te llevamos a {partner} para completar tu compra de forma segura</Text>
 
-      <ActivityIndicator color="#A78BFA" style={{ marginTop: 20 }} />
+        <ActivityIndicator color="#A78BFA" style={{ marginTop: 22 }} />
 
-      <View style={styles.badge}>
-        <Ionicons name="shield-checkmark" size={14} color="#A78BFA" />
-        <Text style={styles.badgeText}>Pago seguro · {partner} (Merchant of Record) · PCI-DSS</Text>
-      </View>
+        <View style={styles.badge}>
+          <Ionicons name="shield-checkmark" size={13} color="#A78BFA" />
+          <Text style={styles.badgeText}>Pago seguro · {partner} · PCI-DSS</Text>
+        </View>
+      </Animated.View>
     </View>
   );
 }
@@ -74,27 +75,36 @@ export default function SecureRedirect({ visible, url, partner = 'Trainline', on
 const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject, zIndex: 1000,
-    backgroundColor: 'rgba(8,6,24,0.96)',
-    alignItems: 'center', justifyContent: 'center', paddingHorizontal: 36,
+    backgroundColor: 'rgba(8,6,24,0.92)',
+    alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28,
   },
-  lockArea: { width: 168, height: 168, alignItems: 'center', justifyContent: 'center', marginBottom: 26 },
+  // Card centrada (como el mockup)
+  card: {
+    width: '100%', maxWidth: 360, backgroundColor: '#1A1F2C',
+    borderRadius: 26, paddingVertical: 38, paddingHorizontal: 28, alignItems: 'center',
+    borderWidth: 1, borderColor: 'rgba(139,92,246,0.18)',
+    shadowColor: '#000', shadowOpacity: 0.5, shadowRadius: 30, shadowOffset: { width: 0, height: 12 }, elevation: 16,
+  },
+  lockArea: { width: 140, height: 140, alignItems: 'center', justifyContent: 'center', marginBottom: 26 },
+  // Anillo con 4 colores de borde → al rotar simula el arco metálico brillante
   ring: {
-    position: 'absolute', width: 160, height: 160, borderRadius: 80,
-    borderWidth: 3, borderColor: 'rgba(167,139,250,0.25)', borderTopColor: '#A78BFA',
+    position: 'absolute', width: 140, height: 140, borderRadius: 70, borderWidth: 4,
+    borderTopColor: '#FFF5E6', borderRightColor: '#D4AF37',
+    borderBottomColor: '#7A52AA', borderLeftColor: '#4A3B68',
   },
-  lockCircle: { width: 112, height: 112, borderRadius: 56, alignItems: 'center', justifyContent: 'center', ...Shadows.glow },
+  lockCircle: { width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center', ...Shadows.glow },
   checkBadge: {
-    position: 'absolute', right: 2, bottom: 2, width: 34, height: 34, borderRadius: 17,
+    position: 'absolute', right: 8, bottom: 8, width: 30, height: 30, borderRadius: 15,
     backgroundColor: '#22C55E', alignItems: 'center', justifyContent: 'center',
-    borderWidth: 3, borderColor: 'rgba(8,6,24,0.96)',
+    borderWidth: 3, borderColor: '#1A1F2C',
   },
 
-  title: { fontSize: 22, fontWeight: '800', color: '#fff', marginBottom: 8 },
-  sub:   { fontSize: 15, color: 'rgba(255,255,255,0.7)', textAlign: 'center', lineHeight: 21 },
+  title: { fontSize: 24, fontWeight: '800', color: '#fff', marginBottom: 10, letterSpacing: -0.4 },
+  sub:   { fontSize: 15, color: '#A0A5B5', textAlign: 'center', lineHeight: 22 },
 
   badge: {
-    position: 'absolute', bottom: 120, flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: 'rgba(139,92,246,0.12)', borderWidth: 1, borderColor: 'rgba(139,92,246,0.35)',
+    marginTop: 24, flexDirection: 'row', alignItems: 'center', gap: 7,
+    backgroundColor: 'rgba(139,92,246,0.12)', borderWidth: 1, borderColor: 'rgba(139,92,246,0.30)',
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
   },
   badgeText: { color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: '600' },
