@@ -55,6 +55,7 @@ import { Ionicons } from '@expo/vector-icons';
 import TrainCountdown    from '../components/TrainCountdown';
 import ModeChip, { formatEta } from '../components/ModeChip';
 import AffiliateWebView  from '../components/AffiliateWebView';
+import SecureRedirect     from '../components/SecureRedirect';
 
 import { useTrainSchedules }          from '../hooks/useTrainSchedules';
 import { useLocation }                from '../hooks/useLocation';
@@ -382,6 +383,7 @@ export default function SplitScreen() {
 
   // Checkout — affiliate WebView (primary)
   const [affiliateVisible,  setAffiliateVisible]  = useState(false);
+  const [secureUrl,         setSecureUrl]         = useState<string | null>(null);
   const [scenicVisible,     setScenicVisible]     = useState<string | null>(null);
   const [showTravelModal,   setShowTravelModal]   = useState(false);
 
@@ -705,7 +707,7 @@ export default function SplitScreen() {
       departure,
       svc.origin.country,
     );
-    Linking.openURL(url).catch(() => {});
+    setSecureUrl(url); // muestra la transición "Conexión segura" → abre Trainline
   }, []);
 
   // ── Purchase success ──────────────────────────────────────────────────
@@ -1240,6 +1242,9 @@ export default function SplitScreen() {
           </Pressable>
         </View>
       )}
+
+      {/* ── Transición "Conexión segura" antes de saltar a Trainline ── */}
+      <SecureRedirect visible={!!secureUrl} url={secureUrl ?? ''} onDone={() => setSecureUrl(null)} />
 
       {/* ── Picker de estación manual — overlay absoluto (evita bugs de Modal transparent en Android) ── */}
       {showStationPicker && (

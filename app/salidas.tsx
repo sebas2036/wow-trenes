@@ -34,6 +34,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { t } from '../services/i18n';
 import { buildBestBookingUrl } from '../services/affiliateEngine';
+import SecureRedirect from '../components/SecureRedirect';
 import { useLocation } from '../hooks/useLocation';
 import * as Location from 'expo-location';
 import BottomTabBar from '../components/BottomTabBar';
@@ -166,11 +167,13 @@ function BoardRow({
   index,
   originName,
   countryCode,
+  onBuy,
 }: {
   entry: BoardEntry;
   index: number;
   originName: string;
   countryCode: string;
+  onBuy: (url: string) => void;
 }) {
   const { colors } = useTheme();
 
@@ -178,8 +181,8 @@ function BoardRow({
     hImpact(ImpactStyle.Medium);
     const dest = entry.endpoint !== '—' ? entry.endpoint : entry.train;
     const url = buildBestBookingUrl(originName, dest, new Date(), countryCode);
-    Linking.openURL(url).catch(() => {});
-  }, [originName, entry, countryCode]);
+    onBuy(url); // muestra la transición "Conexión segura" en la pantalla padre
+  }, [originName, entry, countryCode, onBuy]);
 
   return (
     <View style={styles.boardRow}>
@@ -372,6 +375,7 @@ export default function SalidasScreen() {
   const { locationState, requestLocation } = useLocation();
   const [mode,            setMode]            = useState<BoardMode>('salidas');
   const [selected,        setSelected]        = useState<typeof DESTINATIONS[0]>(DESTINATIONS[0]);
+  const [secureUrl,       setSecureUrl]       = useState<string | null>(null);
   const [board,           setBoard]           = useState<BoardEntry[]>([]);
   const [loading,         setLoading]         = useState(false);
   const [stationName,     setStationName]     = useState('');
@@ -952,11 +956,15 @@ export default function SalidasScreen() {
                 index={i}
                 originName={displayStation}
                 countryCode={selected.code}
+                onBuy={setSecureUrl}
               />
             </View>
           ))}
         </ScrollView>
       )}
+
+      {/* Transición "Conexión segura" antes de saltar a Trainline */}
+      <SecureRedirect visible={!!secureUrl} url={secureUrl ?? ''} onDone={() => setSecureUrl(null)} />
 
       <BottomTabBar active="salidas" />
 
