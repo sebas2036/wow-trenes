@@ -28,7 +28,7 @@ import FlagCircle from '../components/FlagCircle';
 import { findNearestStation, setActiveCountry, detectCountryFromCoords } from '../services/gtfsDatabase';
 import { prefetchInBackground, onDownloadProgress } from '../services/dbDownloadService';
 import { buildTrainlineByName, buildBestBookingUrl, buildScenicTrainUrl } from '../services/affiliateEngine';
-import { SCENIC_TRAINS } from '../data/scenicTrains';
+import { SCENIC_TRAINS, type ScenicTrain } from '../data/scenicTrains';
 import PartnerCard from '../components/PartnerCard';
 import { getYesimOffer, getTiqetsOffer, getStorageOffer, getInsuranceOffer } from '../data/partnerOffers';
 import AffiliateWebView from '../components/AffiliateWebView';
@@ -332,7 +332,7 @@ function SpeedLines() {
 }
 
 // ── Scenic Card (Internacional) ───────────────────────────────────────────────
-function ScenicCard({ train, onPress }: { train: any; onPress: () => void }) {
+function ScenicCard({ train, onPress }: { train: ScenicTrain; onPress: () => void }) {
   const scale    = useSharedValue(1);
   const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   return (
