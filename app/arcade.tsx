@@ -17,7 +17,7 @@ import { Shadows } from '../theme';
 import { hImpact, hSelection, ImpactStyle } from '../services/haptics';
 
 const COLS = 14;
-const ROWS = 20;
+const ROWS = 18;
 const CELL = Math.floor((Math.min(Dimensions.get('window').width, 460) - 36) / COLS);
 const HIGH_KEY = '@arcade_tren_high';
 
@@ -94,8 +94,8 @@ export default function ArcadeScreen() {
     render();
   }, [endGame]);
 
-  // Velocidad: arranca lento y acelera con el puntaje
-  const speed = Math.max(75, 170 - score * 3);
+  // Velocidad: arranca tranquilo y acelera de a poco con el puntaje
+  const speed = Math.max(120, 260 - score * 5);
   useEffect(() => {
     if (!running || gameOver) return;
     const id = setInterval(step, speed);
@@ -145,16 +145,21 @@ export default function ArcadeScreen() {
         <View style={[styles.board, { width: COLS * CELL, height: ROWS * CELL }]}>
           {/* Estación (comida) */}
           <View style={[styles.food, { left: foodRef.current.x * CELL, top: foodRef.current.y * CELL }]} />
-          {/* Tren */}
+          {/* Tren: locomotora (cabeza) + vagones */}
           {snakeRef.current.map((s, i) => (
-            <View
-              key={`${s.x}-${s.y}-${i}`}
-              style={{
-                position: 'absolute', left: s.x * CELL, top: s.y * CELL,
-                width: CELL - 2, height: CELL - 2, margin: 1, borderRadius: 5,
-                backgroundColor: i === 0 ? '#C4B5FD' : '#7C3AED',
-              }}
-            />
+            i === 0 ? (
+              <View
+                key="loco"
+                style={{ position: 'absolute', left: s.x * CELL, top: s.y * CELL, width: CELL, height: CELL, alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Text style={{ fontSize: CELL + 2, transform: [{ scaleX: dirRef.current.x > 0 ? -1 : 1 }] }}>🚂</Text>
+              </View>
+            ) : (
+              <View
+                key={`v-${s.x}-${s.y}-${i}`}
+                style={{ position: 'absolute', left: s.x * CELL, top: s.y * CELL, width: CELL - 2, height: CELL - 2, margin: 1, borderRadius: 5, backgroundColor: '#7C3AED' }}
+              />
+            )
           ))}
 
           {/* Overlays */}
@@ -205,7 +210,7 @@ const styles = StyleSheet.create({
   scoreText: { color: 'rgba(255,255,255,0.6)', fontSize: 14, fontWeight: '600' },
   scoreNum: { color: '#C4B5FD', fontWeight: '800' },
 
-  boardWrap: { flex: 1, justifyContent: 'center' },
+  boardWrap: { flex: 1, justifyContent: 'center', marginVertical: 14 },
   board: { backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(139,92,246,0.30)', overflow: 'hidden' },
   food: { position: 'absolute', width: CELL - 2, height: CELL - 2, margin: 1, borderRadius: CELL, backgroundColor: '#FCD34D', ...Shadows.glow, shadowColor: '#FCD34D' },
 
@@ -216,8 +221,8 @@ const styles = StyleSheet.create({
   playBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: PURPLE, paddingHorizontal: 22, paddingVertical: 12, borderRadius: 24, ...Shadows.glow },
   playText: { color: '#fff', fontSize: 16, fontWeight: '800' },
 
-  dpad: { alignItems: 'center', marginTop: 10, marginBottom: 6 },
-  dRow: { flexDirection: 'row', alignItems: 'center' },
-  dGap: { width: 66 },
+  dpad: { alignItems: 'center', marginTop: 6, marginBottom: 6 },
+  dRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 6 },
+  dGap: { width: 104 },
   dBtn: { width: 66, height: 58, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(139,92,246,0.22)', borderWidth: 1, borderColor: 'rgba(139,92,246,0.45)', borderRadius: 14, margin: 4 },
 });
