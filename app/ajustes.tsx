@@ -123,6 +123,12 @@ export default function AjustesScreen() {
             onToggle={(v) => { hSelection(); setHaptics(v); setHapticsEnabled(v); }}
           />
           <Row
+            iconName="game-controller-outline" iconBg="#EC4899"
+            label="Tren Escapista 🚂" colors={colors}
+            value="Jugar"
+            onPress={() => { hSelection(); router.push('/arcade'); }}
+          />
+          <Row
             iconName="language-outline" iconBg="#0EA5E9"
             label={t('settings_language')} colors={colors}
             value={currentLangName}
