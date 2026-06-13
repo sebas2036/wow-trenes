@@ -13,6 +13,7 @@ import { NotificationProvider } from '../context/NotificationContext';
 import { initGeofenceTask } from '../tasks/geofenceTask';
 import { initDatabase } from '../services/gtfsDatabase';
 import { loadUserSettings, getNotificationsEnabled } from '../services/userSettings';
+import { loadSavedLanguage, useLanguage } from '../services/i18n';
 
 Notifications.setNotificationHandler({
   // Respeta el toggle "Notificaciones" de Ajustes (gate en primer plano)
@@ -28,9 +29,11 @@ Notifications.setNotificationHandler({
 
 function AppStack() {
   const { colors } = useTheme();
+  useLanguage(); // re-renderiza todo el árbol cuando el usuario cambia el idioma
 
   useEffect(() => {
-    loadUserSettings().catch(() => {}); // preferencias (haptics/notifs) antes de interactuar
+    loadUserSettings().catch(() => {});   // preferencias (haptics/notifs)
+    loadSavedLanguage().catch(() => {});  // idioma elegido por el usuario (override del device)
     // Delay 150ms para que el primer frame se renderice antes de cargar SQLite
     const t = setTimeout(() => {
       initDatabase().catch(console.warn);

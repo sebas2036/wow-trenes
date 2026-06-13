@@ -15,7 +15,10 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { Radius, Gradients } from '../theme';
 import { useTheme } from '../context/ThemeContext';
-import { t } from '../services/i18n';
+import { t, useLanguage, setLanguage, SUPPORTED_LANGUAGES } from '../services/i18n';
+
+// Idiomas con traducción real (excluye los que caerían a inglés)
+const PICKER_LANGS = SUPPORTED_LANGUAGES.filter(l => l.code !== 'ru');
 import { LinearGradient } from 'expo-linear-gradient';
 import BottomTabBar from '../components/BottomTabBar';
 
@@ -81,6 +84,9 @@ export default function AjustesScreen() {
   const { colors } = useTheme();
   const [notifications, setNotifications] = useState(getNotificationsEnabled);
   const [haptics,       setHaptics]       = useState(getHapticsEnabled);
+  const lang = useLanguage();
+  const [langOpen, setLangOpen] = useState(false);
+  const currentLangName = PICKER_LANGS.find(l => l.code === lang)?.name ?? lang;
 
   const goLegal = (page: string) => {
     hImpact(ImpactStyle.Light);
@@ -115,8 +121,25 @@ export default function AjustesScreen() {
             label={t('settings_haptics')} colors={colors}
             isSwitch switchValue={haptics}
             onToggle={(v) => { hSelection(); setHaptics(v); setHapticsEnabled(v); }}
-            isLast
           />
+          <Row
+            iconName="language-outline" iconBg="#0EA5E9"
+            label={t('settings_language')} colors={colors}
+            value={currentLangName}
+            onPress={() => { hSelection(); setLangOpen(o => !o); }}
+            isLast={!langOpen}
+          />
+          {langOpen && PICKER_LANGS.map((l, i) => (
+            <Pressable
+              key={l.code}
+              style={({ pressed }) => [styles.langRow, pressed && { backgroundColor: 'rgba(255,255,255,0.06)' }, i === PICKER_LANGS.length - 1 && { borderBottomWidth: 0 }]}
+              onPress={() => { hSelection(); setLanguage(l.code); setLangOpen(false); }}
+            >
+              <Text style={styles.langFlag}>{l.flag}</Text>
+              <Text style={[styles.langName, { color: colors.text.primary }]}>{l.name}</Text>
+              {lang === l.code && <Ionicons name="checkmark" size={20} color="#0EA5E9" />}
+            </Pressable>
+          ))}
         </View>
 
         {/* ── Datos ── */}
@@ -227,6 +250,15 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: 22, paddingTop: 20, paddingBottom: 6 },
   title:  { fontSize: 34, fontWeight: '900', letterSpacing: -0.8, color: '#fff' },
   scroll: { flex: 1 },
+
+  langRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    paddingVertical: 13, paddingHorizontal: 18,
+    borderBottomWidth: 0.5, borderBottomColor: 'rgba(255,255,255,0.10)',
+    backgroundColor: 'rgba(255,255,255,0.03)',
+  },
+  langFlag: { fontSize: 22 },
+  langName: { flex: 1, fontSize: 16, fontWeight: '500' },
 
   section: {
     fontSize: 11, fontWeight: '700', letterSpacing: 1.3,

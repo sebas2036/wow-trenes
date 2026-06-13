@@ -14,6 +14,8 @@
  *   nombres de botones, alertas de geofence, mensajes de error, POIs.
  *   Sin configuración. Automático desde el primer segundo.
  */
+import { useSyncExternalStore } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Localization from 'expo-localization';
 import type { AppLanguage } from '../types';
 
@@ -21,6 +23,7 @@ import type { AppLanguage } from '../types';
 
 const translations = {
   es: {
+    settings_language: 'Idioma',
     tr_title: 'Traductor',
     tr_detect: 'Detectar',
     tr_from: 'DESDE',
@@ -258,6 +261,7 @@ const translations = {
   },
 
   en: {
+    settings_language: 'Language',
     tr_title: 'Translator',
     tr_detect: 'Detect',
     tr_from: 'FROM',
@@ -476,6 +480,7 @@ const translations = {
   },
 
   pt: {
+    settings_language: 'Idioma',
     tr_title: 'Tradutor',
     tr_detect: 'Detectar',
     tr_from: 'DE',
@@ -694,6 +699,7 @@ const translations = {
   },
 
   ja: {
+    settings_language: '言語',
     tr_title: '翻訳',
     tr_detect: '自動検出',
     tr_from: '元の言語',
@@ -904,6 +910,7 @@ const translations = {
   },
 
   zh: {
+    settings_language: '语言',
     tr_title: '翻译',
     tr_detect: '自动检测',
     tr_from: '源语言',
@@ -1114,6 +1121,7 @@ const translations = {
   },
 
   ko: {
+    settings_language: '언어',
     tr_title: '번역기',
     tr_detect: '자동 감지',
     tr_from: '출발어',
@@ -1324,6 +1332,7 @@ const translations = {
   },
 
   fr: {
+    settings_language: 'Langue',
     tr_title: 'Traducteur',
     tr_detect: 'Détecter',
     tr_from: 'DE',
@@ -1542,6 +1551,7 @@ const translations = {
   },
 
   de: {
+    settings_language: 'Sprache',
     tr_title: 'Übersetzer',
     tr_detect: 'Erkennen',
     tr_from: 'VON',
@@ -1760,6 +1770,7 @@ const translations = {
   },
 
   it: {
+    settings_language: 'Lingua',
     tr_title: 'Traduttore',
     tr_detect: 'Rileva',
     tr_from: 'DA',
@@ -1978,6 +1989,7 @@ const translations = {
   },
 
   ar: {
+    settings_language: 'اللغة',
     tr_title: 'المترجم',
     tr_detect: 'كشف تلقائي',
     tr_from: 'من',
@@ -2243,9 +2255,32 @@ export function getLanguage(): AppLanguage {
  * setLanguage — cambia el idioma manualmente (override del automático).
  * Útil para un selector de idioma en Settings.
  */
+// ── Suscripción: React re-renderiza al cambiar de idioma ──────────────────────
+const LANG_KEY = '@app_language';
+const langListeners = new Set<() => void>();
+function notifyLang() { langListeners.forEach((l) => l()); }
+
 export function setLanguage(lang: AppLanguage): void {
   currentLang   = lang;
   currentStrings = (translations as any)[lang] as Translations ?? translations.en as Translations;
+  AsyncStorage.setItem(LANG_KEY, lang).catch(() => {});
+  notifyLang();
+}
+
+/** Carga el idioma elegido por el usuario (si lo guardó) al arrancar la app. */
+export async function loadSavedLanguage(): Promise<void> {
+  try {
+    const saved = await AsyncStorage.getItem(LANG_KEY);
+    if (saved && (translations as any)[saved]) setLanguage(saved as AppLanguage);
+  } catch { /* usar el idioma del dispositivo */ }
+}
+
+/** Hook reactivo: el componente se re-renderiza cuando cambia el idioma. */
+export function useLanguage(): AppLanguage {
+  return useSyncExternalStore(
+    (cb) => { langListeners.add(cb); return () => langListeners.delete(cb); },
+    () => currentLang,
+  );
 }
 
 /**
