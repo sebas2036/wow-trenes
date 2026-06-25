@@ -55,13 +55,18 @@ Implementar backend para AI Route Planner usando Google Gemini API para WoW Trai
 ## ❌ ERROR ACTUAL - CRÍTICO
 
 ### Descripción del Error
-**Error 404 Not Found:** Todos los modelos de Gemini probados retornan 404.
+**Error 404 Not Found:** Todas las API Keys probadas no tienen acceso a modelos de Gemini.
 
-### Modelos Probados (todos fallan con 404):
+### API Keys Probadas (todas fallan con 404):
+1. `[REDACTED]` - 404
+2. `[REDACTED]` - 404
+
+### Modelos Probados (todos fallan con ambas API Keys):
 1. `gemini-3.5-flash` - 404 Not Found
 2. `gemini-1.5-flash` - 404 Not Found
 3. `gemini-1.5-pro` - 404 Not Found
-4. `gemini-pro` - 404 Not Found
+4. `gemini-1.0-pro` - 404 Not Found
+5. `gemini-pro` - 404 Not Found
 
 ### Mensaje de Error Exacto:
 ```
@@ -72,12 +77,12 @@ supported for generateContent. Call ModelService.ListModels to see the list of
 available models and their supported methods.
 ```
 
-### Causa Probable
-La API Key proporcionada (`[REDACTED]`) puede ser:
-1. Inválida o expirada
-2. No tiene acceso a los modelos de Gemini
-3. Es de un proyecto diferente sin permisos
-4. Necesita ser regenerada en Google AI Studio
+### Causa Confirmada
+Las API Keys proporcionadas **no tienen acceso a los modelos de Gemini API**. Esto puede deberse a:
+- API Keys de un proyecto diferente sin permisos de Gemini
+- Proyecto no habilitado para Gemini API
+- API Keys de prueba o temporales
+- Necesitan configuración específica en Google Cloud Console
 
 ---
 
@@ -126,18 +131,22 @@ NODE_ENV=development
 **Backend:**
 - `54c42e9` - "Feat: WoW Train Backend v2.0 - Actualización a Gemini 3.5 Flash"
 - `5e98f01` - "Fix: Ajustar CORS a dominios especificados exactos"
+- `fa36f6e` - "Fix: Corregir SDK Gemini a @google/generative-ai y sintaxis"
 
 **Frontend:**
 - `2bb6ff2` - "Feat: Conectar frontend con backend local"
+
+**Documentación:**
+- `228471c` - "Docs: Documentar estado actual y error de API Key de Gemini"
 
 ---
 
 ## 🚨 ACCIONES PENDIENTES CRÍTICAS
 
-### 1. VALIDAR API KEY DE GEMINI
-- [ ] Verificar que la API Key sea válida
-- [ ] Confirmar que tiene acceso a modelos de Gemini
-- [ ] Regenerar si es necesario en https://makersuite.google.com/app/apikey
+### 1. OBTENER API KEY VÁLIDA
+- [ ] Crear proyecto en Google Cloud Console con Gemini API habilitada
+- [ ] Generar API Key con acceso a modelos de Gemini
+- [ ] Verificar acceso a modelos disponibles
 
 ### 2. PROBAR CON API KEY VÁLIDA
 - [ ] Actualizar `.env` con API Key confirmada
@@ -145,15 +154,9 @@ NODE_ENV=development
 - [ ] Probar endpoint con curl
 - [ ] Verificar respuesta JSON estructurada
 
-### 3. HACER COMMIT DE CAMBIOS PENDIENTES
-- [ ] Commit de cambios en `server.js` (sintaxis SDK corregida)
-- [ ] Commit de cambios en `package.json` (paquete correcto)
-- [ ] Push a repositorio
-
-### 4. ACTUALIZAR DOCUMENTACIÓN
-- [ ] Actualizar `README.md` con estado actual
-- [ ] Actualizar `CONTEXTO_CLAUDE_CODE.md` con error de API Key
-- [ ] Documentar solución cuando se resuelva
+### 3. ALTERNATIVA INMEDIATA - MODO DEMO
+- [ ] Usar datos mock del frontend mientras se obtiene API Key válida
+- [ ] El frontend ya tiene datos mock implementados para demostración
 
 ---
 
@@ -199,4 +202,6 @@ El código del backend está **100% correcto** en términos de:
 - ✅ Rate limiting
 - ✅ CORS
 
-El único problema es la **API Key de Gemini** que no tiene acceso a los modelos. Una vez que se tenga una API Key válida, el sistema funcionará perfectamente.
+**El problema confirmado:** Las API Keys proporcionadas no tienen acceso a los modelos de Gemini API. Necesitan una API Key de un proyecto de Google Cloud con Gemini API habilitada.
+
+**Alternativa inmediata:** El frontend ya tiene datos mock implementados. Se puede usar el modo demo para mostrar la funcionalidad mientras se obtiene una API Key válida.
