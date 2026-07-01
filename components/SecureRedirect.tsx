@@ -3,7 +3,7 @@
  *
  * Overlay EN EL ÁRBOL (no <Modal> → evita el bug de toques muertos en Android).
  * Cuando se hace visible: anima el candado, y tras ~1.6s abre la URL del partner
- * (Trainline) en el navegador y se cierra. Da confianza antes del redirect.
+ * (Omio) en el navegador y se cierra. Da confianza antes del redirect.
  */
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, Easing, Linking, ActivityIndicator } from 'react-native';
@@ -18,7 +18,7 @@ interface Props {
   onDone:    () => void;
 }
 
-export default function SecureRedirect({ visible, url, partner = 'Trainline', onDone }: Props) {
+export default function SecureRedirect({ visible, url, partner = 'Omio', onDone }: Props) {
   const scale = useRef(new Animated.Value(0.5)).current;
   const ring  = useRef(new Animated.Value(0)).current;
 
