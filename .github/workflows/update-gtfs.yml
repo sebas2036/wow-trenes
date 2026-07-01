@@ -1,0 +1,149 @@
+name: Update GTFS feeds
+
+on:
+  schedule:
+    # Lunes 03:00 UTC — fuera de hora pico de descarga
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
+    # Permite lanzar manualmente desde GitHub → Actions
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # necesario para el commit automático
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # ─── ALEMANIA (DE) ────────────────────────────────────────────────────
+      # gtfs.de rota cada ~4 semanas — actualizar siempre
+      - name: Download DE (DB Fernverkehr)
+        run: |
+          curl -L "https://download.gtfs.de/germany/fv_free/latest.zip" \
+               -o /tmp/de.zip --fail --silent --show-error
+          mkdir -p ~/Downloads/germany_fv
+          unzip -o /tmp/de.zip -d ~/Downloads/germany_fv/
+
+      - name: Import DE
+        run: python3 scripts/import_gtfs_germany.py
+        working-directory: ${{ github.workspace }}
+
+      # ─── ESPAÑA (ES) ──────────────────────────────────────────────────────
+      # Renfe rota el zip cada pocas semanas
+      - name: Download ES (Renfe AV+LD)
+        run: |
+          curl -L "https://ssl.renfe.com/gtransit/Fichero_AV_LD/google_transit.zip" \
+               -o /tmp/es.zip --fail --silent --show-error
+          mkdir -p ~/Downloads/google_transit
+          unzip -o /tmp/es.zip -d ~/Downloads/google_transit/
+
+      - name: Import ES
+        run: python3 scripts/import_gtfs_spain.py
+        working-directory: ${{ github.workspace }}
+
+      # ─── PAÍSES BAJOS (NL) ────────────────────────────────────────────────
+      - name: Download NL (OV-API)
+        run: |
+          curl -L "https://gtfs.ovapi.nl/nl/gtfs-nl.zip" \
+               -o /tmp/nl.zip --fail --silent --show-error
+
+      - name: Import NL
+        run: python3 scripts/import_gtfs_netherlands_real.py /tmp/nl.zip
+        working-directory: ${{ github.workspace }}
+
+      # ─── DINAMARCA (DK) ───────────────────────────────────────────────────
+      - name: Download DK (Rejseplanen)
+        run: |
+          curl -L "https://www.rejseplanen.info/labs/GTFS.zip" \
+               -o /tmp/dk.zip --fail --silent --show-error
+          mkdir -p ~/Downloads/DENMARK
+          unzip -o /tmp/dk.zip -d ~/Downloads/DENMARK/
+
+      - name: Import DK
+        run: python3 scripts/import_gtfs_dk.py
+        working-directory: ${{ github.workspace }}
+
+      # ─── NORUEGA (NO) ─────────────────────────────────────────────────────
+      - name: Download NO (Entur)
+        run: |
+          curl -L "https://storage.googleapis.com/marduk-production/outbound/gtfs/rb_norway-aggregated-gtfs.zip" \
+               -o /tmp/no.zip --fail --silent --show-error
+          mkdir -p ~/Downloads/NORWAY
+          unzip -o /tmp/no.zip -d ~/Downloads/NORWAY/
+
+      - name: Import NO
+        run: python3 scripts/import_gtfs_no.py
+        working-directory: ${{ github.workspace }}
+
+      # ─── PAÍSES QUE REQUIEREN DESCARGA MANUAL ─────────────────────────────
+      # FR — SNCF no publica un ZIP público único de larga distancia con URL estable.
+      #       Descargar manualmente desde: https://ressources.data.sncf.com/explore/dataset/horaires-des-lignes-intraday/
+      #       Importar con: python3 scripts/import_gtfs_france_real.py <zip>
+      #
+      # IT — Trenitalia no publica GTFS oficial. Datos cubiertos por RT ViaggiaTreno.
+      #
+      # AT — data.gv.at requiere auth/registro. Descargar manualmente el GTFS_Fahrplan_2026.zip
+      #       Importar con: python3 scripts/import_gtfs_austria_real.py <zip>
+      #
+      # BE — NMBS/SNCB requiere registro. Ver: https://www.belgiantrain.be/en/timetables-and-railway/resources-for-web-developers/developers/gtfs
+      #       Importar con: python3 scripts/import_gtfs_belgium_real.py <zip>
+      #
+      # PT — API de CP Portugal caída (jun 2026). Migrar a Infraestruturas de Portugal cuando estabilice.
+      #
+      # CH — opentransportdata.swiss requiere API key. Ver: https://opentransportdata.swiss
+      #       Importar con: python3 scripts/import_gtfs_switzerland_real.py <zip>
+
+      # ─── VERIFICAR VIGENCIA DE TODAS LAS DBs ──────────────────────────────
+      - name: Check feed validity
+        run: |
+          python3 - << 'EOF'
+          import sqlite3, os, datetime
+          today = datetime.date.today().strftime('%Y%m%d')
+          assets = 'assets'
+          print(f"\nEstado de feeds al {today}:")
+          print(f"{'DB':<30} {'Min':<10} {'Max':<10} {'Estado'}")
+          print("-" * 65)
+          for db in sorted(os.listdir(assets)):
+              if not db.endswith('.db') or not db.startswith('gtfs_'):
+                  continue
+              path = os.path.join(assets, db)
+              try:
+                  con = sqlite3.connect(path)
+                  row = con.execute("SELECT MIN(date), MAX(date) FROM calendar_dates").fetchone()
+                  if not row or not row[1]:
+                      row = con.execute("SELECT MIN(start_date), MAX(end_date) FROM calendar").fetchone()
+                  con.close()
+                  min_d, max_d = (row or ('?', '?'))
+                  if max_d and max_d < today:
+                      status = '❌ EXPIRADO'
+                  elif max_d and max_d < (datetime.date.today() + datetime.timedelta(days=14)).strftime('%Y%m%d'):
+                      status = '⚠️  Vence pronto'
+                  else:
+                      status = '✅'
+                  print(f"{db:<30} {str(min_d):<10} {str(max_d):<10} {status}")
+              except Exception as e:
+                  print(f"{db:<30} {'?':<10} {'?':<10} ⚠️  {e}")
+          EOF
+
+      # ─── COMMIT AUTOMÁTICO si hay cambios ─────────────────────────────────
+      - name: Commit updated DBs
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add assets/gtfs_*.db
+          if git diff --cached --quiet; then
+            echo "Sin cambios en las DBs — nada que commitear."
+          else
+            CHANGED=$(git diff --cached --name-only | tr '\n' ' ')
+            git commit -m "chore(gtfs): auto-update feeds $(date +%Y-%m-%d) — ${CHANGED}"
+            git push
+          fi
