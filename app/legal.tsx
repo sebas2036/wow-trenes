@@ -33,7 +33,7 @@ const CONTENT: Record<string, { title: string; sections: { heading: string; body
       },
       {
         heading: '¿Cómo compro un billete?',
-        body: 'Seleccioná el país o ciudad, elegí tu tren y tocá "Comprar". Serás redirigido a Trainline o Rail Europe, operadores certificados que gestionan el pago de forma segura. WoW Train nunca toca ni procesa tu tarjeta.',
+        body: 'Seleccioná el país o ciudad, elegí tu tren y tocá "Comprar". Serás redirigido a Omio, operador certificado que gestiona el pago de forma segura. WoW Train nunca toca ni procesa tu tarjeta.',
       },
       {
         heading: '¿Los datos de horarios son en tiempo real?',
@@ -45,7 +45,7 @@ const CONTENT: Record<string, { title: string; sections: { heading: string; body
       },
       {
         heading: '¿La app es gratuita?',
-        body: 'Sí, la app es gratuita. WoW Train es un afiliado tecnológico de Trainline y Rail Europe. Podemos cobrar una comisión sobre los billetes vendidos, sin costo adicional para el usuario.',
+        body: 'Sí, la app es gratuita. WoW Train es un afiliado tecnológico de Omio. Podemos cobrar una comisión sobre los billetes vendidos, sin costo adicional para el usuario.',
       },
       {
         heading: '¿Dónde se guardan mis billetes?',
@@ -71,11 +71,11 @@ const CONTENT: Record<string, { title: string; sections: { heading: string; body
       },
       {
         heading: '2. Descripción del servicio',
-        body: 'WoW Train es una aplicación de información ferroviaria y plataforma de afiliación tecnológica. Facilita el acceso a horarios GTFS públicos y redirige a operadores certificados (Trainline, Rail Europe) para la compra de billetes.',
+        body: 'WoW Train es una aplicación de información ferroviaria y plataforma de afiliación tecnológica. Facilita el acceso a horarios GTFS públicos y redirige a operadores certificados (Omio) para la compra de billetes.',
       },
       {
         heading: '3. Relación de afiliación',
-        body: 'WoW Train actúa exclusivamente como "Front-End Afiliado Tecnológico". Trainline Ltd. y Rail Europe SAS actúan como Merchant of Record (MoR) en todas las transacciones. WoW Train no es parte de ningún contrato de transporte ni de compraventa de billetes.',
+        body: 'WoW Train actúa exclusivamente como "Front-End Afiliado Tecnológico". Omio GmbH actúa como Merchant of Record (MoR) en todas las transacciones. WoW Train no es parte de ningún contrato de transporte ni de compraventa de billetes.',
       },
       {
         heading: '4. Exactitud de la información',
@@ -121,11 +121,11 @@ const CONTENT: Record<string, { title: string; sections: { heading: string; body
       },
       {
         heading: 'Pagos',
-        body: 'Los pagos se procesan íntegramente por Trainline Ltd. o Rail Europe SAS (Merchant of Record). WoW Train nunca recibe, toca ni almacena datos de tarjeta de crédito o débito. Cumplimiento PCI-DSS delegado completamente al MoR.',
+        body: 'Los pagos se procesan íntegramente por Omio GmbH (Merchant of Record). WoW Train nunca recibe, toca ni almacena datos de tarjeta de crédito o débito. Cumplimiento PCI-DSS delegado completamente al MoR.',
       },
       {
         heading: 'Datos del pasajero en checkout',
-        body: 'Nombre, documento y email del pasajero se ingresan directamente en el formulario del operador (Trainline/Rail Europe) y se mantienen en RAM solo durante la transacción. No se persisten en la App ni en servidores propios.',
+        body: 'Nombre, documento y email del pasajero se ingresan directamente en el formulario del operador (Omio) y se mantienen en RAM solo durante la transacción. No se persisten en la App ni en servidores propios.',
       },
       {
         heading: 'Terceros',
@@ -159,7 +159,7 @@ const CONTENT: Record<string, { title: string; sections: { heading: string; body
       },
       {
         heading: 'Pagos PCI-DSS',
-        body: 'Toda la gestión de pagos recae en Trainline Ltd. o Rail Europe SAS, ambos certificados bajo el estándar PCI-DSS. WoW Train es un intermediario de interfaz exclusivamente y nunca recibe datos de pago.',
+        body: 'Toda la gestión de pagos recae en Omio GmbH, certificado bajo el estándar PCI-DSS. WoW Train es un intermediario de interfaz exclusivamente y nunca recibe datos de pago.',
       },
       {
         heading: 'Sin tracking ni analytics',

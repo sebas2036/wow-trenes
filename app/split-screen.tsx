@@ -146,7 +146,7 @@ function PurchaseSuccessBanner({
           {destName} · Ref: {bookingRef}
         </Text>
         <Text style={styles.successHint}>
-          Recibirás el QR de Trainline por email. La app te avisará cuando llegues.
+          Recibirás el QR de Omio por email. La app te avisará cuando llegues.
         </Text>
       </View>
       <Pressable onPress={onDismiss} style={styles.successClose} accessibilityLabel="Cerrar">
